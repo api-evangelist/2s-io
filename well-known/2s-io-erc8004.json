@@ -1,0 +1,57 @@
+{
+  "type": "https://eips.ethereum.org/EIPS/eip-8004#registration-v1",
+  "name": "2s",
+  "description": "The (most) everything API for AI agents: 575+ pay-per-call REST endpoints for ground-truth data (public records, finance & SEC, crypto & web3, security & CVEs, legal, medical, weather, geo, B2B/EDI) plus an AI gateway and agent infrastructure. Pay per call in USDC on Base or Solana via x402 — no API keys, no signup.",
+  "image": "https://2s.io/icon-512.png",
+  "services": [
+    {
+      "name": "web",
+      "endpoint": "https://2s.io"
+    },
+    {
+      "name": "A2A",
+      "endpoint": "https://2s.io/.well-known/agent-card.json",
+      "version": "0.3.0"
+    },
+    {
+      "name": "MCP",
+      "endpoint": "https://2s.io/mcp",
+      "version": "2025-06-18"
+    },
+    {
+      "name": "OpenAPI",
+      "endpoint": "https://2s.io/api/openapi"
+    },
+    {
+      "name": "catalog",
+      "endpoint": "https://2s.io/registry.json"
+    }
+  ],
+  "x402Support": true,
+  "active": true,
+  "registrations": [
+    {
+      "agentId": null,
+      "agentRegistry": "eip155:8453:0x8004A169FB4a3325136EB29fA0ceB6D2e539a432"
+    }
+  ],
+  "supportedTrust": [
+    "reputation",
+    "tee-attestation"
+  ],
+  "x402": {
+    "scheme": "exact",
+    "asset": "USDC",
+    "networks": [
+      {
+        "network": "base",
+        "caip2": "eip155:8453"
+      },
+      {
+        "network": "solana",
+        "caip2": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp"
+      }
+    ],
+    "attestation": "https://2s.io/.well-known/2s-attestation.json"
+  }
+}

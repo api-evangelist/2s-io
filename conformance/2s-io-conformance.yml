@@ -1,0 +1,161 @@
+generated: '2026-09-19'
+method: searched
+source: https://2s.io/openapi.json
+derived_from: openapi/2s-io-openapi.json
+docs:
+- https://2s.io/llms.txt
+- https://2s.io/learn/x402
+- https://2s.io/status
+- https://2s.io/.well-known/api-catalog
+summary: >-
+  2s's conformance profile is the agent-commerce and agent-discovery protocol stack rather than any enterprise
+  standard, and unusually much of it is verifiable from the outside: a live x402 v2 402 envelope observed on a
+  real endpoint, an A2A 0.3.0 card graded conformant, an MCP server at protocol 2025-06-18 answering anonymous
+  tools/list, an RFC 9727 API catalog served with the correct application/linkset+json media type, an APIs.json
+  0.16 index, an llms.txt, an OpenAI ai-plugin manifest, a Wildcard agents.json, an ERC-8004 on-chain agent
+  registration, an MCP server card, and a documented EIP-191 response-attestation scheme. In its own market it
+  declares two domain standards inside the contract — ANSI ASC X12 and UN/EDIFACT message types on the edi
+  group — and an OpenAI-compatible chat-completions request/response shape on the AI gateway. It declares no
+  OAuth/OIDC, no RFC 9457 problem details, no RFC 9116 security.txt, no RFC 8594 sunset signalling and no
+  Idempotency-Key.
+standards:
+- id: x402
+  name: x402 HTTP payment protocol
+  version: '2'
+  conforms: true
+  verification: observed
+  evidence: >-
+    GET https://2s.io/api/validate/iban?iban=… (no auth) returned HTTP 402, application/json, x402Version 2,
+    accepts[] with two exact-scheme rails (eip155:8453 USDC amount "2500", payTo 0x2b6D…32C5; solana:5eykt… USDC
+    amount "2500", payTo TW6n…yWhn, feePayer), resource {url, description, mimeType, serviceName, iconUrl,
+    tags}, error "PAYMENT-SIGNATURE required", extensions.bazaar {info.input, info.output.example + schema},
+    plus a PAYMENT-REQUIRED response header carrying the same envelope base64-encoded and
+    x-payment-requirements: x402. Every one of the 575 operations declares the 402 response
+    (components.responses.PaymentRequired → X402PaymentRequiredV2) and the x402Payment apiKey scheme on
+    PAYMENT-SIGNATURE. The provider also serves /.well-known/x402 (x402Version 2, 575 endpoints with prices).
+  note: The paid retry (PAYMENT-SIGNATURE + X-PAYMENT-TX on the 200) was not exercised — that requires spending USDC. The upto scheme (Permit2, actual-usage settlement) is documented on AI endpoints and in changelog 1.80.0 but was not observed in the 402 accepts[] of the IBAN endpoint, which is a fixed-price operation.
+  domain_standard_signature: true
+- id: a2a
+  name: Agent2Agent protocol
+  version: '0.3.0'
+  conforms: true
+  evidence: a2a/2s-io-agent-card.json — protocolVersion "0.3.0", url https://2s.io/a2a, preferredTransport JSONRPC, capabilities object, skills[] of 1; POST https://2s.io/a2a answered JSON-RPC 2.0 with -32601 naming message/send as the supported method. Graded conformant in a2a/2s-io-a2a.yml.
+- id: mcp
+  name: Model Context Protocol
+  version: '2025-06-18'
+  conforms: true
+  evidence: 'POST https://2s.io/mcp initialize returned protocolVersion "2025-06-18", serverInfo {2s.io, 1.0.0}, capabilities.tools.listChanged false; tools/list returned 575 tools with inputSchema. See mcp/2s-io-mcp.yml.'
+- id: mcp-server-card
+  name: MCP server card (SEP-1649)
+  conforms: true
+  evidence: https://2s.io/.well-known/mcp/server-card.json — 200, serverInfo + authentication {schemes [x402]} + tools[575]; saved under well-known/.
+- id: json-rpc-2.0
+  conforms: true
+  evidence: 'Both /mcp and /a2a answer {"jsonrpc":"2.0", ...} with standard -32601 Method not found and -32000 for a GET on the POST-only MCP endpoint.'
+- id: erc-8004
+  name: ERC-8004 / EIP-8004 trustless agent registration
+  conforms: true
+  evidence: 'https://2s.io/.well-known/agent.json and /.well-known/erc8004.json — "type": "https://eips.ethereum.org/EIPS/eip-8004", services[] (MCP, A2A, http, openapi, directory), payment {x402, USDC, eip155:8453 + solana}, registrations[] {agentRegistry eip155:8453:0x8004A169FB4a3325136EB29fA0ceB6D2e539a432, agentId 57911}, supportedTrust [reputation].'
+  note: The on-chain registration itself was not read from the chain; the provider's published registration file is the evidence.
+  domain_standard_signature: true
+- id: rfc9727-api-catalog
+  name: RFC 9727 API Catalog
+  conforms: true
+  evidence: 'https://2s.io/.well-known/api-catalog — 200, Content-Type application/linkset+json, linkset[] with anchor https://2s.io and service-desc / service-doc / service-meta / status-page relations, plus per-group anchors. Saved as well-known/2s-io-api-catalog.json.'
+- id: apis-json
+  name: APIs.json
+  version: '0.16'
+  conforms: true
+  evidence: 'https://2s.io/apis.json — 200, specificationVersion 0.16, aid io.2s, 113 apis, maintainers[] with email alley@2s.io. Property types are x-openapi / x-directory / x-llms-txt rather than the canonical OpenAPI type, so a strict reader sees no OpenAPI property.'
+- id: llms-txt
+  conforms: true
+  evidence: https://2s.io/llms.txt — 200 text/plain, 332 KB, llms.txt shape (H1, blockquote summary, H2 sections with link lists); /llms-full.txt also served. Saved under llms/.
+- id: openai-ai-plugin
+  name: OpenAI plugin manifest
+  conforms: true
+  evidence: 'https://2s.io/.well-known/ai-plugin.json — schema_version v1, auth.type none, api.type openapi → /openapi.json.'
+- id: wildcard-agents-json
+  name: agents.json (Wildcard)
+  version: 0.1.0
+  conforms: true
+  evidence: https://2s.io/.well-known/agents.json — agentsJson 0.1.0, six flows whose actions reference real operationIds (search_endpoints, …) in per-group OpenAPI sub-specs.
+- id: openapi-3.1
+  conforms: true
+  version: 3.1.0
+  evidence: openapi/2s-io-openapi.json openapi "3.1.0"; parses; 575 paths, 575 operations, every operation has summary, description, unique operationId, one tag, security, and 200/400/402/405/500/502 responses; 3 component schemas, 5 component responses, 1 component parameter, 1 securityScheme.
+  gaps:
+  - No top-level tags[] declarations (each operation is tagged with its group name but the tags are undefined at the document level); overlays/2s-io-openapi-overlay.yaml proposes them from the provider's catalog.txt group descriptions.
+  - No examples in-spec (the 402 envelope's extensions.bazaar and /registry.json carry example inputs; the OpenAPI does not).
+  - 429 RATE_LIMITED and 503 UPSTREAM_RATE_LIMIT are documented in the changelog but not declared as responses.
+  - 10 of 575 operations declare a 200 with no schema (media endpoints returning raw bytes, e.g. ai.screenshot).
+- id: openai-chat-completions-compatible
+  name: OpenAI-compatible chat completions shape
+  conforms: true
+  evidence: 'openapi/2s-io-openapi.json ai_chat — "OpenAI-compatible chat completions … POST { model, messages, max_tokens?, temperature?, top_p?, stop? } and get back a standard chat.completion (choices[].message + usage)"; ai_image returns "OpenAI-style { created, data: [{ b64_json }] }".'
+  note: A de-facto interface shape, not a standards-body specification; recorded because a client already speaking it integrates without a connector.
+- id: ansi-x12
+  name: ANSI ASC X12 EDI
+  conforms: true
+  domain_standard_signature: true
+  evidence: 'openapi/2s-io-openapi.json edi_parse (850, 810, 856, 855, 997 transaction sets; ISA/GS/ST envelopes), edi_generate (850 / 810 / 856 with ISA/GS/ST…SE/GE/IEA, N1 loops, PO1/IT1, HL hierarchy, CTT/TDS), edi_ack (997 Functional Acknowledgment with AK1/AK2/AK5/AK9, status A/E/P/R/M/W/X).'
+  note: The contract names the X12 message types, segments and envelope structure it emits and consumes — the domain-standard signature for B2B commerce integration. Conformance is by the provider's contract; no X12 document was exchanged.
+- id: un-edifact
+  name: UN/EDIFACT
+  conforms: true
+  domain_standard_signature: true
+  evidence: 'openapi/2s-io-openapi.json edi_edifact (UNA/UNB/UNH envelopes; ORDERS, INVOIC, DESADV, ORDRSP, CONTRL message types; BGM/DTM/NAD/LIN/QTY/MOA segments) and edi_edifact-generate (ORDERS / INVOIC with UNA/UNB/UNH…UNT/UNZ).'
+- id: caip-2
+  name: CAIP-2 chain identifiers
+  conforms: true
+  evidence: eip155:8453 and solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp in the live 402 accepts[].network, the x402 manifest, agent.json and the MCP server card.
+- id: eip-3009
+  name: EIP-3009 transferWithAuthorization
+  conforms: true
+  evidence: Named as the Base settlement mechanism in the x402Payment securityScheme description, the 402 accepts[].extra (EIP-712 domain name/version), the MCP server card (transferMechanism) and llms.txt.
+- id: eip-191
+  name: EIP-191 personal_sign
+  conforms: true
+  evidence: 'https://2s.io/.well-known/2s-attestation.json (alg secp256k1-eip191-sha256, signer 0xC20d…7717, X-2s-Attestation-* headers, ?sign=1 trigger) and every watchers_* / schedule_* / pubsub_subscribe description ("EIP-191-signed by our published key (verify offline)").'
+- id: robots-ai-crawler-allow
+  conforms: true
+  evidence: 'https://2s.io/robots.txt — 23 named AI/search crawlers each Allow /, then User-agent * Allow /; no Disallow.'
+- id: idempotency-key
+  conforms: false
+  evidence: >-
+    No Idempotency-Key header, parameter or body field on any of the 105 write operations, and no
+    idempotency section in the docs. Eight operations describe themselves as idempotent by construction
+    (lock_release, watchers_cancel, pubsub_create-topic, store_kv-delete, store_doc-delete,
+    store_vector-delete, store_blob-delete, text_redact) and batch_run is atomic ("every sub-call must
+    succeed or nothing is charged"). See conventions/2s-io-conventions.yml (coverage: partial).
+- id: pagination
+  conforms: true
+  verification: partial
+  evidence: 'limit on 210 operations, offset on 46, page on 30, pageSize on 6, cursor on 7 (nextCursor in 10 response schemas), per_page on 4 — mixed styles, no single documented convention.'
+- id: oauth2
+  conforms: false
+  evidence: No oauth2 securityScheme; /.well-known/oauth-authorization-server 404.
+- id: oidc
+  conforms: false
+  evidence: No openIdConnect securityScheme; /.well-known/openid-configuration 404.
+- id: rfc9728-protected-resource
+  conforms: false
+  evidence: /.well-known/oauth-protected-resource 404 on the MCP host (the apex). The MCP server card declares authentication schemes [x402], not OAuth.
+- id: rfc9457-problem-details
+  conforms: false
+  evidence: 'Errors are {"error": {"code", "message", "details"}} in application/json — observed 400 BAD_REQUEST with Zod-style details.issues[] on a trial call; no type URI, no application/problem+json. See errors/2s-io-problem-types.yml.'
+- id: rfc9116-security-txt
+  conforms: false
+  evidence: /.well-known/security.txt and /security.txt both 404.
+- id: rfc8594-sunset
+  conforms: false
+  evidence: No Sunset or Deprecation header anywhere in the contract; every operation carries deprecated false; the directory exposes a per-version deprecated flag (all false) but no dates.
+- id: soc2-iso27001-pci
+  conforms: false
+  evidence: 'No certification is claimed anywhere on the site; /security is the security-endpoints catalog page, /trust, /compliance, /legal, /privacy and /terms all 404. probe-security-programs.py found no trust center or disclosure program.'
+compliance_program:
+  published: false
+  note: >-
+    No SOC 2, ISO 27001, PCI DSS or similar program is published, and the site carries no terms of service or
+    privacy policy page at any conventional path (all 404). The status page's "service commitments" are the
+    only published policy text (best-effort uptime, no SLA, pay only for successful calls). No Compliance
+    pointer is emitted.

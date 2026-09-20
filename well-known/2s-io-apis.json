@@ -1,0 +1,1496 @@
+{
+  "aid": "io.2s",
+  "name": "2s — the (most) everything API",
+  "type": "Index",
+  "description": "Discovery index for 2s. Fetch the full OpenAPI spec, or a small self-contained per-group sub-spec. Pay-per-call in USDC via x402; no accounts or API keys.",
+  "url": "https://2s.io/apis.json",
+  "created": "2026-06-14",
+  "modified": "2026-09-19",
+  "specificationVersion": "0.16",
+  "apis": [
+    {
+      "aid": "io.2s:full",
+      "name": "2s — full catalog",
+      "description": "Complete OpenAPI 3.1 spec for every public 2s endpoint, in one bundled document.",
+      "humanURL": "https://2s.io",
+      "baseURL": "https://2s.io",
+      "properties": [
+        {
+          "type": "x-openapi",
+          "url": "https://2s.io/api/openapi"
+        },
+        {
+          "type": "x-directory",
+          "url": "https://2s.io/api/directory"
+        },
+        {
+          "type": "x-llms-txt",
+          "url": "https://2s.io/llms.txt"
+        }
+      ]
+    },
+    {
+      "aid": "io.2s:agent",
+      "name": "2s — agent",
+      "description": "Self-contained OpenAPI sub-spec for the \"agent\" endpoint group.",
+      "humanURL": "https://2s.io/agent",
+      "baseURL": "https://2s.io",
+      "properties": [
+        {
+          "type": "x-openapi",
+          "url": "https://2s.io/api/openapi?group=agent"
+        }
+      ]
+    },
+    {
+      "aid": "io.2s:agriculture",
+      "name": "2s — agriculture",
+      "description": "Self-contained OpenAPI sub-spec for the \"agriculture\" endpoint group.",
+      "humanURL": "https://2s.io/agriculture",
+      "baseURL": "https://2s.io",
+      "properties": [
+        {
+          "type": "x-openapi",
+          "url": "https://2s.io/api/openapi?group=agriculture"
+        }
+      ]
+    },
+    {
+      "aid": "io.2s:ai",
+      "name": "2s — ai",
+      "description": "Self-contained OpenAPI sub-spec for the \"ai\" endpoint group.",
+      "humanURL": "https://2s.io/ai",
+      "baseURL": "https://2s.io",
+      "properties": [
+        {
+          "type": "x-openapi",
+          "url": "https://2s.io/api/openapi?group=ai"
+        }
+      ]
+    },
+    {
+      "aid": "io.2s:airport",
+      "name": "2s — airport",
+      "description": "Self-contained OpenAPI sub-spec for the \"airport\" endpoint group.",
+      "humanURL": "https://2s.io/airport",
+      "baseURL": "https://2s.io",
+      "properties": [
+        {
+          "type": "x-openapi",
+          "url": "https://2s.io/api/openapi?group=airport"
+        }
+      ]
+    },
+    {
+      "aid": "io.2s:aviation",
+      "name": "2s — aviation",
+      "description": "Self-contained OpenAPI sub-spec for the \"aviation\" endpoint group.",
+      "humanURL": "https://2s.io/aviation",
+      "baseURL": "https://2s.io",
+      "properties": [
+        {
+          "type": "x-openapi",
+          "url": "https://2s.io/api/openapi?group=aviation"
+        }
+      ]
+    },
+    {
+      "aid": "io.2s:bank",
+      "name": "2s — bank",
+      "description": "Self-contained OpenAPI sub-spec for the \"bank\" endpoint group.",
+      "humanURL": "https://2s.io/bank",
+      "baseURL": "https://2s.io",
+      "properties": [
+        {
+          "type": "x-openapi",
+          "url": "https://2s.io/api/openapi?group=bank"
+        }
+      ]
+    },
+    {
+      "aid": "io.2s:barcode",
+      "name": "2s — barcode",
+      "description": "Self-contained OpenAPI sub-spec for the \"barcode\" endpoint group.",
+      "humanURL": "https://2s.io/barcode",
+      "baseURL": "https://2s.io",
+      "properties": [
+        {
+          "type": "x-openapi",
+          "url": "https://2s.io/api/openapi?group=barcode"
+        }
+      ]
+    },
+    {
+      "aid": "io.2s:batch",
+      "name": "2s — batch",
+      "description": "Self-contained OpenAPI sub-spec for the \"batch\" endpoint group.",
+      "humanURL": "https://2s.io/batch",
+      "baseURL": "https://2s.io",
+      "properties": [
+        {
+          "type": "x-openapi",
+          "url": "https://2s.io/api/openapi?group=batch"
+        }
+      ]
+    },
+    {
+      "aid": "io.2s:bio",
+      "name": "2s — bio",
+      "description": "Self-contained OpenAPI sub-spec for the \"bio\" endpoint group.",
+      "humanURL": "https://2s.io/bio",
+      "baseURL": "https://2s.io",
+      "properties": [
+        {
+          "type": "x-openapi",
+          "url": "https://2s.io/api/openapi?group=bio"
+        }
+      ]
+    },
+    {
+      "aid": "io.2s:bls",
+      "name": "2s — bls",
+      "description": "Self-contained OpenAPI sub-spec for the \"bls\" endpoint group.",
+      "humanURL": "https://2s.io/bls",
+      "baseURL": "https://2s.io",
+      "properties": [
+        {
+          "type": "x-openapi",
+          "url": "https://2s.io/api/openapi?group=bls"
+        }
+      ]
+    },
+    {
+      "aid": "io.2s:book",
+      "name": "2s — book",
+      "description": "Self-contained OpenAPI sub-spec for the \"book\" endpoint group.",
+      "humanURL": "https://2s.io/book",
+      "baseURL": "https://2s.io",
+      "properties": [
+        {
+          "type": "x-openapi",
+          "url": "https://2s.io/api/openapi?group=book"
+        }
+      ]
+    },
+    {
+      "aid": "io.2s:business",
+      "name": "2s — business",
+      "description": "Self-contained OpenAPI sub-spec for the \"business\" endpoint group.",
+      "humanURL": "https://2s.io/business",
+      "baseURL": "https://2s.io",
+      "properties": [
+        {
+          "type": "x-openapi",
+          "url": "https://2s.io/api/openapi?group=business"
+        }
+      ]
+    },
+    {
+      "aid": "io.2s:calendar",
+      "name": "2s — calendar",
+      "description": "Self-contained OpenAPI sub-spec for the \"calendar\" endpoint group.",
+      "humanURL": "https://2s.io/calendar",
+      "baseURL": "https://2s.io",
+      "properties": [
+        {
+          "type": "x-openapi",
+          "url": "https://2s.io/api/openapi?group=calendar"
+        }
+      ]
+    },
+    {
+      "aid": "io.2s:census",
+      "name": "2s — census",
+      "description": "Self-contained OpenAPI sub-spec for the \"census\" endpoint group.",
+      "humanURL": "https://2s.io/census",
+      "baseURL": "https://2s.io",
+      "properties": [
+        {
+          "type": "x-openapi",
+          "url": "https://2s.io/api/openapi?group=census"
+        }
+      ]
+    },
+    {
+      "aid": "io.2s:chem",
+      "name": "2s — chem",
+      "description": "Self-contained OpenAPI sub-spec for the \"chem\" endpoint group.",
+      "humanURL": "https://2s.io/chem",
+      "baseURL": "https://2s.io",
+      "properties": [
+        {
+          "type": "x-openapi",
+          "url": "https://2s.io/api/openapi?group=chem"
+        }
+      ]
+    },
+    {
+      "aid": "io.2s:chinese",
+      "name": "2s — chinese",
+      "description": "Self-contained OpenAPI sub-spec for the \"chinese\" endpoint group.",
+      "humanURL": "https://2s.io/chinese",
+      "baseURL": "https://2s.io",
+      "properties": [
+        {
+          "type": "x-openapi",
+          "url": "https://2s.io/api/openapi?group=chinese"
+        }
+      ]
+    },
+    {
+      "aid": "io.2s:class",
+      "name": "2s — class",
+      "description": "Self-contained OpenAPI sub-spec for the \"class\" endpoint group.",
+      "humanURL": "https://2s.io/class",
+      "baseURL": "https://2s.io",
+      "properties": [
+        {
+          "type": "x-openapi",
+          "url": "https://2s.io/api/openapi?group=class"
+        }
+      ]
+    },
+    {
+      "aid": "io.2s:climate",
+      "name": "2s — climate",
+      "description": "Self-contained OpenAPI sub-spec for the \"climate\" endpoint group.",
+      "humanURL": "https://2s.io/climate",
+      "baseURL": "https://2s.io",
+      "properties": [
+        {
+          "type": "x-openapi",
+          "url": "https://2s.io/api/openapi?group=climate"
+        }
+      ]
+    },
+    {
+      "aid": "io.2s:clinical",
+      "name": "2s — clinical",
+      "description": "Self-contained OpenAPI sub-spec for the \"clinical\" endpoint group.",
+      "humanURL": "https://2s.io/clinical",
+      "baseURL": "https://2s.io",
+      "properties": [
+        {
+          "type": "x-openapi",
+          "url": "https://2s.io/api/openapi?group=clinical"
+        }
+      ]
+    },
+    {
+      "aid": "io.2s:code",
+      "name": "2s — code",
+      "description": "Self-contained OpenAPI sub-spec for the \"code\" endpoint group.",
+      "humanURL": "https://2s.io/code",
+      "baseURL": "https://2s.io",
+      "properties": [
+        {
+          "type": "x-openapi",
+          "url": "https://2s.io/api/openapi?group=code"
+        }
+      ]
+    },
+    {
+      "aid": "io.2s:convert",
+      "name": "2s — convert",
+      "description": "Self-contained OpenAPI sub-spec for the \"convert\" endpoint group.",
+      "humanURL": "https://2s.io/convert",
+      "baseURL": "https://2s.io",
+      "properties": [
+        {
+          "type": "x-openapi",
+          "url": "https://2s.io/api/openapi?group=convert"
+        }
+      ]
+    },
+    {
+      "aid": "io.2s:countdown",
+      "name": "2s — countdown",
+      "description": "Self-contained OpenAPI sub-spec for the \"countdown\" endpoint group.",
+      "humanURL": "https://2s.io/countdown",
+      "baseURL": "https://2s.io",
+      "properties": [
+        {
+          "type": "x-openapi",
+          "url": "https://2s.io/api/openapi?group=countdown"
+        }
+      ]
+    },
+    {
+      "aid": "io.2s:country",
+      "name": "2s — country",
+      "description": "Self-contained OpenAPI sub-spec for the \"country\" endpoint group.",
+      "humanURL": "https://2s.io/country",
+      "baseURL": "https://2s.io",
+      "properties": [
+        {
+          "type": "x-openapi",
+          "url": "https://2s.io/api/openapi?group=country"
+        }
+      ]
+    },
+    {
+      "aid": "io.2s:crypto",
+      "name": "2s — crypto",
+      "description": "Self-contained OpenAPI sub-spec for the \"crypto\" endpoint group.",
+      "humanURL": "https://2s.io/crypto",
+      "baseURL": "https://2s.io",
+      "properties": [
+        {
+          "type": "x-openapi",
+          "url": "https://2s.io/api/openapi?group=crypto"
+        }
+      ]
+    },
+    {
+      "aid": "io.2s:dev",
+      "name": "2s — dev",
+      "description": "Self-contained OpenAPI sub-spec for the \"dev\" endpoint group.",
+      "humanURL": "https://2s.io/dev",
+      "baseURL": "https://2s.io",
+      "properties": [
+        {
+          "type": "x-openapi",
+          "url": "https://2s.io/api/openapi?group=dev"
+        }
+      ]
+    },
+    {
+      "aid": "io.2s:dns",
+      "name": "2s — dns",
+      "description": "Self-contained OpenAPI sub-spec for the \"dns\" endpoint group.",
+      "humanURL": "https://2s.io/dns",
+      "baseURL": "https://2s.io",
+      "properties": [
+        {
+          "type": "x-openapi",
+          "url": "https://2s.io/api/openapi?group=dns"
+        }
+      ]
+    },
+    {
+      "aid": "io.2s:domain",
+      "name": "2s — domain",
+      "description": "Self-contained OpenAPI sub-spec for the \"domain\" endpoint group.",
+      "humanURL": "https://2s.io/domain",
+      "baseURL": "https://2s.io",
+      "properties": [
+        {
+          "type": "x-openapi",
+          "url": "https://2s.io/api/openapi?group=domain"
+        }
+      ]
+    },
+    {
+      "aid": "io.2s:earth",
+      "name": "2s — earth",
+      "description": "Self-contained OpenAPI sub-spec for the \"earth\" endpoint group.",
+      "humanURL": "https://2s.io/earth",
+      "baseURL": "https://2s.io",
+      "properties": [
+        {
+          "type": "x-openapi",
+          "url": "https://2s.io/api/openapi?group=earth"
+        }
+      ]
+    },
+    {
+      "aid": "io.2s:econ",
+      "name": "2s — econ",
+      "description": "Self-contained OpenAPI sub-spec for the \"econ\" endpoint group.",
+      "humanURL": "https://2s.io/econ",
+      "baseURL": "https://2s.io",
+      "properties": [
+        {
+          "type": "x-openapi",
+          "url": "https://2s.io/api/openapi?group=econ"
+        }
+      ]
+    },
+    {
+      "aid": "io.2s:edi",
+      "name": "2s — edi",
+      "description": "Self-contained OpenAPI sub-spec for the \"edi\" endpoint group.",
+      "humanURL": "https://2s.io/edi",
+      "baseURL": "https://2s.io",
+      "properties": [
+        {
+          "type": "x-openapi",
+          "url": "https://2s.io/api/openapi?group=edi"
+        }
+      ]
+    },
+    {
+      "aid": "io.2s:edu",
+      "name": "2s — edu",
+      "description": "Self-contained OpenAPI sub-spec for the \"edu\" endpoint group.",
+      "humanURL": "https://2s.io/edu",
+      "baseURL": "https://2s.io",
+      "properties": [
+        {
+          "type": "x-openapi",
+          "url": "https://2s.io/api/openapi?group=edu"
+        }
+      ]
+    },
+    {
+      "aid": "io.2s:email",
+      "name": "2s — email",
+      "description": "Self-contained OpenAPI sub-spec for the \"email\" endpoint group.",
+      "humanURL": "https://2s.io/email",
+      "baseURL": "https://2s.io",
+      "properties": [
+        {
+          "type": "x-openapi",
+          "url": "https://2s.io/api/openapi?group=email"
+        }
+      ]
+    },
+    {
+      "aid": "io.2s:energy",
+      "name": "2s — energy",
+      "description": "Self-contained OpenAPI sub-spec for the \"energy\" endpoint group.",
+      "humanURL": "https://2s.io/energy",
+      "baseURL": "https://2s.io",
+      "properties": [
+        {
+          "type": "x-openapi",
+          "url": "https://2s.io/api/openapi?group=energy"
+        }
+      ]
+    },
+    {
+      "aid": "io.2s:factcheck",
+      "name": "2s — factcheck",
+      "description": "Self-contained OpenAPI sub-spec for the \"factcheck\" endpoint group.",
+      "humanURL": "https://2s.io/factcheck",
+      "baseURL": "https://2s.io",
+      "properties": [
+        {
+          "type": "x-openapi",
+          "url": "https://2s.io/api/openapi?group=factcheck"
+        }
+      ]
+    },
+    {
+      "aid": "io.2s:feedback",
+      "name": "2s — feedback",
+      "description": "Self-contained OpenAPI sub-spec for the \"feedback\" endpoint group.",
+      "humanURL": "https://2s.io/feedback",
+      "baseURL": "https://2s.io",
+      "properties": [
+        {
+          "type": "x-openapi",
+          "url": "https://2s.io/api/openapi?group=feedback"
+        }
+      ]
+    },
+    {
+      "aid": "io.2s:finance",
+      "name": "2s — finance",
+      "description": "Self-contained OpenAPI sub-spec for the \"finance\" endpoint group.",
+      "humanURL": "https://2s.io/finance",
+      "baseURL": "https://2s.io",
+      "properties": [
+        {
+          "type": "x-openapi",
+          "url": "https://2s.io/api/openapi?group=finance"
+        }
+      ]
+    },
+    {
+      "aid": "io.2s:flight",
+      "name": "2s — flight",
+      "description": "Self-contained OpenAPI sub-spec for the \"flight\" endpoint group.",
+      "humanURL": "https://2s.io/flight",
+      "baseURL": "https://2s.io",
+      "properties": [
+        {
+          "type": "x-openapi",
+          "url": "https://2s.io/api/openapi?group=flight"
+        }
+      ]
+    },
+    {
+      "aid": "io.2s:food",
+      "name": "2s — food",
+      "description": "Self-contained OpenAPI sub-spec for the \"food\" endpoint group.",
+      "humanURL": "https://2s.io/food",
+      "baseURL": "https://2s.io",
+      "properties": [
+        {
+          "type": "x-openapi",
+          "url": "https://2s.io/api/openapi?group=food"
+        }
+      ]
+    },
+    {
+      "aid": "io.2s:fx",
+      "name": "2s — fx",
+      "description": "Self-contained OpenAPI sub-spec for the \"fx\" endpoint group.",
+      "humanURL": "https://2s.io/fx",
+      "baseURL": "https://2s.io",
+      "properties": [
+        {
+          "type": "x-openapi",
+          "url": "https://2s.io/api/openapi?group=fx"
+        }
+      ]
+    },
+    {
+      "aid": "io.2s:geo",
+      "name": "2s — geo",
+      "description": "Self-contained OpenAPI sub-spec for the \"geo\" endpoint group.",
+      "humanURL": "https://2s.io/geo",
+      "baseURL": "https://2s.io",
+      "properties": [
+        {
+          "type": "x-openapi",
+          "url": "https://2s.io/api/openapi?group=geo"
+        }
+      ]
+    },
+    {
+      "aid": "io.2s:geocode",
+      "name": "2s — geocode",
+      "description": "Self-contained OpenAPI sub-spec for the \"geocode\" endpoint group.",
+      "humanURL": "https://2s.io/geocode",
+      "baseURL": "https://2s.io",
+      "properties": [
+        {
+          "type": "x-openapi",
+          "url": "https://2s.io/api/openapi?group=geocode"
+        }
+      ]
+    },
+    {
+      "aid": "io.2s:github",
+      "name": "2s — github",
+      "description": "Self-contained OpenAPI sub-spec for the \"github\" endpoint group.",
+      "humanURL": "https://2s.io/github",
+      "baseURL": "https://2s.io",
+      "properties": [
+        {
+          "type": "x-openapi",
+          "url": "https://2s.io/api/openapi?group=github"
+        }
+      ]
+    },
+    {
+      "aid": "io.2s:gov",
+      "name": "2s — gov",
+      "description": "Self-contained OpenAPI sub-spec for the \"gov\" endpoint group.",
+      "humanURL": "https://2s.io/gov",
+      "baseURL": "https://2s.io",
+      "properties": [
+        {
+          "type": "x-openapi",
+          "url": "https://2s.io/api/openapi?group=gov"
+        }
+      ]
+    },
+    {
+      "aid": "io.2s:hash",
+      "name": "2s — hash",
+      "description": "Self-contained OpenAPI sub-spec for the \"hash\" endpoint group.",
+      "humanURL": "https://2s.io/hash",
+      "baseURL": "https://2s.io",
+      "properties": [
+        {
+          "type": "x-openapi",
+          "url": "https://2s.io/api/openapi?group=hash"
+        }
+      ]
+    },
+    {
+      "aid": "io.2s:health",
+      "name": "2s — health",
+      "description": "Self-contained OpenAPI sub-spec for the \"health\" endpoint group.",
+      "humanURL": "https://2s.io/health",
+      "baseURL": "https://2s.io",
+      "properties": [
+        {
+          "type": "x-openapi",
+          "url": "https://2s.io/api/openapi?group=health"
+        }
+      ]
+    },
+    {
+      "aid": "io.2s:html",
+      "name": "2s — html",
+      "description": "Self-contained OpenAPI sub-spec for the \"html\" endpoint group.",
+      "humanURL": "https://2s.io/html",
+      "baseURL": "https://2s.io",
+      "properties": [
+        {
+          "type": "x-openapi",
+          "url": "https://2s.io/api/openapi?group=html"
+        }
+      ]
+    },
+    {
+      "aid": "io.2s:image",
+      "name": "2s — image",
+      "description": "Self-contained OpenAPI sub-spec for the \"image\" endpoint group.",
+      "humanURL": "https://2s.io/image",
+      "baseURL": "https://2s.io",
+      "properties": [
+        {
+          "type": "x-openapi",
+          "url": "https://2s.io/api/openapi?group=image"
+        }
+      ]
+    },
+    {
+      "aid": "io.2s:inflation",
+      "name": "2s — inflation",
+      "description": "Self-contained OpenAPI sub-spec for the \"inflation\" endpoint group.",
+      "humanURL": "https://2s.io/inflation",
+      "baseURL": "https://2s.io",
+      "properties": [
+        {
+          "type": "x-openapi",
+          "url": "https://2s.io/api/openapi?group=inflation"
+        }
+      ]
+    },
+    {
+      "aid": "io.2s:ipinfo",
+      "name": "2s — ipinfo",
+      "description": "Self-contained OpenAPI sub-spec for the \"ipinfo\" endpoint group.",
+      "humanURL": "https://2s.io/ipinfo",
+      "baseURL": "https://2s.io",
+      "properties": [
+        {
+          "type": "x-openapi",
+          "url": "https://2s.io/api/openapi?group=ipinfo"
+        }
+      ]
+    },
+    {
+      "aid": "io.2s:iso",
+      "name": "2s — iso",
+      "description": "Self-contained OpenAPI sub-spec for the \"iso\" endpoint group.",
+      "humanURL": "https://2s.io/iso",
+      "baseURL": "https://2s.io",
+      "properties": [
+        {
+          "type": "x-openapi",
+          "url": "https://2s.io/api/openapi?group=iso"
+        }
+      ]
+    },
+    {
+      "aid": "io.2s:job",
+      "name": "2s — job",
+      "description": "Self-contained OpenAPI sub-spec for the \"job\" endpoint group.",
+      "humanURL": "https://2s.io/job",
+      "baseURL": "https://2s.io",
+      "properties": [
+        {
+          "type": "x-openapi",
+          "url": "https://2s.io/api/openapi?group=job"
+        }
+      ]
+    },
+    {
+      "aid": "io.2s:labor",
+      "name": "2s — labor",
+      "description": "Self-contained OpenAPI sub-spec for the \"labor\" endpoint group.",
+      "humanURL": "https://2s.io/labor",
+      "baseURL": "https://2s.io",
+      "properties": [
+        {
+          "type": "x-openapi",
+          "url": "https://2s.io/api/openapi?group=labor"
+        }
+      ]
+    },
+    {
+      "aid": "io.2s:law",
+      "name": "2s — law",
+      "description": "Self-contained OpenAPI sub-spec for the \"law\" endpoint group.",
+      "humanURL": "https://2s.io/law",
+      "baseURL": "https://2s.io",
+      "properties": [
+        {
+          "type": "x-openapi",
+          "url": "https://2s.io/api/openapi?group=law"
+        }
+      ]
+    },
+    {
+      "aid": "io.2s:license",
+      "name": "2s — license",
+      "description": "Self-contained OpenAPI sub-spec for the \"license\" endpoint group.",
+      "humanURL": "https://2s.io/license",
+      "baseURL": "https://2s.io",
+      "properties": [
+        {
+          "type": "x-openapi",
+          "url": "https://2s.io/api/openapi?group=license"
+        }
+      ]
+    },
+    {
+      "aid": "io.2s:lock",
+      "name": "2s — lock",
+      "description": "Self-contained OpenAPI sub-spec for the \"lock\" endpoint group.",
+      "humanURL": "https://2s.io/lock",
+      "baseURL": "https://2s.io",
+      "properties": [
+        {
+          "type": "x-openapi",
+          "url": "https://2s.io/api/openapi?group=lock"
+        }
+      ]
+    },
+    {
+      "aid": "io.2s:maritime",
+      "name": "2s — maritime",
+      "description": "Self-contained OpenAPI sub-spec for the \"maritime\" endpoint group.",
+      "humanURL": "https://2s.io/maritime",
+      "baseURL": "https://2s.io",
+      "properties": [
+        {
+          "type": "x-openapi",
+          "url": "https://2s.io/api/openapi?group=maritime"
+        }
+      ]
+    },
+    {
+      "aid": "io.2s:markets",
+      "name": "2s — markets",
+      "description": "Self-contained OpenAPI sub-spec for the \"markets\" endpoint group.",
+      "humanURL": "https://2s.io/markets",
+      "baseURL": "https://2s.io",
+      "properties": [
+        {
+          "type": "x-openapi",
+          "url": "https://2s.io/api/openapi?group=markets"
+        }
+      ]
+    },
+    {
+      "aid": "io.2s:medical",
+      "name": "2s — medical",
+      "description": "Self-contained OpenAPI sub-spec for the \"medical\" endpoint group.",
+      "humanURL": "https://2s.io/medical",
+      "baseURL": "https://2s.io",
+      "properties": [
+        {
+          "type": "x-openapi",
+          "url": "https://2s.io/api/openapi?group=medical"
+        }
+      ]
+    },
+    {
+      "aid": "io.2s:music",
+      "name": "2s — music",
+      "description": "Self-contained OpenAPI sub-spec for the \"music\" endpoint group.",
+      "humanURL": "https://2s.io/music",
+      "baseURL": "https://2s.io",
+      "properties": [
+        {
+          "type": "x-openapi",
+          "url": "https://2s.io/api/openapi?group=music"
+        }
+      ]
+    },
+    {
+      "aid": "io.2s:net",
+      "name": "2s — net",
+      "description": "Self-contained OpenAPI sub-spec for the \"net\" endpoint group.",
+      "humanURL": "https://2s.io/net",
+      "baseURL": "https://2s.io",
+      "properties": [
+        {
+          "type": "x-openapi",
+          "url": "https://2s.io/api/openapi?group=net"
+        }
+      ]
+    },
+    {
+      "aid": "io.2s:news",
+      "name": "2s — news",
+      "description": "Self-contained OpenAPI sub-spec for the \"news\" endpoint group.",
+      "humanURL": "https://2s.io/news",
+      "baseURL": "https://2s.io",
+      "properties": [
+        {
+          "type": "x-openapi",
+          "url": "https://2s.io/api/openapi?group=news"
+        }
+      ]
+    },
+    {
+      "aid": "io.2s:nonprofit",
+      "name": "2s — nonprofit",
+      "description": "Self-contained OpenAPI sub-spec for the \"nonprofit\" endpoint group.",
+      "humanURL": "https://2s.io/nonprofit",
+      "baseURL": "https://2s.io",
+      "properties": [
+        {
+          "type": "x-openapi",
+          "url": "https://2s.io/api/openapi?group=nonprofit"
+        }
+      ]
+    },
+    {
+      "aid": "io.2s:nutrition",
+      "name": "2s — nutrition",
+      "description": "Self-contained OpenAPI sub-spec for the \"nutrition\" endpoint group.",
+      "humanURL": "https://2s.io/nutrition",
+      "baseURL": "https://2s.io",
+      "properties": [
+        {
+          "type": "x-openapi",
+          "url": "https://2s.io/api/openapi?group=nutrition"
+        }
+      ]
+    },
+    {
+      "aid": "io.2s:occupation",
+      "name": "2s — occupation",
+      "description": "Self-contained OpenAPI sub-spec for the \"occupation\" endpoint group.",
+      "humanURL": "https://2s.io/occupation",
+      "baseURL": "https://2s.io",
+      "properties": [
+        {
+          "type": "x-openapi",
+          "url": "https://2s.io/api/openapi?group=occupation"
+        }
+      ]
+    },
+    {
+      "aid": "io.2s:paper",
+      "name": "2s — paper",
+      "description": "Self-contained OpenAPI sub-spec for the \"paper\" endpoint group.",
+      "humanURL": "https://2s.io/paper",
+      "baseURL": "https://2s.io",
+      "properties": [
+        {
+          "type": "x-openapi",
+          "url": "https://2s.io/api/openapi?group=paper"
+        }
+      ]
+    },
+    {
+      "aid": "io.2s:papers",
+      "name": "2s — papers",
+      "description": "Self-contained OpenAPI sub-spec for the \"papers\" endpoint group.",
+      "humanURL": "https://2s.io/papers",
+      "baseURL": "https://2s.io",
+      "properties": [
+        {
+          "type": "x-openapi",
+          "url": "https://2s.io/api/openapi?group=papers"
+        }
+      ]
+    },
+    {
+      "aid": "io.2s:park",
+      "name": "2s — park",
+      "description": "Self-contained OpenAPI sub-spec for the \"park\" endpoint group.",
+      "humanURL": "https://2s.io/park",
+      "baseURL": "https://2s.io",
+      "properties": [
+        {
+          "type": "x-openapi",
+          "url": "https://2s.io/api/openapi?group=park"
+        }
+      ]
+    },
+    {
+      "aid": "io.2s:patents",
+      "name": "2s — patents",
+      "description": "Self-contained OpenAPI sub-spec for the \"patents\" endpoint group.",
+      "humanURL": "https://2s.io/patents",
+      "baseURL": "https://2s.io",
+      "properties": [
+        {
+          "type": "x-openapi",
+          "url": "https://2s.io/api/openapi?group=patents"
+        }
+      ]
+    },
+    {
+      "aid": "io.2s:person",
+      "name": "2s — person",
+      "description": "Self-contained OpenAPI sub-spec for the \"person\" endpoint group.",
+      "humanURL": "https://2s.io/person",
+      "baseURL": "https://2s.io",
+      "properties": [
+        {
+          "type": "x-openapi",
+          "url": "https://2s.io/api/openapi?group=person"
+        }
+      ]
+    },
+    {
+      "aid": "io.2s:phone",
+      "name": "2s — phone",
+      "description": "Self-contained OpenAPI sub-spec for the \"phone\" endpoint group.",
+      "humanURL": "https://2s.io/phone",
+      "baseURL": "https://2s.io",
+      "properties": [
+        {
+          "type": "x-openapi",
+          "url": "https://2s.io/api/openapi?group=phone"
+        }
+      ]
+    },
+    {
+      "aid": "io.2s:poi",
+      "name": "2s — poi",
+      "description": "Self-contained OpenAPI sub-spec for the \"poi\" endpoint group.",
+      "humanURL": "https://2s.io/poi",
+      "baseURL": "https://2s.io",
+      "properties": [
+        {
+          "type": "x-openapi",
+          "url": "https://2s.io/api/openapi?group=poi"
+        }
+      ]
+    },
+    {
+      "aid": "io.2s:predict",
+      "name": "2s — predict",
+      "description": "Self-contained OpenAPI sub-spec for the \"predict\" endpoint group.",
+      "humanURL": "https://2s.io/predict",
+      "baseURL": "https://2s.io",
+      "properties": [
+        {
+          "type": "x-openapi",
+          "url": "https://2s.io/api/openapi?group=predict"
+        }
+      ]
+    },
+    {
+      "aid": "io.2s:product",
+      "name": "2s — product",
+      "description": "Self-contained OpenAPI sub-spec for the \"product\" endpoint group.",
+      "humanURL": "https://2s.io/product",
+      "baseURL": "https://2s.io",
+      "properties": [
+        {
+          "type": "x-openapi",
+          "url": "https://2s.io/api/openapi?group=product"
+        }
+      ]
+    },
+    {
+      "aid": "io.2s:property",
+      "name": "2s — property",
+      "description": "Self-contained OpenAPI sub-spec for the \"property\" endpoint group.",
+      "humanURL": "https://2s.io/property",
+      "baseURL": "https://2s.io",
+      "properties": [
+        {
+          "type": "x-openapi",
+          "url": "https://2s.io/api/openapi?group=property"
+        }
+      ]
+    },
+    {
+      "aid": "io.2s:pubsub",
+      "name": "2s — pubsub",
+      "description": "Self-contained OpenAPI sub-spec for the \"pubsub\" endpoint group.",
+      "humanURL": "https://2s.io/pubsub",
+      "baseURL": "https://2s.io",
+      "properties": [
+        {
+          "type": "x-openapi",
+          "url": "https://2s.io/api/openapi?group=pubsub"
+        }
+      ]
+    },
+    {
+      "aid": "io.2s:quakes",
+      "name": "2s — quakes",
+      "description": "Self-contained OpenAPI sub-spec for the \"quakes\" endpoint group.",
+      "humanURL": "https://2s.io/quakes",
+      "baseURL": "https://2s.io",
+      "properties": [
+        {
+          "type": "x-openapi",
+          "url": "https://2s.io/api/openapi?group=quakes"
+        }
+      ]
+    },
+    {
+      "aid": "io.2s:queue",
+      "name": "2s — queue",
+      "description": "Self-contained OpenAPI sub-spec for the \"queue\" endpoint group.",
+      "humanURL": "https://2s.io/queue",
+      "baseURL": "https://2s.io",
+      "properties": [
+        {
+          "type": "x-openapi",
+          "url": "https://2s.io/api/openapi?group=queue"
+        }
+      ]
+    },
+    {
+      "aid": "io.2s:recreation",
+      "name": "2s — recreation",
+      "description": "Self-contained OpenAPI sub-spec for the \"recreation\" endpoint group.",
+      "humanURL": "https://2s.io/recreation",
+      "baseURL": "https://2s.io",
+      "properties": [
+        {
+          "type": "x-openapi",
+          "url": "https://2s.io/api/openapi?group=recreation"
+        }
+      ]
+    },
+    {
+      "aid": "io.2s:registry",
+      "name": "2s — registry",
+      "description": "Self-contained OpenAPI sub-spec for the \"registry\" endpoint group.",
+      "humanURL": "https://2s.io/registry",
+      "baseURL": "https://2s.io",
+      "properties": [
+        {
+          "type": "x-openapi",
+          "url": "https://2s.io/api/openapi?group=registry"
+        }
+      ]
+    },
+    {
+      "aid": "io.2s:research",
+      "name": "2s — research",
+      "description": "Self-contained OpenAPI sub-spec for the \"research\" endpoint group.",
+      "humanURL": "https://2s.io/research",
+      "baseURL": "https://2s.io",
+      "properties": [
+        {
+          "type": "x-openapi",
+          "url": "https://2s.io/api/openapi?group=research"
+        }
+      ]
+    },
+    {
+      "aid": "io.2s:schedule",
+      "name": "2s — schedule",
+      "description": "Self-contained OpenAPI sub-spec for the \"schedule\" endpoint group.",
+      "humanURL": "https://2s.io/schedule",
+      "baseURL": "https://2s.io",
+      "properties": [
+        {
+          "type": "x-openapi",
+          "url": "https://2s.io/api/openapi?group=schedule"
+        }
+      ]
+    },
+    {
+      "aid": "io.2s:search",
+      "name": "2s — search",
+      "description": "Self-contained OpenAPI sub-spec for the \"search\" endpoint group.",
+      "humanURL": "https://2s.io/search",
+      "baseURL": "https://2s.io",
+      "properties": [
+        {
+          "type": "x-openapi",
+          "url": "https://2s.io/api/openapi?group=search"
+        }
+      ]
+    },
+    {
+      "aid": "io.2s:security",
+      "name": "2s — security",
+      "description": "Self-contained OpenAPI sub-spec for the \"security\" endpoint group.",
+      "humanURL": "https://2s.io/security",
+      "baseURL": "https://2s.io",
+      "properties": [
+        {
+          "type": "x-openapi",
+          "url": "https://2s.io/api/openapi?group=security"
+        }
+      ]
+    },
+    {
+      "aid": "io.2s:soil",
+      "name": "2s — soil",
+      "description": "Self-contained OpenAPI sub-spec for the \"soil\" endpoint group.",
+      "humanURL": "https://2s.io/soil",
+      "baseURL": "https://2s.io",
+      "properties": [
+        {
+          "type": "x-openapi",
+          "url": "https://2s.io/api/openapi?group=soil"
+        }
+      ]
+    },
+    {
+      "aid": "io.2s:space",
+      "name": "2s — space",
+      "description": "Self-contained OpenAPI sub-spec for the \"space\" endpoint group.",
+      "humanURL": "https://2s.io/space",
+      "baseURL": "https://2s.io",
+      "properties": [
+        {
+          "type": "x-openapi",
+          "url": "https://2s.io/api/openapi?group=space"
+        }
+      ]
+    },
+    {
+      "aid": "io.2s:sports",
+      "name": "2s — sports",
+      "description": "Self-contained OpenAPI sub-spec for the \"sports\" endpoint group.",
+      "humanURL": "https://2s.io/sports",
+      "baseURL": "https://2s.io",
+      "properties": [
+        {
+          "type": "x-openapi",
+          "url": "https://2s.io/api/openapi?group=sports"
+        }
+      ]
+    },
+    {
+      "aid": "io.2s:stocks",
+      "name": "2s — stocks",
+      "description": "Self-contained OpenAPI sub-spec for the \"stocks\" endpoint group.",
+      "humanURL": "https://2s.io/stocks",
+      "baseURL": "https://2s.io",
+      "properties": [
+        {
+          "type": "x-openapi",
+          "url": "https://2s.io/api/openapi?group=stocks"
+        }
+      ]
+    },
+    {
+      "aid": "io.2s:store",
+      "name": "2s — store",
+      "description": "Self-contained OpenAPI sub-spec for the \"store\" endpoint group.",
+      "humanURL": "https://2s.io/store",
+      "baseURL": "https://2s.io",
+      "properties": [
+        {
+          "type": "x-openapi",
+          "url": "https://2s.io/api/openapi?group=store"
+        }
+      ]
+    },
+    {
+      "aid": "io.2s:sunrise",
+      "name": "2s — sunrise",
+      "description": "Self-contained OpenAPI sub-spec for the \"sunrise\" endpoint group.",
+      "humanURL": "https://2s.io/sunrise",
+      "baseURL": "https://2s.io",
+      "properties": [
+        {
+          "type": "x-openapi",
+          "url": "https://2s.io/api/openapi?group=sunrise"
+        }
+      ]
+    },
+    {
+      "aid": "io.2s:tax",
+      "name": "2s — tax",
+      "description": "Self-contained OpenAPI sub-spec for the \"tax\" endpoint group.",
+      "humanURL": "https://2s.io/tax",
+      "baseURL": "https://2s.io",
+      "properties": [
+        {
+          "type": "x-openapi",
+          "url": "https://2s.io/api/openapi?group=tax"
+        }
+      ]
+    },
+    {
+      "aid": "io.2s:tcg",
+      "name": "2s — tcg",
+      "description": "Self-contained OpenAPI sub-spec for the \"tcg\" endpoint group.",
+      "humanURL": "https://2s.io/tcg",
+      "baseURL": "https://2s.io",
+      "properties": [
+        {
+          "type": "x-openapi",
+          "url": "https://2s.io/api/openapi?group=tcg"
+        }
+      ]
+    },
+    {
+      "aid": "io.2s:telecom",
+      "name": "2s — telecom",
+      "description": "Self-contained OpenAPI sub-spec for the \"telecom\" endpoint group.",
+      "humanURL": "https://2s.io/telecom",
+      "baseURL": "https://2s.io",
+      "properties": [
+        {
+          "type": "x-openapi",
+          "url": "https://2s.io/api/openapi?group=telecom"
+        }
+      ]
+    },
+    {
+      "aid": "io.2s:text",
+      "name": "2s — text",
+      "description": "Self-contained OpenAPI sub-spec for the \"text\" endpoint group.",
+      "humanURL": "https://2s.io/text",
+      "baseURL": "https://2s.io",
+      "properties": [
+        {
+          "type": "x-openapi",
+          "url": "https://2s.io/api/openapi?group=text"
+        }
+      ]
+    },
+    {
+      "aid": "io.2s:tides",
+      "name": "2s — tides",
+      "description": "Self-contained OpenAPI sub-spec for the \"tides\" endpoint group.",
+      "humanURL": "https://2s.io/tides",
+      "baseURL": "https://2s.io",
+      "properties": [
+        {
+          "type": "x-openapi",
+          "url": "https://2s.io/api/openapi?group=tides"
+        }
+      ]
+    },
+    {
+      "aid": "io.2s:time",
+      "name": "2s — time",
+      "description": "Self-contained OpenAPI sub-spec for the \"time\" endpoint group.",
+      "humanURL": "https://2s.io/time",
+      "baseURL": "https://2s.io",
+      "properties": [
+        {
+          "type": "x-openapi",
+          "url": "https://2s.io/api/openapi?group=time"
+        }
+      ]
+    },
+    {
+      "aid": "io.2s:timezone",
+      "name": "2s — timezone",
+      "description": "Self-contained OpenAPI sub-spec for the \"timezone\" endpoint group.",
+      "humanURL": "https://2s.io/timezone",
+      "baseURL": "https://2s.io",
+      "properties": [
+        {
+          "type": "x-openapi",
+          "url": "https://2s.io/api/openapi?group=timezone"
+        }
+      ]
+    },
+    {
+      "aid": "io.2s:tld",
+      "name": "2s — tld",
+      "description": "Self-contained OpenAPI sub-spec for the \"tld\" endpoint group.",
+      "humanURL": "https://2s.io/tld",
+      "baseURL": "https://2s.io",
+      "properties": [
+        {
+          "type": "x-openapi",
+          "url": "https://2s.io/api/openapi?group=tld"
+        }
+      ]
+    },
+    {
+      "aid": "io.2s:tls",
+      "name": "2s — tls",
+      "description": "Self-contained OpenAPI sub-spec for the \"tls\" endpoint group.",
+      "humanURL": "https://2s.io/tls",
+      "baseURL": "https://2s.io",
+      "properties": [
+        {
+          "type": "x-openapi",
+          "url": "https://2s.io/api/openapi?group=tls"
+        }
+      ]
+    },
+    {
+      "aid": "io.2s:trade",
+      "name": "2s — trade",
+      "description": "Self-contained OpenAPI sub-spec for the \"trade\" endpoint group.",
+      "humanURL": "https://2s.io/trade",
+      "baseURL": "https://2s.io",
+      "properties": [
+        {
+          "type": "x-openapi",
+          "url": "https://2s.io/api/openapi?group=trade"
+        }
+      ]
+    },
+    {
+      "aid": "io.2s:transcribe",
+      "name": "2s — transcribe",
+      "description": "Self-contained OpenAPI sub-spec for the \"transcribe\" endpoint group.",
+      "humanURL": "https://2s.io/transcribe",
+      "baseURL": "https://2s.io",
+      "properties": [
+        {
+          "type": "x-openapi",
+          "url": "https://2s.io/api/openapi?group=transcribe"
+        }
+      ]
+    },
+    {
+      "aid": "io.2s:travel",
+      "name": "2s — travel",
+      "description": "Self-contained OpenAPI sub-spec for the \"travel\" endpoint group.",
+      "humanURL": "https://2s.io/travel",
+      "baseURL": "https://2s.io",
+      "properties": [
+        {
+          "type": "x-openapi",
+          "url": "https://2s.io/api/openapi?group=travel"
+        }
+      ]
+    },
+    {
+      "aid": "io.2s:treasury",
+      "name": "2s — treasury",
+      "description": "Self-contained OpenAPI sub-spec for the \"treasury\" endpoint group.",
+      "humanURL": "https://2s.io/treasury",
+      "baseURL": "https://2s.io",
+      "properties": [
+        {
+          "type": "x-openapi",
+          "url": "https://2s.io/api/openapi?group=treasury"
+        }
+      ]
+    },
+    {
+      "aid": "io.2s:url",
+      "name": "2s — url",
+      "description": "Self-contained OpenAPI sub-spec for the \"url\" endpoint group.",
+      "humanURL": "https://2s.io/url",
+      "baseURL": "https://2s.io",
+      "properties": [
+        {
+          "type": "x-openapi",
+          "url": "https://2s.io/api/openapi?group=url"
+        }
+      ]
+    },
+    {
+      "aid": "io.2s:validate",
+      "name": "2s — validate",
+      "description": "Self-contained OpenAPI sub-spec for the \"validate\" endpoint group.",
+      "humanURL": "https://2s.io/validate",
+      "baseURL": "https://2s.io",
+      "properties": [
+        {
+          "type": "x-openapi",
+          "url": "https://2s.io/api/openapi?group=validate"
+        }
+      ]
+    },
+    {
+      "aid": "io.2s:vehicle",
+      "name": "2s — vehicle",
+      "description": "Self-contained OpenAPI sub-spec for the \"vehicle\" endpoint group.",
+      "humanURL": "https://2s.io/vehicle",
+      "baseURL": "https://2s.io",
+      "properties": [
+        {
+          "type": "x-openapi",
+          "url": "https://2s.io/api/openapi?group=vehicle"
+        }
+      ]
+    },
+    {
+      "aid": "io.2s:watchers",
+      "name": "2s — watchers",
+      "description": "Self-contained OpenAPI sub-spec for the \"watchers\" endpoint group.",
+      "humanURL": "https://2s.io/watchers",
+      "baseURL": "https://2s.io",
+      "properties": [
+        {
+          "type": "x-openapi",
+          "url": "https://2s.io/api/openapi?group=watchers"
+        }
+      ]
+    },
+    {
+      "aid": "io.2s:water",
+      "name": "2s — water",
+      "description": "Self-contained OpenAPI sub-spec for the \"water\" endpoint group.",
+      "humanURL": "https://2s.io/water",
+      "baseURL": "https://2s.io",
+      "properties": [
+        {
+          "type": "x-openapi",
+          "url": "https://2s.io/api/openapi?group=water"
+        }
+      ]
+    },
+    {
+      "aid": "io.2s:weather",
+      "name": "2s — weather",
+      "description": "Self-contained OpenAPI sub-spec for the \"weather\" endpoint group.",
+      "humanURL": "https://2s.io/weather",
+      "baseURL": "https://2s.io",
+      "properties": [
+        {
+          "type": "x-openapi",
+          "url": "https://2s.io/api/openapi?group=weather"
+        }
+      ]
+    },
+    {
+      "aid": "io.2s:wikidata",
+      "name": "2s — wikidata",
+      "description": "Self-contained OpenAPI sub-spec for the \"wikidata\" endpoint group.",
+      "humanURL": "https://2s.io/wikidata",
+      "baseURL": "https://2s.io",
+      "properties": [
+        {
+          "type": "x-openapi",
+          "url": "https://2s.io/api/openapi?group=wikidata"
+        }
+      ]
+    },
+    {
+      "aid": "io.2s:wikipedia",
+      "name": "2s — wikipedia",
+      "description": "Self-contained OpenAPI sub-spec for the \"wikipedia\" endpoint group.",
+      "humanURL": "https://2s.io/wikipedia",
+      "baseURL": "https://2s.io",
+      "properties": [
+        {
+          "type": "x-openapi",
+          "url": "https://2s.io/api/openapi?group=wikipedia"
+        }
+      ]
+    },
+    {
+      "aid": "io.2s:word",
+      "name": "2s — word",
+      "description": "Self-contained OpenAPI sub-spec for the \"word\" endpoint group.",
+      "humanURL": "https://2s.io/word",
+      "baseURL": "https://2s.io",
+      "properties": [
+        {
+          "type": "x-openapi",
+          "url": "https://2s.io/api/openapi?group=word"
+        }
+      ]
+    },
+    {
+      "aid": "io.2s:worldbank",
+      "name": "2s — worldbank",
+      "description": "Self-contained OpenAPI sub-spec for the \"worldbank\" endpoint group.",
+      "humanURL": "https://2s.io/worldbank",
+      "baseURL": "https://2s.io",
+      "properties": [
+        {
+          "type": "x-openapi",
+          "url": "https://2s.io/api/openapi?group=worldbank"
+        }
+      ]
+    }
+  ],
+  "maintainers": [
+    {
+      "FN": "2s",
+      "email": "alley@2s.io",
+      "url": "https://2s.io"
+    }
+  ]
+}

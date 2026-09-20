@@ -1,0 +1,153 @@
+generated: '2026-09-19'
+method: probed
+source: >-
+  Live GET probes of the named /.well-known/* path list on 2s.io and www.2s.io, 2026-09-19, plus the
+  discovery documents the provider's own sitemap, api-catalog linkset and directory name. Every row below is a
+  request that was actually issued; every status is the one returned. Bodies were saved only where the
+  response was a real, correctly-typed document (never an HTML shell).
+summary:
+  hosts_probed: 2
+  paths_probed: 27
+  documents_served: 12
+  hit_count: 12
+  path_echo_control: passed
+  note: >-
+    2s.io serves an unusually complete discovery layer from one host: an RFC 9727 API catalog linkset
+    (application/linkset+json), an OpenAI-style ai-plugin.json, an A2A agent card, an EIP-8004/ERC-8004 agent
+    registration at BOTH /.well-known/agent.json and /.well-known/erc8004.json, a Wildcard agents.json, an
+    x402 service manifest, an MCP server card (SEP-1649), a response-attestation descriptor, an APIs.json
+    index at /apis.json and an llms.txt. It serves NO security.txt (RFC 9116), no OpenID/OAuth discovery
+    and no RFC 9728 protected-resource metadata for its MCP server (the MCP host is the apex, so the apex
+    rows below are the MCP-host rows). Every miss is a real 404 (the Next.js error document, 526 KB of HTML
+    with a 404 status), and a negative-control path that cannot exist also 404s, so the 200s are served
+    documents. www.2s.io presents a TLS certificate that does not cover the www name (curl error 60); with
+    verification disabled it 307s every path to the apex, and plain http://www.2s.io 308s to https://www.2s.io,
+    which then fails TLS — the www alias is effectively unreachable over HTTPS.
+hosts:
+- host: 2s.io
+  role: Website, API (OpenAPI servers[] https://2s.io), MCP server (https://2s.io/mcp) and A2A JSON-RPC host (https://2s.io/a2a) — one origin (Vercel)
+  documents:
+  - path: /.well-known/agent-card.json
+    status: 200
+    content_type: application/json; charset=utf-8
+    bytes: 2206
+    file: ../a2a/2s-io-agent-card.json
+    standard: A2A Agent Card (protocolVersion 0.3.0)
+    note: Saved verbatim under a2a/ and graded in a2a/2s-io-a2a.yml (conformant).
+  - path: /.well-known/agent.json
+    status: 200
+    content_type: application/json; charset=utf-8
+    bytes: 1158
+    file: 2s-io-agent.json
+    standard: EIP-8004 / ERC-8004 agent registration file
+    note: >-
+      The legacy A2A card path, but the body is NOT an A2A card — it declares "type":
+      "https://eips.ethereum.org/EIPS/eip-8004" and lists services (MCP https://2s.io/mcp, A2A https://2s.io/a2a
+      with card URL, http, openapi, directory), an x402 payment block (USDC on eip155:8453 and Solana) and an
+      on-chain registration {agentRegistry eip155:8453:0x8004A169FB4a3325136EB29fA0ceB6D2e539a432, agentId 57911}.
+      Recorded here, not graded as an A2A card.
+  - path: /.well-known/erc8004.json
+    status: 200
+    content_type: application/json; charset=utf-8
+    bytes: 1532
+    file: 2s-io-erc8004.json
+    standard: ERC-8004 agent registration file
+    note: The same registration under its own name; listed in the provider's sitemap.
+  - path: /.well-known/api-catalog
+    status: 200
+    content_type: application/linkset+json; charset=utf-8
+    bytes: 54826
+    file: 2s-io-api-catalog.json
+    standard: RFC 9727 API Catalog (linkset)
+    note: >-
+      Anchor https://2s.io with service-desc (full OpenAPI 3.1 at /openapi.json typed
+      application/vnd.oai.openapi+json;version=3.1, and the APIs.json index), service-doc (llms.txt, /discover),
+      service-meta (directory, x402 manifest, ai-plugin, MCP server card, A2A card) and status-page (/status),
+      plus per-group sub-spec anchors (https://2s.io/api/openapi?group=<g>). Correct media type; a real catalog.
+  - path: /.well-known/ai-plugin.json
+    status: 200
+    content_type: application/json; charset=utf-8
+    bytes: 1865
+    file: 2s-io-ai-plugin.json
+    standard: OpenAI plugin manifest (schema_version v1)
+    note: 'auth.type none; api.type openapi → https://2s.io/openapi.json; carries an x-payment block (x402 v2, USDC on Base + Solana); contact_email alley@alleyford.com.'
+  - path: /.well-known/agents.json
+    status: 200
+    content_type: application/json; charset=utf-8
+    bytes: 16455
+    file: 2s-io-agents.json
+    standard: Wildcard agents.json 0.1.0
+    note: Six flows (discover_endpoints, web_search, patent_search, case_law_search, business_screen, knowledge_delta) over five per-group OpenAPI sub-specs; each action names a real operationId from the spec.
+  - path: /.well-known/x402
+    status: 200
+    content_type: application/json; charset=utf-8
+    bytes: 380692
+    file: 2s-io-x402.json
+    standard: x402 service manifest (x402Version 2)
+    note: service block cross-linking every other discovery document, a settlement block (Base + Solana USDC, treasury addresses, CDP facilitator) and all 575 endpoints with method, path, description and priceUsd.
+  - path: /.well-known/mcp/server-card.json
+    status: 200
+    content_type: application/json; charset=utf-8
+    bytes: 836608
+    file: 2s-io-mcp-server-card.json
+    standard: MCP server card (SEP-1649)
+    note: serverInfo + authentication {required true, schemes [x402]} + the full 575-tool list with inputSchemas; resources[] and prompts[] empty, matching the live server.
+  - path: /.well-known/2s-attestation.json
+    status: 200
+    content_type: application/json; charset=utf-8
+    bytes: 1600
+    file: 2s-io-attestation.json
+    standard: provider-specific response-attestation descriptor
+    note: 'Add ?sign=1 to any endpoint for a response signed by 0xC20d180f1d8aaf2117d13252C5E803895F0D7717 (secp256k1-eip191-sha256) carried in X-2s-Attestation-* headers; the body is never mutated. Named by /status.json.'
+  - path: /apis.json
+    status: 200
+    content_type: application/json; charset=utf-8
+    bytes: 43435
+    file: 2s-io-apis.json
+    standard: APIs.json 0.16
+    note: 'aid io.2s, 113 apis (the full catalog plus one entry per group pointing at https://2s.io/api/openapi?group=<g>), maintainer alley@2s.io. Property types are x-openapi / x-directory / x-llms-txt rather than the canonical OpenAPI type.'
+  - path: /llms.txt
+    status: 200
+    content_type: text/plain; charset=utf-8
+    bytes: 332767
+    file: ../llms/2s-io-llms.txt
+    standard: llms.txt
+    note: Saved verbatim under llms/. A companion /llms-full.txt (388 KB, text/markdown) also answers 200 and is kept locally only (gitignored).
+  - path: /robots.txt
+    status: 200
+    content_type: text/plain; charset=utf-8
+    note: >-
+      Twenty-three named AI and search crawlers (GPTBot, ClaudeBot, PerplexityBot, Google-Extended, CCBot,
+      Bytespider, …) each explicitly Allow /, then User-agent * Allow /; Sitemap https://2s.io/sitemap.xml.
+  - path: /.well-known/security.txt
+    status: 404
+  - path: /security.txt
+    status: 404
+  - path: /.well-known/openid-configuration
+    status: 404
+  - path: /.well-known/oauth-authorization-server
+    status: 404
+  - path: /.well-known/oauth-protected-resource
+    status: 404
+    note: This host is also the MCP resource server (https://2s.io/mcp); no RFC 9728 metadata is served for it. The MCP server's own card states authentication is x402, not OAuth.
+  - path: /openapi.yaml
+    status: 404
+  - path: /swagger.json
+    status: 404
+  - path: /.well-known/2s-io-apievangelist-negative-control-7f3a9c.json
+    status: 404
+    control: negative
+    note: A path that cannot exist. Its 404 proves the host does not echo or catch-all /.well-known/* requests. The 404 body is the Next.js error document (text/html), which is why misses are HTML while hits are JSON.
+- host: www.2s.io
+  role: Alias — TLS certificate does not cover the www name; with verification disabled every path 307s to the apex
+  documents:
+  - {path: /, status: 0, note: 'curl exit 60 — SSL: no alternative certificate subject name matches target host name www.2s.io. With -k: 307 → https://2s.io/.'}
+  - {path: /.well-known/agent-card.json, status: 0, note: 'Not separately probed beyond the TLS failure on /; the alias cannot serve any HTTPS document.'}
+other_hosts_probed:
+- {host: api.2s.io, result: 'DNS does not resolve'}
+- {host: docs.2s.io, result: 'DNS does not resolve'}
+- {host: mcp.2s.io, result: 'DNS does not resolve — the MCP server is at the apex, https://2s.io/mcp'}
+robots_txt:
+  url: https://2s.io/robots.txt
+  status: 200
+  note: Every named AI crawler is explicitly allowed; there is no Disallow anywhere in the file.

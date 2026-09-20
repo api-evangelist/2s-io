@@ -1,0 +1,45 @@
+generated: '2026-09-19'
+method: searched
+source: https://2s.io/llms.txt
+docs:
+- https://2s.io/learn/x402/quickstart
+- https://2s.io/learn/x402/curl
+- https://github.com/2s-io/sdk#-try-before-you-buy--free-no-wallet
+probed:
+- {url: 'https://2s.io/api/validate/iban?trial=1', method: GET, status: 400, fetched: '2026-09-19', note: 'trial mode reached the validator without a payment challenge (required iban omitted → BAD_REQUEST envelope); confirms the trial path is live and that validation precedes any charge'}
+- {url: 'https://2s.io/api/validate/iban?iban=GB82WEST12345698765432', method: GET, status: 402, fetched: '2026-09-19', note: 'the same endpoint without trial=1 returns the x402 envelope'}
+summary: >-
+  2s has no separate test environment, no test keys and no test-mode prefix — there are no keys at all.
+  Production is the sandbox, and the rehearsal mechanism is TRIAL MODE: any endpoint accepts ?trial=1 (or the
+  header X-2s-Trial: 1) for one free real call per endpoint per hour, running the real handler against real
+  upstreams and marking the response meta.trial. The SDKs and MCP server expose the same switch. There is no
+  dry run — a trial call has the same side effects as a paid one (a trial watcher is a real watcher).
+test_vs_live:
+  separate_environment: false
+  key_prefixes: not applicable — no API keys exist
+  note: One host, one payment model. Trial mode is the only "test mode"; the payment rail has no testnet option documented (Base and Solana mainnet only).
+trial_mode:
+  parameter: 'trial=1 (components.parameters.TrialMode, declared on all 575 operations)'
+  header: 'X-2s-Trial: 1'
+  allowance: one free real call per endpoint per hour
+  marker: response meta.trial
+  exclusions: ['feedback_send — "Trial calls are not accepted — this endpoint always requires payment."']
+  after_exhaustion: the endpoint returns the normal 402 until the hour resets
+  verbatim: 'Verify any endpoint works before funding a wallet: add ?trial=1 to the URL (or send header X-2s-Trial: 1) with NO payment. You get one free real call per endpoint per hour (the actual handler runs and returns real data, marked meta.trial).'
+  examples_published:
+  - {client: cURL, verbatim: 'curl "https://2s.io/api/validate/iban?iban=GB82WEST12345698765432&trial=1"'}
+  - {client: TypeScript, verbatim: 'new TwoS({ trial: true }).validate.iban({ iban: "GB82WEST12345698765432" })'}
+  - {client: Python, verbatim: 'TwoS(trial=True).validate.iban(iban="GB82WEST12345698765432")'}
+  - {client: MCP, verbatim: 'npx -y @2sio/mcp --trial  (or TWOS_TRIAL=1)'}
+  - {client: cURL, verbatim: 'curl "https://2s.io/api/weather/zip?zip=94103&trial=1"', source: 'https://2s.io/learn/x402/quickstart'}
+fixtures:
+  published_sample_inputs:
+  - {endpoint: validate_iban, value: GB82WEST12345698765432, source: 'https://2s.io/llms.txt'}
+  - {endpoint: validate_iban, value: DE89370400440532013000, source: '402 envelope extensions.bazaar.info.input.queryParams (the same example the provider ships in /registry.json)'}
+  - {endpoint: weather_zip, value: '94103', source: 'https://2s.io/learn/x402/quickstart'}
+  note: Both IBANs are the standard published test IBANs (UK and German examples used across IBAN documentation); no wallet, key or token example is published because none exists.
+time_simulation: none
+payment_rehearsal:
+  upto_billing: 'On AI endpoints, authorize the quoted maximum and settle actual usage (floor $0.001) — a way to cap exposure before knowing the real cost; not a sandbox.'
+  batch_atomicity: 'batch_run charges nothing unless every sub-call succeeds; failing calls come back for a free retry.'
+  x402_envelope_preview: 'Any unpaid call returns the full PaymentRequirements including extensions.bazaar with an example input and the output schema — the 402 itself is the documentation of what a paid call will return.'

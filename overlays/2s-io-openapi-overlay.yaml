@@ -1,0 +1,419 @@
+overlay: 1.0.0
+info:
+  title: API Evangelist overlay for the 2s OpenAPI
+  version: '2026-09-19'
+  description: 'Enhancements API Evangelist derived while profiling 2s on 2026-09-19: tag declarations from the
+    provider''s catalog.txt, the error envelope observed live, the 429/503 throttle responses documented in the
+    provider''s changelog, discovery-document cross-links, and idempotency/reversibility markers quoted from operation
+    descriptions. The original spec is never mutated; apply this overlay to openapi/2s-io-openapi.json.'
+extends: openapi/2s-io-openapi.json
+x-generated: '2026-09-19'
+x-method: generated
+x-source:
+- https://2s.io/openapi.json
+- https://2s.io/catalog.txt
+- https://2s.io/changelog.json
+- https://2s.io/.well-known/2s-attestation.json
+- GET https://2s.io/api/validate/iban?trial=1 (observed 400)
+actions:
+- target: $.info
+  update:
+    termsOfService: null
+    x-apievangelist-note: No terms of service or privacy policy page exists on 2s.io (all conventional paths 404,
+      2026-09-19); the status page carries the only published commitments.
+- target: $.info
+  description: Name the discovery documents the provider publishes but the spec does not reference
+  update:
+    x-discovery:
+      apisJson: https://2s.io/apis.json
+      apiCatalog: https://2s.io/.well-known/api-catalog
+      llmsTxt: https://2s.io/llms.txt
+      mcp: https://2s.io/mcp
+      mcpServerCard: https://2s.io/.well-known/mcp/server-card.json
+      a2aAgentCard: https://2s.io/.well-known/agent-card.json
+      x402Manifest: https://2s.io/.well-known/x402
+      status: https://2s.io/status.json
+      changelog: https://2s.io/changelog.json
+      attestation: https://2s.io/.well-known/2s-attestation.json
+- target: $
+  description: Declare the 112 tags the operations already use, with the provider's own group descriptions from
+    https://2s.io/catalog.txt
+  update:
+    tags:
+    - name: agent
+      description: Agent-native knowledge-delta primitive
+    - name: agriculture
+      description: Drought monitor & USDA stats
+    - name: ai
+      description: Summarize, translate, extract, screenshot & describe
+    - name: airport
+      description: Airport lookup & nearest airports
+    - name: aviation
+      description: METAR, TAF, SIGMET & accident records
+    - name: bank
+      description: Bank routing lookup
+    - name: barcode
+      description: Barcode generation
+    - name: batch
+      description: Run many endpoints in one settled call
+    - name: bio
+      description: Species, genes & proteins
+    - name: bls
+      description: BLS time-series data
+    - name: book
+      description: Book search
+    - name: business
+      description: Company registries, LEI, KYB & entity screening
+    - name: calendar
+      description: Business days, holidays, earnings & IPO calendars
+    - name: census
+      description: ACS demographics & ZIP geographies
+    - name: chem
+      description: Chemical compound data
+    - name: chinese
+      description: Chinese data & lookups
+    - name: class
+      description: Class data & lookups
+    - name: climate
+      description: Station history & nearest stations
+    - name: clinical
+      description: ClinicalTrials search & study detail
+    - name: code
+      description: Repo lookup & code tools
+    - name: convert
+      description: Currency & unit conversion
+    - name: countdown
+      description: Countdown GIF generator
+    - name: country
+      description: Country reference data
+    - name: crypto
+      description: Prices, gas, fees, DeFi, contracts & on-chain data
+    - name: dev
+      description: RFC lookup & deploy preflight
+    - name: dns
+      description: DNS record lookup
+    - name: domain
+      description: WHOIS, intel, CT logs & email security
+    - name: earth
+      description: Natural events & planetary now
+    - name: econ
+      description: FRED series, releases, vintages, yield curve & indicators
+    - name: edi
+      description: Parse, generate & acknowledge X12 / EDIFACT
+    - name: edu
+      description: College Scorecard & school lookup
+    - name: email
+      description: Email address validation
+    - name: energy
+      description: Prices, generation mix, utility rates & solar resource
+    - name: factcheck
+      description: Fact-check claim search
+    - name: feedback
+      description: Send a message to the 2s team
+    - name: finance
+      description: SEC EDGAR filings, 13F, company facts & FIGI
+    - name: flight
+      description: Live flight status
+    - name: food
+      description: UK hygiene ratings & barcode lookup
+    - name: fx
+      description: Foreign-exchange rates & time series
+    - name: geo
+      description: Geocoding, elevation, flood zones, IP & dossiers
+    - name: geocode
+      description: Address ↔ coordinate, forward & reverse
+    - name: github
+      description: Repos, users, commits, issues, PRs & code search
+    - name: gov
+      description: 'Federal data: Congress, FEC, FDA, SAM, FEMA & more'
+    - name: hash
+      description: Hash computation
+    - name: health
+      description: Hospitals, providers, Medicare, mortality & surveillance
+    - name: html
+      description: HTML → Markdown conversion
+    - name: image
+      description: Image compression
+    - name: inflation
+      description: CPI calculator, rates, expectations & HICP
+    - name: ipinfo
+      description: Bulk IP geolocation
+    - name: iso
+      description: ISO currency, language & subdivision codes
+    - name: job
+      description: Federal job search & occupation codes
+    - name: labor
+      description: BLS openings, unemployment & wages
+    - name: law
+      description: OFAC sanctions, case law & dockets
+    - name: license
+      description: Verify broker, medical, real-estate & trade licenses
+    - name: lock
+      description: Distributed locks/leases — one agent at a time
+    - name: maritime
+      description: Vessels, ports & maritime case records
+    - name: markets
+      description: Exchange open/closed status & market holidays
+    - name: medical
+      description: ICD-10, NPI, drug labels, approvals & device data
+    - name: music
+      description: MusicBrainz artists, releases & recordings
+    - name: net
+      description: ASN / BGP, MAC vendor & RPKI validity
+    - name: news
+      description: Hacker News items, top stories & web news search
+    - name: nonprofit
+      description: Nonprofit search & screening
+    - name: nutrition
+      description: Food & nutrition facts
+    - name: occupation
+      description: O*NET occupation profiles, search & relations
+    - name: paper
+      description: DOI metadata lookup
+    - name: papers
+      description: Academic paper search & citation graphs (arXiv, OpenAlex & more)
+    - name: park
+      description: US National Park lookup
+    - name: patents
+      description: USPTO patent search, detail & documents
+    - name: person
+      description: Cross-registry person lookup
+    - name: phone
+      description: Phone number normalization
+    - name: poi
+      description: Points of interest nearby
+    - name: predict
+      description: Polymarket prediction markets, prices, trades & whales
+    - name: product
+      description: GTIN / UPC / EAN identity
+    - name: property
+      description: NYC deeds, parcels, permits & violations
+    - name: pubsub
+      description: Topics + fan-out signed callbacks for agent coordination
+    - name: quakes
+      description: Recent earthquakes (USGS)
+    - name: queue
+      description: 'Durable task queues: enqueue, lease, ack, dead-letter'
+    - name: recreation
+      description: Recreation.gov facility search
+    - name: registry
+      description: npm & PyPI package lookups
+    - name: research
+      description: ORCID authors, ROR orgs & NIH funding
+    - name: schedule
+      description: Time-driven signed callbacks — cron for agents
+    - name: search
+      description: Endpoint discovery & web search
+    - name: security
+      description: CVEs, KEV, EPSS, IOC reputation, headers, exposure
+    - name: soil
+      description: Soil profiles & USDA hardiness zones
+    - name: space
+      description: Launches, satellites, exoplanets, sky & space weather
+    - name: sports
+      description: MLB & NHL schedules, scores & standings
+    - name: stocks
+      description: Quotes, metrics, analyst, earnings, news, gov/alt data
+    - name: store
+      description: 'Wallet-keyed persistence: KV, documents, vector search & private files'
+    - name: sunrise
+      description: Sunrise / sunset times
+    - name: tax
+      description: VAT validation & EU VAT-rate tables
+    - name: tcg
+      description: Tcg data & lookups
+    - name: telecom
+      description: FCC filings & telecom market areas
+    - name: text
+      description: Text data & lookups
+    - name: tides
+      description: Current tide predictions
+    - name: time
+      description: Time data & lookups
+    - name: timezone
+      description: Timezone by coordinate
+    - name: tld
+      description: Top-level-domain info
+    - name: tls
+      description: TLS certificate inspection
+    - name: trade
+      description: UN Comtrade flows, tariffs & LOCODE
+    - name: transcribe
+      description: Audio transcription
+    - name: travel
+      description: Travel advisories & visa requirements
+    - name: treasury
+      description: US Treasury cash, debt, rates & monthly statements
+    - name: url
+      description: Render, map, clean & unfurl any URL
+    - name: validate
+      description: IBAN, BIC, ISIN, CUSIP, GTIN & check-digit checks
+    - name: vehicle
+      description: VIN decode, recalls, complaints, safety ratings
+    - name: watchers
+      description: Watchers data & lookups
+    - name: water
+      description: USGS stream-gauge readings
+    - name: weather
+      description: Global conditions & forecasts, NWS alerts, marine & air quality
+    - name: wikidata
+      description: Wikidata entity lookup
+    - name: wikipedia
+      description: Wikipedia article summaries
+    - name: word
+      description: Definitions & related words
+    - name: worldbank
+      description: World Bank development indicators
+- target: $
+  update:
+    externalDocs:
+      description: 2s llms.txt — payment flow, discovery surfaces, SDKs and the full endpoint list
+      url: https://2s.io/llms.txt
+- target: $.servers[0]
+  update:
+    description: Single production origin; also hosts the MCP server (/mcp) and the A2A JSON-RPC endpoint (/a2a).
+      No sandbox host — use ?trial=1 for a free real call.
+- target: $.components.responses
+  description: Add the two throttle responses the provider documents in changelog 1.80.1 but does not declare
+  update:
+    RateLimited:
+      description: 429 RATE_LIMITED — 2s's own rate limiter (changelog 1.80.1). Back off client-side. No Retry-After
+        header is documented.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+    UpstreamRateLimit:
+      description: 503 UPSTREAM_RATE_LIMIT — an upstream throttle, not the caller's limit; the provider says retry
+        without client-side backoff (changelog 1.80.1).
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+- target: $.components.schemas
+  description: Declare the error envelope observed live on a trial 400 (2026-09-19)
+  update:
+    ErrorEnvelope:
+      type: object
+      required:
+      - error
+      properties:
+        error:
+          type: object
+          required:
+          - code
+          - message
+          properties:
+            code:
+              type: string
+              description: UPPER_SNAKE code — BAD_REQUEST, RATE_LIMITED, UPSTREAM_RATE_LIMIT, RESULT_TOO_LARGE,
+                NOT_FOUND observed or documented
+              example: BAD_REQUEST
+            message:
+              type: string
+              example: Invalid parameters.
+            details:
+              type: object
+              description: Optional; on 400 a validation report with issues[] {code, expected, received, path[],
+                message}
+- target: $.components.responses.BadRequest
+  update:
+    content:
+      application/json:
+        schema:
+          $ref: '#/components/schemas/ErrorEnvelope'
+        example:
+          error:
+            code: BAD_REQUEST
+            message: Invalid parameters.
+            details:
+              issues:
+              - code: invalid_type
+                expected: string
+                received: undefined
+                path:
+                - iban
+                message: Required
+- target: $.paths.*[?(@.operationId)]
+  description: Wire the two documented throttle responses onto every operation
+  update:
+    responses:
+      '429':
+        $ref: '#/components/responses/RateLimited'
+      '503':
+        $ref: '#/components/responses/UpstreamRateLimit'
+- target: $.paths.*[?(@.operationId)]
+  description: Name the headers the provider documents on a paid 200 and on a signed response
+  update:
+    x-response-headers:
+      X-PAYMENT-TX: on-chain settlement transaction of the x402 payment
+      X-2s-Endpoint: endpoint id (attestation descriptor)
+      X-2s-Attestation-Signature: present when ?sign=1 — EIP-191 signature over the canonical message; see https://2s.io/.well-known/2s-attestation.json
+- target: $.paths['/api/lock/release'].post
+  update:
+    x-idempotent: true
+    x-idempotency-basis: stated in the operation description
+- target: $.paths['/api/watchers/cancel'].post
+  update:
+    x-idempotent: true
+    x-idempotency-basis: stated in the operation description
+- target: $.paths['/api/pubsub/create-topic'].post
+  update:
+    x-idempotent: true
+    x-idempotency-basis: stated in the operation description
+- target: $.paths['/api/store/kv-delete'].post
+  update:
+    x-idempotent: true
+    x-idempotency-basis: stated in the operation description
+- target: $.paths['/api/store/doc-delete'].post
+  update:
+    x-idempotent: true
+    x-idempotency-basis: stated in the operation description
+- target: $.paths['/api/store/vector-delete'].post
+  update:
+    x-idempotent: true
+    x-idempotency-basis: stated in the operation description
+- target: $.paths['/api/store/blob-delete'].post
+  update:
+    x-idempotent: true
+    x-idempotency-basis: stated in the operation description
+- target: $.paths['/api/text/redact'].post
+  update:
+    x-idempotent: true
+    x-idempotency-basis: stated in the operation description
+- target: $.paths['/api/watchers/cancel'].post
+  update:
+    x-reversal-of: watchers.* arming operations
+    x-refund: none — the contract states no refund of the unused window
+- target: $.paths['/api/schedule/cancel'].post
+  update:
+    x-reversal-of: schedule.create
+    x-refund: none — the contract states no refund of the unused window
+- target: $.paths['/api/lock/release'].post
+  update:
+    x-reversal-of: lock.acquire
+    x-refund: null
+- target: $.paths['/api/pubsub/unsubscribe'].post
+  update:
+    x-reversal-of: pubsub.subscribe
+    x-refund: null
+- target: $.paths['/api/queue/ack'].post
+  update:
+    x-reversal-of: queue.lease (makes the removal permanent)
+    x-refund: null
+- target: $.paths['/api/store/kv-delete'].post
+  update:
+    x-reversal-of: store.kv-put
+    x-restore: none documented; objects also expire 90 days after last touch
+- target: $.paths['/api/store/doc-delete'].post
+  update:
+    x-reversal-of: store.doc-put
+    x-restore: none documented; objects also expire 90 days after last touch
+- target: $.paths['/api/store/vector-delete'].post
+  update:
+    x-reversal-of: store.vector-upsert
+    x-restore: none documented; objects also expire 90 days after last touch
+- target: $.paths['/api/store/blob-delete'].post
+  update:
+    x-reversal-of: store.blob-put
+    x-restore: none documented; objects also expire 90 days after last touch

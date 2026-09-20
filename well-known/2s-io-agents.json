@@ -1,0 +1,541 @@
+{
+  "agentsJson": "0.1.0",
+  "info": {
+    "title": "2s API — Agent Flows",
+    "version": "1.0.0",
+    "description": "agents.json flows for 2s (2s.io): a keyless, pay-per-call API for AI agents — 578+ live endpoints across 113 groups (web answers, patents, US case law, KYB/KYC & OFAC screening, geo, weather, identity crosswalks, plus an AI gateway). Every flow is billed per request in USDC on Base (and Solana) via the x402 protocol — no signup, no API key. The discover_endpoints flow routes to any endpoint in the full catalog."
+  },
+  "sources": [
+    {
+      "id": "search",
+      "path": "https://2s.io/api/openapi?group=search",
+      "description": "Self-contained OpenAPI 3.1 sub-spec for the 2s \"search\" endpoint group."
+    },
+    {
+      "id": "patents",
+      "path": "https://2s.io/api/openapi?group=patents",
+      "description": "Self-contained OpenAPI 3.1 sub-spec for the 2s \"patents\" endpoint group."
+    },
+    {
+      "id": "law",
+      "path": "https://2s.io/api/openapi?group=law",
+      "description": "Self-contained OpenAPI 3.1 sub-spec for the 2s \"law\" endpoint group."
+    },
+    {
+      "id": "business",
+      "path": "https://2s.io/api/openapi?group=business",
+      "description": "Self-contained OpenAPI 3.1 sub-spec for the 2s \"business\" endpoint group."
+    },
+    {
+      "id": "agent",
+      "path": "https://2s.io/api/openapi?group=agent",
+      "description": "Self-contained OpenAPI 3.1 sub-spec for the 2s \"agent\" endpoint group."
+    }
+  ],
+  "overrides": [],
+  "flows": [
+    {
+      "id": "discover_endpoints_flow",
+      "title": "Find the right 2s endpoint for a task",
+      "description": "Given a natural-language description of what you want to do, returns the ranked 2s endpoints that can do it (path, price, params). Use this first when you are not sure which 2s call fits — the whole 578-endpoint catalog is one call away.",
+      "actions": [
+        {
+          "id": "search_endpoints_action",
+          "sourceId": "search",
+          "operationId": "search_endpoints"
+        }
+      ],
+      "links": [
+        {
+          "origin": {
+            "actionId": "discover_endpoints_flow",
+            "fieldPath": "parameters.q"
+          },
+          "target": {
+            "actionId": "search_endpoints_action",
+            "fieldPath": "parameters.q"
+          }
+        },
+        {
+          "origin": {
+            "actionId": "discover_endpoints_flow",
+            "fieldPath": "parameters.limit"
+          },
+          "target": {
+            "actionId": "search_endpoints_action",
+            "fieldPath": "parameters.limit"
+          }
+        }
+      ],
+      "fields": {
+        "parameters": [
+          {
+            "name": "q",
+            "type": "string",
+            "required": true,
+            "description": "Natural-language description of the task, e.g. \"screen a company for OFAC sanctions\" or \"US patent prior art for solid-state batteries\"."
+          },
+          {
+            "name": "limit",
+            "type": "integer",
+            "required": false,
+            "description": "Maximum number of endpoint matches to return."
+          }
+        ],
+        "requestBody": {},
+        "responses": {
+          "success": {
+            "type": "object",
+            "description": "Ranked endpoint matches for the query.",
+            "example": {
+              "items": [
+                {
+                  "id": "business.entity-screen",
+                  "path": "/api/business/entity-screen",
+                  "priceUsd": 0.02,
+                  "summary": "KYC in one call: US state registry + OFAC screen."
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "web_search_flow",
+      "title": "Answer a question from the live web",
+      "description": "Runs an agent-optimized live web search and returns ranked, cited results for a natural-language query. Keyless, pay-per-call over x402.",
+      "actions": [
+        {
+          "id": "search_ai_action",
+          "sourceId": "search",
+          "operationId": "search_ai"
+        }
+      ],
+      "links": [
+        {
+          "origin": {
+            "actionId": "web_search_flow",
+            "fieldPath": "parameters.q"
+          },
+          "target": {
+            "actionId": "search_ai_action",
+            "fieldPath": "parameters.q"
+          }
+        },
+        {
+          "origin": {
+            "actionId": "web_search_flow",
+            "fieldPath": "parameters.maxResults"
+          },
+          "target": {
+            "actionId": "search_ai_action",
+            "fieldPath": "parameters.maxResults"
+          }
+        },
+        {
+          "origin": {
+            "actionId": "web_search_flow",
+            "fieldPath": "parameters.topic"
+          },
+          "target": {
+            "actionId": "search_ai_action",
+            "fieldPath": "parameters.topic"
+          }
+        }
+      ],
+      "fields": {
+        "parameters": [
+          {
+            "name": "q",
+            "type": "string",
+            "required": true,
+            "description": "The search query / question."
+          },
+          {
+            "name": "maxResults",
+            "type": "integer",
+            "required": false,
+            "description": "Maximum number of results to return."
+          },
+          {
+            "name": "topic",
+            "type": "string",
+            "required": false,
+            "description": "Optional topic hint to focus the search."
+          }
+        ],
+        "requestBody": {},
+        "responses": {
+          "success": {
+            "type": "object",
+            "description": "Ranked, cited web results.",
+            "example": {
+              "results": [
+                {
+                  "title": "Example",
+                  "url": "https://example.com",
+                  "snippet": "…"
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "patent_search_flow",
+      "title": "Search US patents",
+      "description": "Search US patent applications and grants (USPTO) by free-text query, optionally bounded by year — for prior-art discovery and landscape checks.",
+      "actions": [
+        {
+          "id": "patents_search_action",
+          "sourceId": "patents",
+          "operationId": "patents_search"
+        }
+      ],
+      "links": [
+        {
+          "origin": {
+            "actionId": "patent_search_flow",
+            "fieldPath": "parameters.q"
+          },
+          "target": {
+            "actionId": "patents_search_action",
+            "fieldPath": "parameters.q"
+          }
+        },
+        {
+          "origin": {
+            "actionId": "patent_search_flow",
+            "fieldPath": "parameters.yearFrom"
+          },
+          "target": {
+            "actionId": "patents_search_action",
+            "fieldPath": "parameters.yearFrom"
+          }
+        },
+        {
+          "origin": {
+            "actionId": "patent_search_flow",
+            "fieldPath": "parameters.yearTo"
+          },
+          "target": {
+            "actionId": "patents_search_action",
+            "fieldPath": "parameters.yearTo"
+          }
+        },
+        {
+          "origin": {
+            "actionId": "patent_search_flow",
+            "fieldPath": "parameters.limit"
+          },
+          "target": {
+            "actionId": "patents_search_action",
+            "fieldPath": "parameters.limit"
+          }
+        }
+      ],
+      "fields": {
+        "parameters": [
+          {
+            "name": "q",
+            "type": "string",
+            "required": true,
+            "description": "Free-text patent query, e.g. \"solid-state battery separator\"."
+          },
+          {
+            "name": "yearFrom",
+            "type": "integer",
+            "required": false,
+            "description": "Earliest year (filing/grant) to include."
+          },
+          {
+            "name": "yearTo",
+            "type": "integer",
+            "required": false,
+            "description": "Latest year to include."
+          },
+          {
+            "name": "limit",
+            "type": "integer",
+            "required": false,
+            "description": "Maximum number of results to return."
+          }
+        ],
+        "requestBody": {},
+        "responses": {
+          "success": {
+            "type": "object",
+            "description": "Matching US patent applications and grants.",
+            "example": {
+              "items": [
+                {
+                  "title": "…",
+                  "patentNumber": "…",
+                  "filingDate": "…",
+                  "abstract": "…"
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "case_law_search_flow",
+      "title": "Search US case law",
+      "description": "Search US court opinions (SCOTUS, federal circuits, state appellate) via CourtListener by free-text query, optionally filtered by court or filing date.",
+      "actions": [
+        {
+          "id": "law_case-search_action",
+          "sourceId": "law",
+          "operationId": "law_case-search"
+        }
+      ],
+      "links": [
+        {
+          "origin": {
+            "actionId": "case_law_search_flow",
+            "fieldPath": "parameters.q"
+          },
+          "target": {
+            "actionId": "law_case-search_action",
+            "fieldPath": "parameters.q"
+          }
+        },
+        {
+          "origin": {
+            "actionId": "case_law_search_flow",
+            "fieldPath": "parameters.court"
+          },
+          "target": {
+            "actionId": "law_case-search_action",
+            "fieldPath": "parameters.court"
+          }
+        },
+        {
+          "origin": {
+            "actionId": "case_law_search_flow",
+            "fieldPath": "parameters.limit"
+          },
+          "target": {
+            "actionId": "law_case-search_action",
+            "fieldPath": "parameters.limit"
+          }
+        }
+      ],
+      "fields": {
+        "parameters": [
+          {
+            "name": "q",
+            "type": "string",
+            "required": true,
+            "description": "Free-text query, e.g. a legal issue, party name, or holding."
+          },
+          {
+            "name": "court",
+            "type": "string",
+            "required": false,
+            "description": "Court filter (e.g. \"scotus\")."
+          },
+          {
+            "name": "limit",
+            "type": "integer",
+            "required": false,
+            "description": "Maximum number of results to return."
+          }
+        ],
+        "requestBody": {},
+        "responses": {
+          "success": {
+            "type": "object",
+            "description": "Matching US court opinions.",
+            "example": {
+              "items": [
+                {
+                  "caseName": "…",
+                  "court": "…",
+                  "dateFiled": "…",
+                  "citation": "…",
+                  "url": "…"
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "business_screen_flow",
+      "title": "Screen a US business (KYC/KYB)",
+      "description": "KYB in one call: look up a business by name in a US state registry and screen it against OFAC sanctions. Returns registry matches plus any sanctions hits.",
+      "actions": [
+        {
+          "id": "business_entity-screen_action",
+          "sourceId": "business",
+          "operationId": "business_entity-screen"
+        }
+      ],
+      "links": [
+        {
+          "origin": {
+            "actionId": "business_screen_flow",
+            "fieldPath": "parameters.state"
+          },
+          "target": {
+            "actionId": "business_entity-screen_action",
+            "fieldPath": "parameters.state"
+          }
+        },
+        {
+          "origin": {
+            "actionId": "business_screen_flow",
+            "fieldPath": "parameters.name"
+          },
+          "target": {
+            "actionId": "business_entity-screen_action",
+            "fieldPath": "parameters.name"
+          }
+        },
+        {
+          "origin": {
+            "actionId": "business_screen_flow",
+            "fieldPath": "parameters.limit"
+          },
+          "target": {
+            "actionId": "business_entity-screen_action",
+            "fieldPath": "parameters.limit"
+          }
+        }
+      ],
+      "fields": {
+        "parameters": [
+          {
+            "name": "state",
+            "type": "string",
+            "required": true,
+            "description": "US state — two-letter postal abbreviation, e.g. \"DE\", \"CA\"."
+          },
+          {
+            "name": "name",
+            "type": "string",
+            "required": false,
+            "description": "Business name to search for."
+          },
+          {
+            "name": "limit",
+            "type": "integer",
+            "required": false,
+            "description": "Maximum number of results to return."
+          }
+        ],
+        "requestBody": {},
+        "responses": {
+          "success": {
+            "type": "object",
+            "description": "Registry matches plus OFAC screening result.",
+            "example": {
+              "registry": [
+                {
+                  "name": "…",
+                  "entityId": "…",
+                  "status": "active"
+                }
+              ],
+              "sanctions": {
+                "hits": []
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "knowledge_delta_flow",
+      "title": "Catch up on what's changed in a topic since a date",
+      "description": "Spend one call to bring an LLM current on a domain since its training cutoff: returns significance-ranked, cited events (federal regs, House/Senate votes, arXiv/PubMed papers, court opinions) for a topic since a given date. Ready to inject as grounding context.",
+      "actions": [
+        {
+          "id": "knowledge_delta_action",
+          "sourceId": "agent",
+          "operationId": "agent_knowledge-delta"
+        }
+      ],
+      "links": [
+        {
+          "origin": {
+            "actionId": "knowledge_delta_flow",
+            "fieldPath": "requestBody"
+          },
+          "target": {
+            "actionId": "knowledge_delta_action",
+            "fieldPath": "requestBody"
+          }
+        }
+      ],
+      "fields": {
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "topic": {
+                    "type": "string",
+                    "description": "The domain/topic to catch up on, e.g. \"US stablecoin regulation\"."
+                  },
+                  "since": {
+                    "type": "string",
+                    "description": "ISO date — the training cutoff or last-known date to report changes since."
+                  },
+                  "until": {
+                    "type": "string",
+                    "description": "Optional ISO end date (defaults to now)."
+                  },
+                  "maxEvents": {
+                    "type": "integer",
+                    "description": "Optional cap on the number of events returned."
+                  }
+                },
+                "required": [
+                  "topic",
+                  "since"
+                ]
+              },
+              "example": {
+                "topic": "US stablecoin regulation",
+                "since": "2025-05-01"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "success": {
+            "type": "object",
+            "description": "Significance-ranked, cited events in the topic since the given date.",
+            "example": {
+              "items": [
+                {
+                  "query": "US stablecoin regulation",
+                  "events": [
+                    {
+                      "title": "…",
+                      "summary": "…",
+                      "date": "…",
+                      "source": "…",
+                      "sourceUrl": "…",
+                      "significance": 5
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        }
+      }
+    }
+  ]
+}

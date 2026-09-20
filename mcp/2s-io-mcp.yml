@@ -1,0 +1,102 @@
+generated: '2026-09-19'
+method: probed
+status: published
+source: https://2s.io/mcp
+docs: https://2s.io/learn/x402/mcp
+summary: >-
+  2s ships the same MCP server two ways. HOSTED: https://2s.io/mcp — the apex host that also serves the website,
+  the OpenAPI and the A2A endpoint — is POST-only Streamable HTTP (a GET returns 405 with a JSON-RPC error
+  "This MCP endpoint is POST-only (no SSE stream)"), speaks protocol version 2025-06-18, identifies itself as
+  serverInfo {name: 2s.io, version: 1.0.0}, and answers initialize and tools/list anonymously with 575 tools,
+  each carrying a real inputSchema; resources/list and prompts/list return -32601 Method not found. LOCAL:
+  npm @2sio/mcp (npx -y @2sio/mcp, stdio) exposes the same catalog from the caller's own machine, which the
+  provider's own docs recommend over the hosted server because the hosted signer needs the caller's EVM
+  private key in a request header. The provider also publishes an MCP server card at
+  /.well-known/mcp/server-card.json (SEP-1649 shape; 575 tools, authentication schemes ["x402"]). Tool names
+  are the spec's x-2s-id values (group.name, e.g. weather.zip) and map 1:1 onto the 575 OpenAPI operationIds
+  (group_name), so authorship is not in question — this is a provider-built server over the provider's own
+  contract, not a platform-generated surface.
+deployment:
+  mode: both
+  endpoint: https://2s.io/mcp
+  install: npx -y @2sio/mcp
+  package: https://www.npmjs.com/package/@2sio/mcp
+  auth: none
+  verified: probed
+  note: >-
+    auth is "none" in the connection sense — initialize and tools/list need no credential and no OAuth
+    metadata is served (/.well-known/oauth-authorization-server and /.well-known/oauth-protected-resource both
+    404 on the MCP host, which is the apex). Invoking a paid tool is gated by x402 PAYMENT, not by an
+    authentication scheme: on the hosted server the caller supplies an EVM private key funded with USDC on Base
+    in the X-EVM-Private-Key request header and the server signs and settles each call; on the local server the
+    key stays in the EVM_PRIVATE_KEY environment variable and the client signs. Both variants accept a trial
+    mode (npx -y @2sio/mcp --trial or TWOS_TRIAL=1) for one free real call per endpoint per hour.
+servers:
+- id: 2s-hosted
+  name: 2s.io (hosted)
+  endpoint: https://2s.io/mcp
+  transport: streamable-http
+  http_methods: [POST]
+  auth: none
+  payment: x402 (USDC on Base, eip155:8453) per paid tool call; hosted signer takes X-EVM-Private-Key header
+  status: live
+  probe:
+    fetched: '2026-09-19'
+    initialize:
+      http_status: 200
+      protocol_version: '2025-06-18'
+      server_info: {name: 2s.io, version: 1.0.0}
+      capabilities: {tools: {listChanged: false}}
+      instructions: >-
+        Hosted 2s.io MCP — pay-per-call data + watchers, settled in USDC on Base via x402. Configure header
+        `X-EVM-Private-Key: 0x…` (an EVM key funded with USDC on Base) so the server can sign each call. Your
+        key transits 2s infrastructure here; for keys that never leave your machine, use the SDK /
+        `npx @2sio/mcp` instead. watchers.* arm a signed push callback so you never poll.
+    tools_list:
+      http_status: 200
+      content_type: application/json
+      tool_count: 575
+      file: mcp/2s-io-mcp-tools.json
+      note: Every tool has name, description and inputSchema (JSON Schema object); no annotations, no title.
+    resources_list: {http_status: 200, error: '-32601 Method not found: resources/list'}
+    prompts_list: {http_status: 200, error: '-32601 Method not found: prompts/list'}
+    get_request: {http_status: 405, body: '{"jsonrpc":"2.0","id":null,"error":{"code":-32000,"message":"This MCP endpoint is POST-only (no SSE stream). Send JSON-RPC ..."}}'}
+  authorship: provider
+- id: 2s-local
+  name: '@2sio/mcp'
+  transport: stdio
+  install: npx -y @2sio/mcp
+  package: https://www.npmjs.com/package/@2sio/mcp
+  version: 1.82.0
+  published: '2026-08-21'
+  source: https://github.com/2s-io/sdk/tree/main/packages/2s-mcp
+  config_example:
+    source: https://github.com/2s-io/sdk/blob/main/.mcp.json
+    verbatim: '{"mcpServers":{"twosio":{"command":"npx","args":["-y","@2sio/mcp"],"env":{"EVM_PRIVATE_KEY":"${EVM_PRIVATE_KEY}"}}}}'
+  trial: 'npx -y @2sio/mcp --trial  (or TWOS_TRIAL=1) — one free real call per endpoint per hour, no wallet'
+  status: published
+  authorship: provider
+  registries:
+  - {name: Smithery, url: 'https://smithery.ai/servers/twosio/mcp', probed: 'https://registry.smithery.ai/servers/twosio/mcp', http_status: 200}
+  - {name: Glama, url: 'https://glama.ai/mcp/servers/2s-io/sdk', note: badge linked from the SDK README; not probed}
+server_card:
+  url: https://2s.io/.well-known/mcp/server-card.json
+  http_status: 200
+  file: well-known/2s-io-mcp-server-card.json
+  shape: 'serverInfo {name 2s.io, version 1, vendor 2s.io, documentation https://2s.io/api/openapi} + authentication {required true, schemes [x402]} + tools[575] + resources[] + prompts[]'
+tools_summary:
+  count: 575
+  naming: group.name (x-2s-id); identical to the OpenAPI operationId with the dot replaced by an underscore
+  groups: 112
+  largest_groups: {gov: 56, crypto: 46, watchers: 27, predict: 23, finance: 17, ai: 16, business: 16, security: 16, store: 16, dev: 15}
+  stateful_tools: 'store.* (16: kv/doc/vector/blob), lock.* (3), queue.* (4), pubsub.* (4), schedule.* (3), watchers.* (27) — wallet-scoped, the x402 payer is the tenant'
+  crosswalk: mcp/2s-io-tool-crosswalk.yml
+  input_schema_note: >-
+    Each tool's inputSchema is the union of the REST operation's query parameters (GET) or requestBody
+    properties (POST), minus the shared TrialMode parameter. Verified on agriculture.drought (area, weeks),
+    watchers.cancel (watcherId) and ai.chat (model, messages, max_tokens, temperature, top_p, stop).
+web_mcp: null
+clients_documented:
+- {client: Claude Desktop, docs: 'https://2s.io/learn/x402/mcp', config: 'mcpServers.2sio → npx -y @2sio/mcp with EVM_PRIVATE_KEY'}
+- {client: any MCP host by URL, docs: 'https://2s.io/learn/x402/mcp', config: 'https://2s.io/mcp + header X-EVM-Private-Key'}
+- {client: Cursor, docs: 'https://github.com/2s-io/sdk/tree/main/.cursor-plugin', note: repo ships a .cursor-plugin directory; contents not inspected}

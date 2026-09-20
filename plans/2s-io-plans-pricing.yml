@@ -1,0 +1,539 @@
+generated: '2026-09-19'
+method: probed
+source: https://2s.io/openapi.json (x-2s-price / x-payment-info on every operation) and https://2s.io/api/directory
+docs:
+- https://2s.io/discover
+- https://2s.io/llms.txt
+- https://2s.io/status
+plan_count: 0
+currency: USD, settled as USDC
+model: pay-per-call in USDC via x402 on Base or Solana; no tiers, no subscription, no account, no minimum, no card
+  payments
+summary: 2s publishes no plans or tiers. Every one of the 575 endpoints carries its own per-call price in the contract
+  (x-2s-price) and in the machine-readable directory, quoted again in the 402 before payment. Prices are read here
+  from the OpenAPI itself, so method is probed. The only free allowance is trial mode (one free real call per endpoint
+  per hour) and the free A2A discovery skill; the only volume mechanism is batch_run (up to 50 calls, price = exact
+  sum, no discount). AI endpoints are variable-priced (quoted per request in the 402) and support upto billing (authorize
+  the max, pay actual usage).
+price_statistics:
+  endpoints_priced: 575
+  min_usd: 0.0025
+  max_usd: 0.32625
+  median_usd: 0.0036
+  fixed_price: 570
+  variable_price: 5
+  bands:
+    '> $0.125': 5
+    ≤ $0.003: 259
+    $0.01–$0.05: 68
+    $0.05–$0.125: 34
+    $0.003–$0.01: 209
+variable_priced_endpoints:
+  ids:
+  - ai.chat
+  - ai.council
+  - ai.image
+  - batch.run
+  - pubsub.publish
+  note: x-payment-info.price.mode is not "fixed" — the x-2s-price is the FROM price; the real quote is in the 402.
+    These are the AI-gateway endpoints whose cost scales with model and tokens.
+most_expensive:
+- id: transcribe.audio
+  usd: 0.32625
+  mode: fixed
+- id: feedback.send
+  usd: 0.249999
+  mode: fixed
+- id: ai.extract
+  usd: 0.1875
+  mode: fixed
+- id: ai.summarize
+  usd: 0.1575
+  mode: fixed
+- id: agent.knowledge-delta
+  usd: 0.15
+  mode: fixed
+- id: schedule.create
+  usd: 0.125
+  mode: fixed
+- id: watchers.business-earnings
+  usd: 0.125
+  mode: fixed
+- id: watchers.company-news
+  usd: 0.125
+  mode: fixed
+price_by_group:
+  agent:
+    endpoints: 1
+    min_usd: 0.15
+    max_usd: 0.15
+  agriculture:
+    endpoints: 2
+    min_usd: 0.0025
+    max_usd: 0.0025
+  ai:
+    endpoints: 16
+    min_usd: 0.0025
+    max_usd: 0.1875
+  airport:
+    endpoints: 2
+    min_usd: 0.0025
+    max_usd: 0.0025
+  aviation:
+    endpoints: 4
+    min_usd: 0.0027
+    max_usd: 0.003
+  bank:
+    endpoints: 1
+    min_usd: 0.003
+    max_usd: 0.003
+  barcode:
+    endpoints: 1
+    min_usd: 0.0025
+    max_usd: 0.0025
+  batch:
+    endpoints: 1
+    min_usd: 0.003
+    max_usd: 0.003
+  bio:
+    endpoints: 3
+    min_usd: 0.0036
+    max_usd: 0.0048
+  bls:
+    endpoints: 1
+    min_usd: 0.003
+    max_usd: 0.003
+  book:
+    endpoints: 1
+    min_usd: 0.003
+    max_usd: 0.003
+  business:
+    endpoints: 16
+    min_usd: 0.0025
+    max_usd: 0.036
+  calendar:
+    endpoints: 4
+    min_usd: 0.0025
+    max_usd: 0.0025
+  census:
+    endpoints: 2
+    min_usd: 0.0025
+    max_usd: 0.0027
+  chem:
+    endpoints: 1
+    min_usd: 0.0025
+    max_usd: 0.0025
+  chinese:
+    endpoints: 3
+    min_usd: 0.0025
+    max_usd: 0.0025
+  class:
+    endpoints: 1
+    min_usd: 0.009
+    max_usd: 0.009
+  climate:
+    endpoints: 2
+    min_usd: 0.0025
+    max_usd: 0.003
+  clinical:
+    endpoints: 2
+    min_usd: 0.003
+    max_usd: 0.0036
+  code:
+    endpoints: 1
+    min_usd: 0.003
+    max_usd: 0.003
+  convert:
+    endpoints: 2
+    min_usd: 0.0025
+    max_usd: 0.0036
+  countdown:
+    endpoints: 1
+    min_usd: 0.015
+    max_usd: 0.015
+  country:
+    endpoints: 2
+    min_usd: 0.0025
+    max_usd: 0.003
+  crypto:
+    endpoints: 46
+    min_usd: 0.0025
+    max_usd: 0.012
+  dev:
+    endpoints: 15
+    min_usd: 0.0025
+    max_usd: 0.0036
+  dns:
+    endpoints: 1
+    min_usd: 0.0025
+    max_usd: 0.0025
+  domain:
+    endpoints: 4
+    min_usd: 0.0025
+    max_usd: 0.012
+  earth:
+    endpoints: 2
+    min_usd: 0.003
+    max_usd: 0.003
+  econ:
+    endpoints: 10
+    min_usd: 0.003
+    max_usd: 0.0045
+  edi:
+    endpoints: 5
+    min_usd: 0.0045
+    max_usd: 0.0045
+  edu:
+    endpoints: 2
+    min_usd: 0.003
+    max_usd: 0.0036
+  email:
+    endpoints: 1
+    min_usd: 0.0025
+    max_usd: 0.0025
+  energy:
+    endpoints: 8
+    min_usd: 0.0025
+    max_usd: 0.0072
+  factcheck:
+    endpoints: 1
+    min_usd: 0.0045
+    max_usd: 0.0045
+  feedback:
+    endpoints: 1
+    min_usd: 0.249999
+    max_usd: 0.249999
+  finance:
+    endpoints: 17
+    min_usd: 0.0025
+    max_usd: 0.018
+  flight:
+    endpoints: 3
+    min_usd: 0.045
+    max_usd: 0.045
+  food:
+    endpoints: 2
+    min_usd: 0.0025
+    max_usd: 0.003
+  fx:
+    endpoints: 2
+    min_usd: 0.003
+    max_usd: 0.0036
+  geo:
+    endpoints: 7
+    min_usd: 0.0025
+    max_usd: 0.018
+  geocode:
+    endpoints: 2
+    min_usd: 0.0025
+    max_usd: 0.0025
+  github:
+    endpoints: 14
+    min_usd: 0.0025
+    max_usd: 0.0025
+  gov:
+    endpoints: 56
+    min_usd: 0.0025
+    max_usd: 0.018
+  hash:
+    endpoints: 1
+    min_usd: 0.0025
+    max_usd: 0.0025
+  health:
+    endpoints: 7
+    min_usd: 0.003
+    max_usd: 0.0144
+  html:
+    endpoints: 1
+    min_usd: 0.0025
+    max_usd: 0.0025
+  image:
+    endpoints: 1
+    min_usd: 0.006
+    max_usd: 0.006
+  inflation:
+    endpoints: 4
+    min_usd: 0.003
+    max_usd: 0.0036
+  ipinfo:
+    endpoints: 1
+    min_usd: 0.015
+    max_usd: 0.015
+  iso:
+    endpoints: 3
+    min_usd: 0.003
+    max_usd: 0.003
+  job:
+    endpoints: 2
+    min_usd: 0.003
+    max_usd: 0.003
+  labor:
+    endpoints: 3
+    min_usd: 0.0025
+    max_usd: 0.0025
+  law:
+    endpoints: 12
+    min_usd: 0.0025
+    max_usd: 0.018
+  license:
+    endpoints: 4
+    min_usd: 0.003
+    max_usd: 0.0072
+  lock:
+    endpoints: 3
+    min_usd: 0.005
+    max_usd: 0.005
+  maritime:
+    endpoints: 3
+    min_usd: 0.0025
+    max_usd: 0.0025
+  markets:
+    endpoints: 2
+    min_usd: 0.0025
+    max_usd: 0.0025
+  medical:
+    endpoints: 14
+    min_usd: 0.0025
+    max_usd: 0.015
+  music:
+    endpoints: 3
+    min_usd: 0.0025
+    max_usd: 0.0025
+  net:
+    endpoints: 4
+    min_usd: 0.003
+    max_usd: 0.009
+  news:
+    endpoints: 5
+    min_usd: 0.003
+    max_usd: 0.0225
+  nonprofit:
+    endpoints: 2
+    min_usd: 0.003
+    max_usd: 0.0126
+  nutrition:
+    endpoints: 1
+    min_usd: 0.003
+    max_usd: 0.003
+  occupation:
+    endpoints: 3
+    min_usd: 0.0025
+    max_usd: 0.0036
+  paper:
+    endpoints: 1
+    min_usd: 0.003
+    max_usd: 0.003
+  papers:
+    endpoints: 2
+    min_usd: 0.006
+    max_usd: 0.006
+  park:
+    endpoints: 1
+    min_usd: 0.003
+    max_usd: 0.003
+  patents:
+    endpoints: 7
+    min_usd: 0.0045
+    max_usd: 0.0045
+  person:
+    endpoints: 1
+    min_usd: 0.018
+    max_usd: 0.018
+  phone:
+    endpoints: 1
+    min_usd: 0.0025
+    max_usd: 0.0025
+  poi:
+    endpoints: 1
+    min_usd: 0.0025
+    max_usd: 0.0025
+  predict:
+    endpoints: 23
+    min_usd: 0.0025
+    max_usd: 0.012
+  product:
+    endpoints: 1
+    min_usd: 0.0036
+    max_usd: 0.0036
+  property:
+    endpoints: 4
+    min_usd: 0.003
+    max_usd: 0.003
+  pubsub:
+    endpoints: 4
+    min_usd: 0.005
+    max_usd: 0.005
+  quakes:
+    endpoints: 1
+    min_usd: 0.0025
+    max_usd: 0.0025
+  queue:
+    endpoints: 4
+    min_usd: 0.005
+    max_usd: 0.005
+  recreation:
+    endpoints: 1
+    min_usd: 0.003
+    max_usd: 0.003
+  registry:
+    endpoints: 2
+    min_usd: 0.003
+    max_usd: 0.003
+  research:
+    endpoints: 3
+    min_usd: 0.003
+    max_usd: 0.0045
+  schedule:
+    endpoints: 3
+    min_usd: 0.005
+    max_usd: 0.125
+  search:
+    endpoints: 5
+    min_usd: 0.0025
+    max_usd: 0.12
+  security:
+    endpoints: 16
+    min_usd: 0.0025
+    max_usd: 0.012
+  soil:
+    endpoints: 2
+    min_usd: 0.0025
+    max_usd: 0.0025
+  space:
+    endpoints: 11
+    min_usd: 0.0025
+    max_usd: 0.0072
+  sports:
+    endpoints: 11
+    min_usd: 0.0025
+    max_usd: 0.012
+  stocks:
+    endpoints: 14
+    min_usd: 0.0025
+    max_usd: 0.012
+  store:
+    endpoints: 16
+    min_usd: 0.005
+    max_usd: 0.025
+  sunrise:
+    endpoints: 1
+    min_usd: 0.0025
+    max_usd: 0.0025
+  tax:
+    endpoints: 2
+    min_usd: 0.0025
+    max_usd: 0.0025
+  tcg:
+    endpoints: 4
+    min_usd: 0.012
+    max_usd: 0.012
+  telecom:
+    endpoints: 2
+    min_usd: 0.0025
+    max_usd: 0.0025
+  text:
+    endpoints: 1
+    min_usd: 0.0025
+    max_usd: 0.0025
+  tides:
+    endpoints: 1
+    min_usd: 0.0025
+    max_usd: 0.0025
+  time:
+    endpoints: 1
+    min_usd: 0.0025
+    max_usd: 0.0025
+  timezone:
+    endpoints: 1
+    min_usd: 0.0025
+    max_usd: 0.0025
+  tld:
+    endpoints: 1
+    min_usd: 0.0025
+    max_usd: 0.0025
+  tls:
+    endpoints: 1
+    min_usd: 0.0025
+    max_usd: 0.0025
+  trade:
+    endpoints: 4
+    min_usd: 0.0025
+    max_usd: 0.009
+  transcribe:
+    endpoints: 1
+    min_usd: 0.32625
+    max_usd: 0.32625
+  travel:
+    endpoints: 2
+    min_usd: 0.0025
+    max_usd: 0.0025
+  treasury:
+    endpoints: 4
+    min_usd: 0.003
+    max_usd: 0.003
+  url:
+    endpoints: 4
+    min_usd: 0.0025
+    max_usd: 0.015
+  validate:
+    endpoints: 10
+    min_usd: 0.0025
+    max_usd: 0.003
+  vehicle:
+    endpoints: 11
+    min_usd: 0.0036
+    max_usd: 0.0144
+  watchers:
+    endpoints: 27
+    min_usd: 0.0025
+    max_usd: 0.125
+  water:
+    endpoints: 1
+    min_usd: 0.003
+    max_usd: 0.003
+  weather:
+    endpoints: 8
+    min_usd: 0.003
+    max_usd: 0.0036
+  wikidata:
+    endpoints: 1
+    min_usd: 0.003
+    max_usd: 0.003
+  wikipedia:
+    endpoints: 1
+    min_usd: 0.0025
+    max_usd: 0.0025
+  word:
+    endpoints: 2
+    min_usd: 0.003
+    max_usd: 0.003
+  worldbank:
+    endpoints: 1
+    min_usd: 0.003
+    max_usd: 0.003
+free_tier:
+  trial: '?trial=1 or X-2s-Trial: 1 — one free real call per endpoint per hour, no wallet (excluded: feedback_send)'
+  a2a_discovery: the A2A discover-endpoints skill is free per the agent card; the same lookup over REST (search_endpoints)
+    is $0.0025
+  discovery_documents: /api/directory, /registry.json, /openapi.json, /llms.txt, /catalog.txt, /endpoints.txt, /status.json,
+    /changelog.json all free and unauthenticated
+billing_mechanics:
+  exact: default x402 scheme — pay the quoted amount
+  upto: 'AI endpoints — Permit2 authorization for the quoted max, settled at actual usage, floor $0.001 (changelog
+    1.80.0: a real call authorized $0.0549 and settled $0.0013)'
+  batch: batch_run — up to 50 sub-calls, one payment, exact sum, atomic; excludes variable-priced and metered-upstream
+    endpoints
+  failure: '"You pay only for calls that succeed. A failed handler is never charged on-chain." (status page)'
+  gas: paid by the facilitator (Coinbase CDP); the caller needs only USDC
+  flat_fee_primitives: watchers_* $0.125 per arm (27 kinds, 30-day/25-fire default window); schedule_create $0.125;
+    store/lock/queue/pubsub calls $0.005
+payment_terms:
+  asset: USDC
+  rails:
+  - Base (eip155:8453)
+  - Solana mainnet
+  treasury:
+    base: '0x2b6D4988Db4723E6908Db86Ab2b8dFBc51FC32C5'
+    solana: TW6ntaGzvj63ZgPjszd4FCGmVTGfzv1MAYZbjYcyWhn
+  refunds: none through the API; the commitment is that failed calls are not charged
+  terms_of_service: none published (no /terms, /tos, /legal page found — all 404)

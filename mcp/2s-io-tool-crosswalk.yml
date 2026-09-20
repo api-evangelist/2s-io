@@ -1,0 +1,5348 @@
+generated: '2026-09-19'
+method: derived
+source: mcp/2s-io-mcp-tools.json (live tools/list, 2026-09-19) and a2a/2s-io-agent-card.json (live card) bound to
+  openapi/2s-io-openapi.json (live https://2s.io/openapi.json, 2026-09-19)
+surfaces:
+  openapi:
+    file: openapi/2s-io-openapi.json
+    url: https://2s.io/openapi.json
+    operations: 575
+    gated: false
+    note: OpenAPI 3.1.0, 575 paths / 575 operations (470 GET, 105 POST), every operation carries a unique operationId
+      of the form group_name and an x-2s-id of the form group.name; one tag per operation (the group) but no top-level
+      tags[] declarations. Every operation is secured by the x402Payment apiKey scheme (PAYMENT-SIGNATURE header)
+      and carries x-2s-price / x-payment-info.
+  mcp:
+  - url: https://2s.io/mcp
+    gated: false
+    note: Anonymous tools/list returned 575 tools with inputSchemas on 2026-09-19. Paid calls are x402-gated at
+      invocation (hosted signer via X-EVM-Private-Key), not at listing. The same tool set ships as npx -y @2sio/mcp
+      (stdio).
+  graphql: null
+  a2a:
+    url: https://2s.io/a2a
+    card: a2a/2s-io-agent-card.json
+    gated: false
+    protocol_version: 0.3.0
+    skills: 1
+    note: One skill, discover-endpoints, which returns pointers into the catalog rather than executing it; it binds
+      to the REST operation search_endpoints (GET /api/search/endpoints).
+binding_rule: 'tool name == x-2s-id == operationId with "." replaced by "_". Verified for all 575 tools: 575 of
+  575 tool names are x-2s-ids in the spec and 575 of 575 x-2s-ids have a tool. A tool''s inputSchema is the REST
+  operation''s query parameters (GET) or JSON requestBody properties (POST) without the shared TrialMode (?trial=1)
+  parameter; rows where the two property sets differ are marked confidence: medium with the difference listed.'
+a2a_crosswalk:
+- skill: discover-endpoints
+  surface: a2a
+  category: search
+  rest:
+  - search_endpoints
+  binding: rest
+  confidence: high
+  note: The card describes the skill exactly as the REST operation describes itself (deterministic keyword + synonym
+    ranking over the live catalog, no LLM). Through REST the lookup costs $0.0025 via x402; through A2A the card
+    states the routing result is free.
+crosswalk:
+- tool: agent.knowledge-delta
+  category: agent
+  rest:
+  - agent_knowledge-delta
+  method: POST
+  path: /api/agent/knowledge-delta
+  binding: rest
+  confidence: high
+  price_usd: 0.15
+- tool: agriculture.drought
+  category: agriculture
+  rest:
+  - agriculture_drought
+  method: GET
+  path: /api/agriculture/drought
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: agriculture.stats
+  category: agriculture
+  rest:
+  - agriculture_stats
+  method: GET
+  path: /api/agriculture/stats
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: ai.chat
+  category: ai
+  rest:
+  - ai_chat
+  method: POST
+  path: /api/ai/chat
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: ai.classify
+  category: ai
+  rest:
+  - ai_classify
+  method: POST
+  path: /api/ai/classify
+  binding: rest
+  confidence: high
+  price_usd: 0.045
+- tool: ai.council
+  category: ai
+  rest:
+  - ai_council
+  method: POST
+  path: /api/ai/council
+  binding: rest
+  confidence: high
+  price_usd: 0.03
+- tool: ai.describe-image
+  category: ai
+  rest:
+  - ai_describe-image
+  method: POST
+  path: /api/ai/describe-image
+  binding: rest
+  confidence: high
+  price_usd: 0.045
+- tool: ai.entities
+  category: ai
+  rest:
+  - ai_entities
+  method: POST
+  path: /api/ai/entities
+  binding: rest
+  confidence: high
+  price_usd: 0.09
+- tool: ai.extract
+  category: ai
+  rest:
+  - ai_extract
+  method: POST
+  path: /api/ai/extract
+  binding: rest
+  confidence: high
+  price_usd: 0.1875
+- tool: ai.image
+  category: ai
+  rest:
+  - ai_image
+  method: POST
+  path: /api/ai/image
+  binding: rest
+  confidence: high
+  price_usd: 0.09
+- tool: ai.moderate
+  category: ai
+  rest:
+  - ai_moderate
+  method: POST
+  path: /api/ai/moderate
+  binding: rest
+  confidence: high
+  price_usd: 0.045
+- tool: ai.ocr
+  category: ai
+  rest:
+  - ai_ocr
+  method: POST
+  path: /api/ai/ocr
+  binding: rest
+  confidence: high
+  price_usd: 0.09
+- tool: ai.pii
+  category: ai
+  rest:
+  - ai_pii
+  method: POST
+  path: /api/ai/pii
+  binding: rest
+  confidence: high
+  price_usd: 0.075
+- tool: ai.research
+  category: ai
+  rest:
+  - ai_research
+  method: POST
+  path: /api/ai/research
+  binding: rest
+  confidence: high
+  price_usd: 0.105
+- tool: ai.screenshot
+  category: ai
+  rest:
+  - ai_screenshot
+  method: POST
+  path: /api/ai/screenshot
+  binding: rest
+  confidence: high
+  price_usd: 0.01875
+- tool: ai.sentiment
+  category: ai
+  rest:
+  - ai_sentiment
+  method: POST
+  path: /api/ai/sentiment
+  binding: rest
+  confidence: high
+  price_usd: 0.045
+- tool: ai.summarize
+  category: ai
+  rest:
+  - ai_summarize
+  method: POST
+  path: /api/ai/summarize
+  binding: rest
+  confidence: high
+  price_usd: 0.1575
+- tool: ai.translate
+  category: ai
+  rest:
+  - ai_translate
+  method: POST
+  path: /api/ai/translate
+  binding: rest
+  confidence: high
+  price_usd: 0.0705
+- tool: ai.web-answer
+  category: ai
+  rest:
+  - ai_web-answer
+  method: POST
+  path: /api/ai/web-answer
+  binding: rest
+  confidence: high
+  price_usd: 0.0825
+- tool: airport.lookup
+  category: airport
+  rest:
+  - airport_lookup
+  method: GET
+  path: /api/airport/lookup
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: airport.near
+  category: airport
+  rest:
+  - airport_near
+  method: GET
+  path: /api/airport/near
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: aviation.accidents
+  category: aviation
+  rest:
+  - aviation_accidents
+  method: GET
+  path: /api/aviation/accidents
+  binding: rest
+  confidence: high
+  price_usd: 0.003
+- tool: aviation.metar
+  category: aviation
+  rest:
+  - aviation_metar
+  method: GET
+  path: /api/aviation/metar
+  binding: rest
+  confidence: high
+  price_usd: 0.003
+- tool: aviation.sigmet
+  category: aviation
+  rest:
+  - aviation_sigmet
+  method: GET
+  path: /api/aviation/sigmet
+  binding: rest
+  confidence: high
+  price_usd: 0.0027
+- tool: aviation.taf
+  category: aviation
+  rest:
+  - aviation_taf
+  method: GET
+  path: /api/aviation/taf
+  binding: rest
+  confidence: high
+  price_usd: 0.003
+- tool: bank.lookup
+  category: bank
+  rest:
+  - bank_lookup
+  method: GET
+  path: /api/bank/lookup
+  binding: rest
+  confidence: high
+  price_usd: 0.003
+- tool: barcode.generate
+  category: barcode
+  rest:
+  - barcode_generate
+  method: POST
+  path: /api/barcode/generate
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: batch.run
+  category: batch
+  rest:
+  - batch_run
+  method: POST
+  path: /api/batch/run
+  binding: rest
+  confidence: high
+  price_usd: 0.003
+- tool: bio.gene
+  category: bio
+  rest:
+  - bio_gene
+  method: GET
+  path: /api/bio/gene
+  binding: rest
+  confidence: high
+  price_usd: 0.0048
+- tool: bio.protein
+  category: bio
+  rest:
+  - bio_protein
+  method: GET
+  path: /api/bio/protein
+  binding: rest
+  confidence: high
+  price_usd: 0.0036
+- tool: bio.species
+  category: bio
+  rest:
+  - bio_species
+  method: GET
+  path: /api/bio/species
+  binding: rest
+  confidence: high
+  price_usd: 0.0036
+- tool: bls.series
+  category: bls
+  rest:
+  - bls_series
+  method: GET
+  path: /api/bls/series
+  binding: rest
+  confidence: high
+  price_usd: 0.003
+- tool: book.search
+  category: book
+  rest:
+  - book_search
+  method: GET
+  path: /api/book/search
+  binding: rest
+  confidence: high
+  price_usd: 0.003
+- tool: business.br-cnpj
+  category: business
+  rest:
+  - business_br-cnpj
+  method: GET
+  path: /api/business/br-cnpj
+  binding: rest
+  confidence: high
+  price_usd: 0.0027
+- tool: business.entity-match
+  category: business
+  rest:
+  - business_entity-match
+  method: GET
+  path: /api/business/entity-match
+  binding: rest
+  confidence: high
+  price_usd: 0.0072
+- tool: business.entity-profile
+  category: business
+  rest:
+  - business_entity-profile
+  method: GET
+  path: /api/business/entity-profile
+  binding: rest
+  confidence: high
+  price_usd: 0.0075
+- tool: business.entity-screen
+  category: business
+  rest:
+  - business_entity-screen
+  method: GET
+  path: /api/business/entity-screen
+  binding: rest
+  confidence: high
+  price_usd: 0.0144
+- tool: business.fi-companies
+  category: business
+  rest:
+  - business_fi-companies
+  method: GET
+  path: /api/business/fi-companies
+  binding: rest
+  confidence: high
+  price_usd: 0.0036
+- tool: business.fr-companies
+  category: business
+  rest:
+  - business_fr-companies
+  method: GET
+  path: /api/business/fr-companies
+  binding: rest
+  confidence: high
+  price_usd: 0.0036
+- tool: business.id-resolve
+  category: business
+  rest:
+  - business_id-resolve
+  method: GET
+  path: /api/business/id-resolve
+  binding: rest
+  confidence: high
+  price_usd: 0.012
+- tool: business.kyb-360
+  category: business
+  rest:
+  - business_kyb-360
+  method: GET
+  path: /api/business/kyb-360
+  binding: rest
+  confidence: high
+  price_usd: 0.036
+- tool: business.lei
+  category: business
+  rest:
+  - business_lei
+  method: GET
+  path: /api/business/lei
+  binding: rest
+  confidence: high
+  price_usd: 0.003
+- tool: business.lei-hierarchy
+  category: business
+  rest:
+  - business_lei-hierarchy
+  method: GET
+  path: /api/business/lei-hierarchy
+  binding: rest
+  confidence: high
+  price_usd: 0.0036
+- tool: business.lei-isins
+  category: business
+  rest:
+  - business_lei-isins
+  method: GET
+  path: /api/business/lei-isins
+  binding: rest
+  confidence: high
+  price_usd: 0.0036
+- tool: business.naics
+  category: business
+  rest:
+  - business_naics
+  method: GET
+  path: /api/business/naics
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: business.no-companies
+  category: business
+  rest:
+  - business_no-companies
+  method: GET
+  path: /api/business/no-companies
+  binding: rest
+  confidence: high
+  price_usd: 0.0036
+- tool: business.pl-krs
+  category: business
+  rest:
+  - business_pl-krs
+  method: GET
+  path: /api/business/pl-krs
+  binding: rest
+  confidence: high
+  price_usd: 0.0036
+- tool: business.sos-search
+  category: business
+  rest:
+  - business_sos-search
+  method: GET
+  path: /api/business/sos-search
+  binding: rest
+  confidence: high
+  price_usd: 0.0072
+- tool: business.uk-companies
+  category: business
+  rest:
+  - business_uk-companies
+  method: GET
+  path: /api/business/uk-companies
+  binding: rest
+  confidence: high
+  price_usd: 0.0036
+- tool: calendar.business-days
+  category: calendar
+  rest:
+  - calendar_business-days
+  method: GET
+  path: /api/calendar/business-days
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: calendar.earnings
+  category: calendar
+  rest:
+  - calendar_earnings
+  method: GET
+  path: /api/calendar/earnings
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: calendar.holidays
+  category: calendar
+  rest:
+  - calendar_holidays
+  method: GET
+  path: /api/calendar/holidays
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: calendar.ipo
+  category: calendar
+  rest:
+  - calendar_ipo
+  method: GET
+  path: /api/calendar/ipo
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: census.demographics
+  category: census
+  rest:
+  - census_demographics
+  method: GET
+  path: /api/census/demographics
+  binding: rest
+  confidence: high
+  price_usd: 0.0027
+- tool: census.zipcode
+  category: census
+  rest:
+  - census_zipcode
+  method: GET
+  path: /api/census/zipcode
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: chem.compound
+  category: chem
+  rest:
+  - chem_compound
+  method: GET
+  path: /api/chem/compound
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: chinese.convert
+  category: chinese
+  rest:
+  - chinese_convert
+  method: GET
+  path: /api/chinese/convert
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: chinese.detect
+  category: chinese
+  rest:
+  - chinese_detect
+  method: GET
+  path: /api/chinese/detect
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: chinese.pinyin
+  category: chinese
+  rest:
+  - chinese_pinyin
+  method: GET
+  path: /api/chinese/pinyin
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: class.industry-resolve
+  category: class
+  rest:
+  - class_industry-resolve
+  method: GET
+  path: /api/class/industry-resolve
+  binding: rest
+  confidence: high
+  price_usd: 0.009
+- tool: climate.station-history
+  category: climate
+  rest:
+  - climate_station-history
+  method: GET
+  path: /api/climate/station-history
+  binding: rest
+  confidence: high
+  price_usd: 0.003
+- tool: climate.station-near
+  category: climate
+  rest:
+  - climate_station-near
+  method: GET
+  path: /api/climate/station-near
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: clinical.study-detail
+  category: clinical
+  rest:
+  - clinical_study-detail
+  method: GET
+  path: /api/clinical/study-detail
+  binding: rest
+  confidence: high
+  price_usd: 0.0036
+- tool: clinical.trial-search
+  category: clinical
+  rest:
+  - clinical_trial-search
+  method: GET
+  path: /api/clinical/trial-search
+  binding: rest
+  confidence: high
+  price_usd: 0.003
+- tool: code.repo-lookup
+  category: code
+  rest:
+  - code_repo-lookup
+  method: GET
+  path: /api/code/repo-lookup
+  binding: rest
+  confidence: high
+  price_usd: 0.003
+- tool: convert.currency
+  category: convert
+  rest:
+  - convert_currency
+  method: GET
+  path: /api/convert/currency
+  binding: rest
+  confidence: high
+  price_usd: 0.0036
+- tool: convert.unit
+  category: convert
+  rest:
+  - convert_unit
+  method: GET
+  path: /api/convert/unit
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: countdown.gif
+  category: countdown
+  rest:
+  - countdown_gif
+  method: GET
+  path: /api/countdown/gif
+  binding: rest
+  confidence: high
+  price_usd: 0.015
+- tool: country.financials
+  category: country
+  rest:
+  - country_financials
+  method: GET
+  path: /api/country/financials
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: country.lookup
+  category: country
+  rest:
+  - country_lookup
+  method: GET
+  path: /api/country/lookup
+  binding: rest
+  confidence: high
+  price_usd: 0.003
+- tool: crypto.address-history
+  category: crypto
+  rest:
+  - crypto_address-history
+  method: GET
+  path: /api/crypto/address-history
+  binding: rest
+  confidence: high
+  price_usd: 0.0036
+- tool: crypto.address-safety
+  category: crypto
+  rest:
+  - crypto_address-safety
+  method: GET
+  path: /api/crypto/address-safety
+  binding: rest
+  confidence: high
+  price_usd: 0.004998
+- tool: crypto.address-screen
+  category: crypto
+  rest:
+  - crypto_address-screen
+  method: GET
+  path: /api/crypto/address-screen
+  binding: rest
+  confidence: high
+  price_usd: 0.004998
+- tool: crypto.address-validate
+  category: crypto
+  rest:
+  - crypto_address-validate
+  method: GET
+  path: /api/crypto/address-validate
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: crypto.balances
+  category: crypto
+  rest:
+  - crypto_balances
+  method: GET
+  path: /api/crypto/balances
+  binding: rest
+  confidence: high
+  price_usd: 0.0036
+- tool: crypto.btc-address
+  category: crypto
+  rest:
+  - crypto_btc-address
+  method: GET
+  path: /api/crypto/btc-address
+  binding: rest
+  confidence: high
+  price_usd: 0.0036
+- tool: crypto.btc-fees
+  category: crypto
+  rest:
+  - crypto_btc-fees
+  method: GET
+  path: /api/crypto/btc-fees
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: crypto.btc-mempool
+  category: crypto
+  rest:
+  - crypto_btc-mempool
+  method: GET
+  path: /api/crypto/btc-mempool
+  binding: rest
+  confidence: high
+  price_usd: 0.0036
+- tool: crypto.btc-tx
+  category: crypto
+  rest:
+  - crypto_btc-tx
+  method: GET
+  path: /api/crypto/btc-tx
+  binding: rest
+  confidence: high
+  price_usd: 0.0036
+- tool: crypto.btc-utxos
+  category: crypto
+  rest:
+  - crypto_btc-utxos
+  method: GET
+  path: /api/crypto/btc-utxos
+  binding: rest
+  confidence: high
+  price_usd: 0.0036
+- tool: crypto.cex-klines
+  category: crypto
+  rest:
+  - crypto_cex-klines
+  method: GET
+  path: /api/crypto/cex-klines
+  binding: rest
+  confidence: high
+  price_usd: 0.0036
+- tool: crypto.cex-ticker
+  category: crypto
+  rest:
+  - crypto_cex-ticker
+  method: GET
+  path: /api/crypto/cex-ticker
+  binding: rest
+  confidence: high
+  price_usd: 0.0036
+- tool: crypto.chain-tvl-history
+  category: crypto
+  rest:
+  - crypto_chain-tvl-history
+  method: GET
+  path: /api/crypto/chain-tvl-history
+  binding: rest
+  confidence: high
+  price_usd: 0.0036
+- tool: crypto.coin
+  category: crypto
+  rest:
+  - crypto_coin
+  method: GET
+  path: /api/crypto/coin
+  binding: rest
+  confidence: high
+  price_usd: 0.0036
+- tool: crypto.coin-history
+  category: crypto
+  rest:
+  - crypto_coin-history
+  method: GET
+  path: /api/crypto/coin-history
+  binding: rest
+  confidence: high
+  price_usd: 0.0036
+- tool: crypto.contract
+  category: crypto
+  rest:
+  - crypto_contract
+  method: GET
+  path: /api/crypto/contract
+  binding: rest
+  confidence: high
+  price_usd: 0.0045
+- tool: crypto.decode-calldata
+  category: crypto
+  rest:
+  - crypto_decode-calldata
+  method: POST
+  path: /api/crypto/decode-calldata
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: crypto.defi
+  category: crypto
+  rest:
+  - crypto_defi
+  method: GET
+  path: /api/crypto/defi
+  binding: rest
+  confidence: high
+  price_usd: 0.0045
+- tool: crypto.defi-chains
+  category: crypto
+  rest:
+  - crypto_defi-chains
+  method: GET
+  path: /api/crypto/defi-chains
+  binding: rest
+  confidence: high
+  price_usd: 0.0036
+- tool: crypto.defi-fees
+  category: crypto
+  rest:
+  - crypto_defi-fees
+  method: GET
+  path: /api/crypto/defi-fees
+  binding: rest
+  confidence: high
+  price_usd: 0.0036
+- tool: crypto.defi-protocol-history
+  category: crypto
+  rest:
+  - crypto_defi-protocol-history
+  method: GET
+  path: /api/crypto/defi-protocol-history
+  binding: rest
+  confidence: high
+  price_usd: 0.0036
+- tool: crypto.defi-yields
+  category: crypto
+  rest:
+  - crypto_defi-yields
+  method: GET
+  path: /api/crypto/defi-yields
+  binding: rest
+  confidence: high
+  price_usd: 0.0036
+- tool: crypto.dex-networks
+  category: crypto
+  rest:
+  - crypto_dex-networks
+  method: GET
+  path: /api/crypto/dex-networks
+  binding: rest
+  confidence: high
+  price_usd: 0.0036
+- tool: crypto.dex-ohlcv
+  category: crypto
+  rest:
+  - crypto_dex-ohlcv
+  method: GET
+  path: /api/crypto/dex-ohlcv
+  binding: rest
+  confidence: high
+  price_usd: 0.0036
+- tool: crypto.dex-pools
+  category: crypto
+  rest:
+  - crypto_dex-pools
+  method: GET
+  path: /api/crypto/dex-pools
+  binding: rest
+  confidence: high
+  price_usd: 0.0036
+- tool: crypto.dex-search
+  category: crypto
+  rest:
+  - crypto_dex-search
+  method: GET
+  path: /api/crypto/dex-search
+  binding: rest
+  confidence: high
+  price_usd: 0.0036
+- tool: crypto.dex-token-pools
+  category: crypto
+  rest:
+  - crypto_dex-token-pools
+  method: GET
+  path: /api/crypto/dex-token-pools
+  binding: rest
+  confidence: high
+  price_usd: 0.0036
+- tool: crypto.ens-resolve
+  category: crypto
+  rest:
+  - crypto_ens-resolve
+  method: GET
+  path: /api/crypto/ens-resolve
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: crypto.fear-greed
+  category: crypto
+  rest:
+  - crypto_fear-greed
+  method: GET
+  path: /api/crypto/fear-greed
+  binding: rest
+  confidence: high
+  price_usd: 0.003
+- tool: crypto.gas-oracle
+  category: crypto
+  rest:
+  - crypto_gas-oracle
+  method: GET
+  path: /api/crypto/gas-oracle
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: crypto.global
+  category: crypto
+  rest:
+  - crypto_global
+  method: GET
+  path: /api/crypto/global
+  binding: rest
+  confidence: high
+  price_usd: 0.003
+- tool: crypto.hyperliquid-funding
+  category: crypto
+  rest:
+  - crypto_hyperliquid-funding
+  method: GET
+  path: /api/crypto/hyperliquid-funding
+  binding: rest
+  confidence: high
+  price_usd: 0.0036
+- tool: crypto.hyperliquid-predicted-funding
+  category: crypto
+  rest:
+  - crypto_hyperliquid-predicted-funding
+  method: GET
+  path: /api/crypto/hyperliquid-predicted-funding
+  binding: rest
+  confidence: high
+  price_usd: 0.0036
+- tool: crypto.kimchi-premium
+  category: crypto
+  rest:
+  - crypto_kimchi-premium
+  method: GET
+  path: /api/crypto/kimchi-premium
+  binding: rest
+  confidence: high
+  price_usd: 0.012
+- tool: crypto.markets
+  category: crypto
+  rest:
+  - crypto_markets
+  method: GET
+  path: /api/crypto/markets
+  binding: rest
+  confidence: high
+  price_usd: 0.0036
+- tool: crypto.nft
+  category: crypto
+  rest:
+  - crypto_nft
+  method: GET
+  path: /api/crypto/nft
+  binding: rest
+  confidence: high
+  price_usd: 0.0036
+- tool: crypto.nft-security
+  category: crypto
+  rest:
+  - crypto_nft-security
+  method: GET
+  path: /api/crypto/nft-security
+  binding: rest
+  confidence: high
+  price_usd: 0.0036
+- tool: crypto.stablecoins
+  category: crypto
+  rest:
+  - crypto_stablecoins
+  method: GET
+  path: /api/crypto/stablecoins
+  binding: rest
+  confidence: high
+  price_usd: 0.0036
+- tool: crypto.token-info
+  category: crypto
+  rest:
+  - crypto_token-info
+  method: GET
+  path: /api/crypto/token-info
+  binding: rest
+  confidence: high
+  price_usd: 0.0036
+- tool: crypto.token-metadata
+  category: crypto
+  rest:
+  - crypto_token-metadata
+  method: GET
+  path: /api/crypto/token-metadata
+  binding: rest
+  confidence: high
+  price_usd: 0.0036
+- tool: crypto.token-price
+  category: crypto
+  rest:
+  - crypto_token-price
+  method: GET
+  path: /api/crypto/token-price
+  binding: rest
+  confidence: high
+  price_usd: 0.003
+- tool: crypto.token-safety
+  category: crypto
+  rest:
+  - crypto_token-safety
+  method: GET
+  path: /api/crypto/token-safety
+  binding: rest
+  confidence: high
+  price_usd: 0.004998
+- tool: crypto.token-transfers
+  category: crypto
+  rest:
+  - crypto_token-transfers
+  method: GET
+  path: /api/crypto/token-transfers
+  binding: rest
+  confidence: high
+  price_usd: 0.0036
+- tool: crypto.trending
+  category: crypto
+  rest:
+  - crypto_trending
+  method: GET
+  path: /api/crypto/trending
+  binding: rest
+  confidence: high
+  price_usd: 0.003
+- tool: crypto.tx
+  category: crypto
+  rest:
+  - crypto_tx
+  method: GET
+  path: /api/crypto/tx
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: crypto.vrf
+  category: crypto
+  rest:
+  - crypto_vrf
+  method: GET
+  path: /api/crypto/vrf
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: dev.crates-search
+  category: dev
+  rest:
+  - dev_crates-search
+  method: GET
+  path: /api/dev/crates-search
+  binding: rest
+  confidence: high
+  price_usd: 0.0036
+- tool: dev.csv-to-json
+  category: dev
+  rest:
+  - dev_csv-to-json
+  method: POST
+  path: /api/dev/csv-to-json
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: dev.diff-json
+  category: dev
+  rest:
+  - dev_diff-json
+  method: POST
+  path: /api/dev/diff-json
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: dev.flatten-json
+  category: dev
+  rest:
+  - dev_flatten-json
+  method: POST
+  path: /api/dev/flatten-json
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: dev.gitlab-search
+  category: dev
+  rest:
+  - dev_gitlab-search
+  method: GET
+  path: /api/dev/gitlab-search
+  binding: rest
+  confidence: high
+  price_usd: 0.0036
+- tool: dev.json-to-csv
+  category: dev
+  rest:
+  - dev_json-to-csv
+  method: POST
+  path: /api/dev/json-to-csv
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: dev.json-to-typescript
+  category: dev
+  rest:
+  - dev_json-to-typescript
+  method: POST
+  path: /api/dev/json-to-typescript
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: dev.json-to-zod
+  category: dev
+  rest:
+  - dev_json-to-zod
+  method: POST
+  path: /api/dev/json-to-zod
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: dev.jwt-decode
+  category: dev
+  rest:
+  - dev_jwt-decode
+  method: POST
+  path: /api/dev/jwt-decode
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: dev.npm-search
+  category: dev
+  rest:
+  - dev_npm-search
+  method: GET
+  path: /api/dev/npm-search
+  binding: rest
+  confidence: high
+  price_usd: 0.0036
+- tool: dev.preflight
+  category: dev
+  rest:
+  - dev_preflight
+  method: POST
+  path: /api/dev/preflight
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: dev.regex-test
+  category: dev
+  rest:
+  - dev_regex-test
+  method: POST
+  path: /api/dev/regex-test
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: dev.rfc
+  category: dev
+  rest:
+  - dev_rfc
+  method: GET
+  path: /api/dev/rfc
+  binding: rest
+  confidence: high
+  price_usd: 0.003
+- tool: dev.stackoverflow-search
+  category: dev
+  rest:
+  - dev_stackoverflow-search
+  method: GET
+  path: /api/dev/stackoverflow-search
+  binding: rest
+  confidence: high
+  price_usd: 0.0036
+- tool: dev.uuid
+  category: dev
+  rest:
+  - dev_uuid
+  method: GET
+  path: /api/dev/uuid
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: dns.lookup
+  category: dns
+  rest:
+  - dns_lookup
+  method: GET
+  path: /api/dns/lookup
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: domain.ct-logs
+  category: domain
+  rest:
+  - domain_ct-logs
+  method: GET
+  path: /api/domain/ct-logs
+  binding: rest
+  confidence: high
+  price_usd: 0.0054
+- tool: domain.email-security
+  category: domain
+  rest:
+  - domain_email-security
+  method: GET
+  path: /api/domain/email-security
+  binding: rest
+  confidence: high
+  price_usd: 0.0045
+- tool: domain.intel
+  category: domain
+  rest:
+  - domain_intel
+  method: GET
+  path: /api/domain/intel
+  binding: rest
+  confidence: high
+  price_usd: 0.012
+- tool: domain.whois
+  category: domain
+  rest:
+  - domain_whois
+  method: GET
+  path: /api/domain/whois
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: earth.events
+  category: earth
+  rest:
+  - earth_events
+  method: GET
+  path: /api/earth/events
+  binding: rest
+  confidence: high
+  price_usd: 0.003
+- tool: earth.now
+  category: earth
+  rest:
+  - earth_now
+  method: GET
+  path: /api/earth/now
+  binding: rest
+  confidence: high
+  price_usd: 0.003
+- tool: econ.commodity
+  category: econ
+  rest:
+  - econ_commodity
+  method: GET
+  path: /api/econ/commodity
+  binding: rest
+  confidence: high
+  price_usd: 0.0036
+- tool: econ.cot
+  category: econ
+  rest:
+  - econ_cot
+  method: GET
+  path: /api/econ/cot
+  binding: rest
+  confidence: high
+  price_usd: 0.0045
+- tool: econ.fred
+  category: econ
+  rest:
+  - econ_fred
+  method: GET
+  path: /api/econ/fred
+  binding: rest
+  confidence: high
+  price_usd: 0.0036
+- tool: econ.fred-categories
+  category: econ
+  rest:
+  - econ_fred-categories
+  method: GET
+  path: /api/econ/fred-categories
+  binding: rest
+  confidence: high
+  price_usd: 0.003
+- tool: econ.fred-regional
+  category: econ
+  rest:
+  - econ_fred-regional
+  method: GET
+  path: /api/econ/fred-regional
+  binding: rest
+  confidence: high
+  price_usd: 0.0045
+- tool: econ.fred-releases
+  category: econ
+  rest:
+  - econ_fred-releases
+  method: GET
+  path: /api/econ/fred-releases
+  binding: rest
+  confidence: high
+  price_usd: 0.003
+- tool: econ.fred-vintage
+  category: econ
+  rest:
+  - econ_fred-vintage
+  method: GET
+  path: /api/econ/fred-vintage
+  binding: rest
+  confidence: high
+  price_usd: 0.0042
+- tool: econ.indicator
+  category: econ
+  rest:
+  - econ_indicator
+  method: GET
+  path: /api/econ/indicator
+  binding: rest
+  confidence: high
+  price_usd: 0.0036
+- tool: econ.recession
+  category: econ
+  rest:
+  - econ_recession
+  method: GET
+  path: /api/econ/recession
+  binding: rest
+  confidence: high
+  price_usd: 0.0036
+- tool: econ.yield-curve
+  category: econ
+  rest:
+  - econ_yield-curve
+  method: GET
+  path: /api/econ/yield-curve
+  binding: rest
+  confidence: high
+  price_usd: 0.0036
+- tool: edi.ack
+  category: edi
+  rest:
+  - edi_ack
+  method: POST
+  path: /api/edi/ack
+  binding: rest
+  confidence: high
+  price_usd: 0.0045
+- tool: edi.edifact
+  category: edi
+  rest:
+  - edi_edifact
+  method: POST
+  path: /api/edi/edifact
+  binding: rest
+  confidence: high
+  price_usd: 0.0045
+- tool: edi.edifact-generate
+  category: edi
+  rest:
+  - edi_edifact-generate
+  method: POST
+  path: /api/edi/edifact-generate
+  binding: rest
+  confidence: high
+  price_usd: 0.0045
+- tool: edi.generate
+  category: edi
+  rest:
+  - edi_generate
+  method: POST
+  path: /api/edi/generate
+  binding: rest
+  confidence: high
+  price_usd: 0.0045
+- tool: edi.parse
+  category: edi
+  rest:
+  - edi_parse
+  method: POST
+  path: /api/edi/parse
+  binding: rest
+  confidence: high
+  price_usd: 0.0045
+- tool: edu.college-scorecard
+  category: edu
+  rest:
+  - edu_college-scorecard
+  method: GET
+  path: /api/edu/college-scorecard
+  binding: rest
+  confidence: high
+  price_usd: 0.003
+- tool: edu.school-lookup
+  category: edu
+  rest:
+  - edu_school-lookup
+  method: GET
+  path: /api/edu/school-lookup
+  binding: rest
+  confidence: high
+  price_usd: 0.0036
+- tool: email.validate
+  category: email
+  rest:
+  - email_validate
+  method: GET
+  path: /api/email/validate
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: energy.carbon-intensity-uk
+  category: energy
+  rest:
+  - energy_carbon-intensity-uk
+  method: GET
+  path: /api/energy/carbon-intensity-uk
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: energy.electricity-rates
+  category: energy
+  rest:
+  - energy_electricity-rates
+  method: GET
+  path: /api/energy/electricity-rates
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: energy.fuel-stations
+  category: energy
+  rest:
+  - energy_fuel-stations
+  method: GET
+  path: /api/energy/fuel-stations
+  binding: rest
+  confidence: high
+  price_usd: 0.003
+- tool: energy.generation-mix
+  category: energy
+  rest:
+  - energy_generation-mix
+  method: GET
+  path: /api/energy/generation-mix
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: energy.prices
+  category: energy
+  rest:
+  - energy_prices
+  method: GET
+  path: /api/energy/prices
+  binding: rest
+  confidence: high
+  price_usd: 0.0072
+- tool: energy.solar-forecast
+  category: energy
+  rest:
+  - energy_solar-forecast
+  method: GET
+  path: /api/energy/solar-forecast
+  binding: rest
+  confidence: high
+  price_usd: 0.0036
+- tool: energy.solar-resource
+  category: energy
+  rest:
+  - energy_solar-resource
+  method: GET
+  path: /api/energy/solar-resource
+  binding: rest
+  confidence: high
+  price_usd: 0.003
+- tool: energy.utility-rates
+  category: energy
+  rest:
+  - energy_utility-rates
+  method: GET
+  path: /api/energy/utility-rates
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: factcheck.search
+  category: factcheck
+  rest:
+  - factcheck_search
+  method: GET
+  path: /api/factcheck/search
+  binding: rest
+  confidence: high
+  price_usd: 0.0045
+- tool: feedback.send
+  category: feedback
+  rest:
+  - feedback_send
+  method: POST
+  path: /api/feedback/send
+  binding: rest
+  confidence: high
+  price_usd: 0.249999
+- tool: finance.amortize
+  category: finance
+  rest:
+  - finance_amortize
+  method: GET
+  path: /api/finance/amortize
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: finance.bank-id-resolve
+  category: finance
+  rest:
+  - finance_bank-id-resolve
+  method: GET
+  path: /api/finance/bank-id-resolve
+  binding: rest
+  confidence: high
+  price_usd: 0.012
+- tool: finance.bin
+  category: finance
+  rest:
+  - finance_bin
+  method: GET
+  path: /api/finance/bin
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: finance.central-bank-rates
+  category: finance
+  rest:
+  - finance_central-bank-rates
+  method: GET
+  path: /api/finance/central-bank-rates
+  binding: rest
+  confidence: high
+  price_usd: 0.012
+- tool: finance.cik-ticker
+  category: finance
+  rest:
+  - finance_cik-ticker
+  method: GET
+  path: /api/finance/cik-ticker
+  binding: rest
+  confidence: high
+  price_usd: 0.009
+- tool: finance.company-facts
+  category: finance
+  rest:
+  - finance_company-facts
+  method: GET
+  path: /api/finance/company-facts
+  binding: rest
+  confidence: high
+  price_usd: 0.012
+- tool: finance.company-profile
+  category: finance
+  rest:
+  - finance_company-profile
+  method: GET
+  path: /api/finance/company-profile
+  binding: rest
+  confidence: high
+  price_usd: 0.0144
+- tool: finance.figi
+  category: finance
+  rest:
+  - finance_figi
+  method: GET
+  path: /api/finance/figi
+  binding: rest
+  confidence: high
+  price_usd: 0.0036
+- tool: finance.figi-search
+  category: finance
+  rest:
+  - finance_figi-search
+  method: GET
+  path: /api/finance/figi-search
+  binding: rest
+  confidence: high
+  price_usd: 0.0036
+- tool: finance.form-144
+  category: finance
+  rest:
+  - finance_form-144
+  method: GET
+  path: /api/finance/form-144
+  binding: rest
+  confidence: high
+  price_usd: 0.0045
+- tool: finance.ifsc-india
+  category: finance
+  rest:
+  - finance_ifsc-india
+  method: GET
+  path: /api/finance/ifsc-india
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: finance.insider-trades
+  category: finance
+  rest:
+  - finance_insider-trades
+  method: GET
+  path: /api/finance/insider-trades
+  binding: rest
+  confidence: high
+  price_usd: 0.018
+- tool: finance.mortgage-pulse
+  category: finance
+  rest:
+  - finance_mortgage-pulse
+  method: GET
+  path: /api/finance/mortgage-pulse
+  binding: rest
+  confidence: high
+  price_usd: 0.012
+- tool: finance.sec-filings
+  category: finance
+  rest:
+  - finance_sec-filings
+  method: GET
+  path: /api/finance/sec-filings
+  binding: rest
+  confidence: high
+  price_usd: 0.009
+- tool: finance.security-resolve
+  category: finance
+  rest:
+  - finance_security-resolve
+  method: GET
+  path: /api/finance/security-resolve
+  binding: rest
+  confidence: high
+  price_usd: 0.012
+- tool: finance.thirteen-f
+  category: finance
+  rest:
+  - finance_thirteen-f
+  method: GET
+  path: /api/finance/thirteen-f
+  binding: rest
+  confidence: high
+  price_usd: 0.018
+- tool: finance.xbrl-frames
+  category: finance
+  rest:
+  - finance_xbrl-frames
+  method: GET
+  path: /api/finance/xbrl-frames
+  binding: rest
+  confidence: high
+  price_usd: 0.0054
+- tool: flight.airport-board
+  category: flight
+  rest:
+  - flight_airport-board
+  method: GET
+  path: /api/flight/airport-board
+  binding: rest
+  confidence: high
+  price_usd: 0.045
+- tool: flight.route-schedule
+  category: flight
+  rest:
+  - flight_route-schedule
+  method: GET
+  path: /api/flight/route-schedule
+  binding: rest
+  confidence: high
+  price_usd: 0.045
+- tool: flight.status
+  category: flight
+  rest:
+  - flight_status
+  method: GET
+  path: /api/flight/status
+  binding: rest
+  confidence: high
+  price_usd: 0.045
+- tool: food.barcode-lookup
+  category: food
+  rest:
+  - food_barcode-lookup
+  method: GET
+  path: /api/food/barcode-lookup
+  binding: rest
+  confidence: high
+  price_usd: 0.003
+- tool: food.hygiene-uk
+  category: food
+  rest:
+  - food_hygiene-uk
+  method: GET
+  path: /api/food/hygiene-uk
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: fx.rates
+  category: fx
+  rest:
+  - fx_rates
+  method: GET
+  path: /api/fx/rates
+  binding: rest
+  confidence: high
+  price_usd: 0.003
+- tool: fx.timeseries
+  category: fx
+  rest:
+  - fx_timeseries
+  method: GET
+  path: /api/fx/timeseries
+  binding: rest
+  confidence: high
+  price_usd: 0.0036
+- tool: geo.elevation
+  category: geo
+  rest:
+  - geo_elevation
+  method: GET
+  path: /api/geo/elevation
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: geo.flood-zone
+  category: geo
+  rest:
+  - geo_flood-zone
+  method: GET
+  path: /api/geo/flood-zone
+  binding: rest
+  confidence: high
+  price_usd: 0.0036
+- tool: geo.ip
+  category: geo
+  rest:
+  - geo_ip
+  method: GET
+  path: /api/geo/ip
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: geo.location-dossier
+  category: geo
+  rest:
+  - geo_location-dossier
+  method: GET
+  path: /api/geo/location-dossier
+  binding: rest
+  confidence: high
+  price_usd: 0.018
+- tool: geo.nearby
+  category: geo
+  rest:
+  - geo_nearby
+  method: GET
+  path: /api/geo/nearby
+  binding: rest
+  confidence: high
+  price_usd: 0.009
+- tool: geo.postal
+  category: geo
+  rest:
+  - geo_postal
+  method: GET
+  path: /api/geo/postal
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: geo.zip-resolve
+  category: geo
+  rest:
+  - geo_zip-resolve
+  method: GET
+  path: /api/geo/zip-resolve
+  binding: rest
+  confidence: high
+  price_usd: 0.012
+- tool: geocode.address
+  category: geocode
+  rest:
+  - geocode_address
+  method: GET
+  path: /api/geocode/address
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: geocode.reverse
+  category: geocode
+  rest:
+  - geocode_reverse
+  method: GET
+  path: /api/geocode/reverse
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: github.branches
+  category: github
+  rest:
+  - github_branches
+  method: GET
+  path: /api/github/branches
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: github.commits
+  category: github
+  rest:
+  - github_commits
+  method: GET
+  path: /api/github/commits
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: github.contributors
+  category: github
+  rest:
+  - github_contributors
+  method: GET
+  path: /api/github/contributors
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: github.issues
+  category: github
+  rest:
+  - github_issues
+  method: GET
+  path: /api/github/issues
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: github.languages
+  category: github
+  rest:
+  - github_languages
+  method: GET
+  path: /api/github/languages
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: github.pulls
+  category: github
+  rest:
+  - github_pulls
+  method: GET
+  path: /api/github/pulls
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: github.readme
+  category: github
+  rest:
+  - github_readme
+  method: GET
+  path: /api/github/readme
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: github.releases
+  category: github
+  rest:
+  - github_releases
+  method: GET
+  path: /api/github/releases
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: github.repo
+  category: github
+  rest:
+  - github_repo
+  method: GET
+  path: /api/github/repo
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: github.repos
+  category: github
+  rest:
+  - github_repos
+  method: GET
+  path: /api/github/repos
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: github.search-code
+  category: github
+  rest:
+  - github_search-code
+  method: GET
+  path: /api/github/search-code
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: github.search-repos
+  category: github
+  rest:
+  - github_search-repos
+  method: GET
+  path: /api/github/search-repos
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: github.tags
+  category: github
+  rest:
+  - github_tags
+  method: GET
+  path: /api/github/tags
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: github.user
+  category: github
+  rest:
+  - github_user
+  method: GET
+  path: /api/github/user
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: gov.bea-gdp
+  category: gov
+  rest:
+  - gov_bea-gdp
+  method: GET
+  path: /api/gov/bea-gdp
+  binding: rest
+  confidence: high
+  price_usd: 0.0027
+- tool: gov.bill-summaries
+  category: gov
+  rest:
+  - gov_bill-summaries
+  method: GET
+  path: /api/gov/bill-summaries
+  binding: rest
+  confidence: high
+  price_usd: 0.003
+- tool: gov.carrier-safety
+  category: gov
+  rest:
+  - gov_carrier-safety
+  method: GET
+  path: /api/gov/carrier-safety
+  binding: rest
+  confidence: high
+  price_usd: 0.0045
+- tool: gov.congress-amendment
+  category: gov
+  rest:
+  - gov_congress-amendment
+  method: GET
+  path: /api/gov/congress-amendment
+  binding: rest
+  confidence: high
+  price_usd: 0.003
+- tool: gov.congress-bill
+  category: gov
+  rest:
+  - gov_congress-bill
+  method: GET
+  path: /api/gov/congress-bill
+  binding: rest
+  confidence: high
+  price_usd: 0.003
+- tool: gov.congress-committee
+  category: gov
+  rest:
+  - gov_congress-committee
+  method: GET
+  path: /api/gov/congress-committee
+  binding: rest
+  confidence: high
+  price_usd: 0.003
+- tool: gov.congress-filings
+  category: gov
+  rest:
+  - gov_congress-filings
+  method: GET
+  path: /api/gov/congress-filings
+  binding: rest
+  confidence: high
+  price_usd: 0.003
+- tool: gov.congress-hearing
+  category: gov
+  rest:
+  - gov_congress-hearing
+  method: GET
+  path: /api/gov/congress-hearing
+  binding: rest
+  confidence: high
+  price_usd: 0.003
+- tool: gov.congress-member
+  category: gov
+  rest:
+  - gov_congress-member
+  method: GET
+  path: /api/gov/congress-member
+  binding: rest
+  confidence: high
+  price_usd: 0.003
+- tool: gov.congress-nomination
+  category: gov
+  rest:
+  - gov_congress-nomination
+  method: GET
+  path: /api/gov/congress-nomination
+  binding: rest
+  confidence: high
+  price_usd: 0.003
+- tool: gov.congress-record
+  category: gov
+  rest:
+  - gov_congress-record
+  method: GET
+  path: /api/gov/congress-record
+  binding: rest
+  confidence: high
+  price_usd: 0.003
+- tool: gov.congress-trades
+  category: gov
+  rest:
+  - gov_congress-trades
+  method: GET
+  path: /api/gov/congress-trades
+  binding: rest
+  confidence: high
+  price_usd: 0.003
+- tool: gov.congress-treaty
+  category: gov
+  rest:
+  - gov_congress-treaty
+  method: GET
+  path: /api/gov/congress-treaty
+  binding: rest
+  confidence: high
+  price_usd: 0.003
+- tool: gov.contract-opportunities
+  category: gov
+  rest:
+  - gov_contract-opportunities
+  method: GET
+  path: /api/gov/contract-opportunities
+  binding: rest
+  confidence: high
+  price_usd: 0.0045
+- tool: gov.counterparty
+  category: gov
+  rest:
+  - gov_counterparty
+  method: GET
+  path: /api/gov/counterparty
+  binding: rest
+  confidence: high
+  price_usd: 0.018
+- tool: gov.disaster-assistance
+  category: gov
+  rest:
+  - gov_disaster-assistance
+  method: GET
+  path: /api/gov/disaster-assistance
+  binding: rest
+  confidence: high
+  price_usd: 0.0045
+- tool: gov.disaster-declarations
+  category: gov
+  rest:
+  - gov_disaster-declarations
+  method: GET
+  path: /api/gov/disaster-declarations
+  binding: rest
+  confidence: high
+  price_usd: 0.0045
+- tool: gov.district
+  category: gov
+  rest:
+  - gov_district
+  method: GET
+  path: /api/gov/district
+  binding: rest
+  confidence: high
+  price_usd: 0.0045
+- tool: gov.entity
+  category: gov
+  rest:
+  - gov_entity
+  method: GET
+  path: /api/gov/entity
+  binding: rest
+  confidence: high
+  price_usd: 0.0045
+- tool: gov.epa-facilities
+  category: gov
+  rest:
+  - gov_epa-facilities
+  method: GET
+  path: /api/gov/epa-facilities
+  binding: rest
+  confidence: high
+  price_usd: 0.006
+- tool: gov.eu-tenders
+  category: gov
+  rest:
+  - gov_eu-tenders
+  method: GET
+  path: /api/gov/eu-tenders
+  binding: rest
+  confidence: high
+  price_usd: 0.0048
+- tool: gov.exclusions
+  category: gov
+  rest:
+  - gov_exclusions
+  method: GET
+  path: /api/gov/exclusions
+  binding: rest
+  confidence: high
+  price_usd: 0.0045
+- tool: gov.fair-market-rent
+  category: gov
+  rest:
+  - gov_fair-market-rent
+  method: GET
+  path: /api/gov/fair-market-rent
+  binding: rest
+  confidence: high
+  price_usd: 0.012
+- tool: gov.fcc-id
+  category: gov
+  rest:
+  - gov_fcc-id
+  method: GET
+  path: /api/gov/fcc-id
+  binding: rest
+  confidence: high
+  price_usd: 0.003
+- tool: gov.fda-animalvet-events
+  category: gov
+  rest:
+  - gov_fda-animalvet-events
+  method: GET
+  path: /api/gov/fda-animalvet-events
+  binding: rest
+  confidence: high
+  price_usd: 0.006
+- tool: gov.fda-device-events
+  category: gov
+  rest:
+  - gov_fda-device-events
+  method: GET
+  path: /api/gov/fda-device-events
+  binding: rest
+  confidence: high
+  price_usd: 0.006
+- tool: gov.fda-drug-events
+  category: gov
+  rest:
+  - gov_fda-drug-events
+  method: GET
+  path: /api/gov/fda-drug-events
+  binding: rest
+  confidence: high
+  price_usd: 0.006
+- tool: gov.fda-food-recalls
+  category: gov
+  rest:
+  - gov_fda-food-recalls
+  method: GET
+  path: /api/gov/fda-food-recalls
+  binding: rest
+  confidence: high
+  price_usd: 0.006
+- tool: gov.fda-recalls
+  category: gov
+  rest:
+  - gov_fda-recalls
+  method: GET
+  path: /api/gov/fda-recalls
+  binding: rest
+  confidence: high
+  price_usd: 0.006
+- tool: gov.fec
+  category: gov
+  rest:
+  - gov_fec
+  method: GET
+  path: /api/gov/fec
+  binding: rest
+  confidence: high
+  price_usd: 0.0036
+- tool: gov.fec-candidate
+  category: gov
+  rest:
+  - gov_fec-candidate
+  method: GET
+  path: /api/gov/fec-candidate
+  binding: rest
+  confidence: high
+  price_usd: 0.003
+- tool: gov.fec-committee
+  category: gov
+  rest:
+  - gov_fec-committee
+  method: GET
+  path: /api/gov/fec-committee
+  binding: rest
+  confidence: high
+  price_usd: 0.003
+- tool: gov.fec-contributions
+  category: gov
+  rest:
+  - gov_fec-contributions
+  method: GET
+  path: /api/gov/fec-contributions
+  binding: rest
+  confidence: high
+  price_usd: 0.003
+- tool: gov.fec-expenditures
+  category: gov
+  rest:
+  - gov_fec-expenditures
+  method: GET
+  path: /api/gov/fec-expenditures
+  binding: rest
+  confidence: high
+  price_usd: 0.003
+- tool: gov.fec-totals
+  category: gov
+  rest:
+  - gov_fec-totals
+  method: GET
+  path: /api/gov/fec-totals
+  binding: rest
+  confidence: high
+  price_usd: 0.003
+- tool: gov.federal-register-recent
+  category: gov
+  rest:
+  - gov_federal-register-recent
+  method: GET
+  path: /api/gov/federal-register-recent
+  binding: rest
+  confidence: high
+  price_usd: 0.006
+- tool: gov.foreign-agents
+  category: gov
+  rest:
+  - gov_foreign-agents
+  method: GET
+  path: /api/gov/foreign-agents
+  binding: rest
+  confidence: high
+  price_usd: 0.0045
+- tool: gov.hazard-mitigation
+  category: gov
+  rest:
+  - gov_hazard-mitigation
+  method: GET
+  path: /api/gov/hazard-mitigation
+  binding: rest
+  confidence: high
+  price_usd: 0.0045
+- tool: gov.house-votes
+  category: gov
+  rest:
+  - gov_house-votes
+  method: GET
+  path: /api/gov/house-votes
+  binding: rest
+  confidence: high
+  price_usd: 0.006
+- tool: gov.income-limits
+  category: gov
+  rest:
+  - gov_income-limits
+  method: GET
+  path: /api/gov/income-limits
+  binding: rest
+  confidence: high
+  price_usd: 0.012
+- tool: gov.inmate-locator
+  category: gov
+  rest:
+  - gov_inmate-locator
+  method: GET
+  path: /api/gov/inmate-locator
+  binding: rest
+  confidence: high
+  price_usd: 0.006
+- tool: gov.lobbying-filings
+  category: gov
+  rest:
+  - gov_lobbying-filings
+  method: GET
+  path: /api/gov/lobbying-filings
+  binding: rest
+  confidence: high
+  price_usd: 0.0072
+- tool: gov.msha-accidents
+  category: gov
+  rest:
+  - gov_msha-accidents
+  method: GET
+  path: /api/gov/msha-accidents
+  binding: rest
+  confidence: high
+  price_usd: 0.003
+- tool: gov.nfip-claims
+  category: gov
+  rest:
+  - gov_nfip-claims
+  method: GET
+  path: /api/gov/nfip-claims
+  binding: rest
+  confidence: high
+  price_usd: 0.0045
+- tool: gov.osha-accidents
+  category: gov
+  rest:
+  - gov_osha-accidents
+  method: GET
+  path: /api/gov/osha-accidents
+  binding: rest
+  confidence: high
+  price_usd: 0.003
+- tool: gov.osha-inspections
+  category: gov
+  rest:
+  - gov_osha-inspections
+  method: GET
+  path: /api/gov/osha-inspections
+  binding: rest
+  confidence: high
+  price_usd: 0.003
+- tool: gov.osha-violations
+  category: gov
+  rest:
+  - gov_osha-violations
+  method: GET
+  path: /api/gov/osha-violations
+  binding: rest
+  confidence: high
+  price_usd: 0.003
+- tool: gov.product-recalls
+  category: gov
+  rest:
+  - gov_product-recalls
+  method: GET
+  path: /api/gov/product-recalls
+  binding: rest
+  confidence: high
+  price_usd: 0.006
+- tool: gov.public-assistance
+  category: gov
+  rest:
+  - gov_public-assistance
+  method: GET
+  path: /api/gov/public-assistance
+  binding: rest
+  confidence: high
+  price_usd: 0.0045
+- tool: gov.representatives
+  category: gov
+  rest:
+  - gov_representatives
+  method: GET
+  path: /api/gov/representatives
+  binding: rest
+  confidence: high
+  price_usd: 0.003
+- tool: gov.risk-index
+  category: gov
+  rest:
+  - gov_risk-index
+  method: GET
+  path: /api/gov/risk-index
+  binding: rest
+  confidence: high
+  price_usd: 0.0045
+- tool: gov.senate-votes
+  category: gov
+  rest:
+  - gov_senate-votes
+  method: GET
+  path: /api/gov/senate-votes
+  binding: rest
+  confidence: high
+  price_usd: 0.006
+- tool: gov.uk-crime
+  category: gov
+  rest:
+  - gov_uk-crime
+  method: GET
+  path: /api/gov/uk-crime
+  binding: rest
+  confidence: high
+  price_usd: 0.0027
+- tool: gov.usajobs
+  category: gov
+  rest:
+  - gov_usajobs
+  method: GET
+  path: /api/gov/usajobs
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: gov.usaspending-awards
+  category: gov
+  rest:
+  - gov_usaspending-awards
+  method: GET
+  path: /api/gov/usaspending-awards
+  binding: rest
+  confidence: high
+  price_usd: 0.006
+- tool: gov.usgs-water
+  category: gov
+  rest:
+  - gov_usgs-water
+  method: GET
+  path: /api/gov/usgs-water
+  binding: rest
+  confidence: high
+  price_usd: 0.006
+- tool: hash.compute
+  category: hash
+  rest:
+  - hash_compute
+  method: POST
+  path: /api/hash/compute
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: health.disease-surveillance
+  category: health
+  rest:
+  - health_disease-surveillance
+  method: GET
+  path: /api/health/disease-surveillance
+  binding: rest
+  confidence: high
+  price_usd: 0.003
+- tool: health.hospital-lookup
+  category: health
+  rest:
+  - health_hospital-lookup
+  method: GET
+  path: /api/health/hospital-lookup
+  binding: rest
+  confidence: high
+  price_usd: 0.003
+- tool: health.hospital-quality
+  category: health
+  rest:
+  - health_hospital-quality
+  method: GET
+  path: /api/health/hospital-quality
+  binding: rest
+  confidence: high
+  price_usd: 0.0072
+- tool: health.medicare-provider
+  category: health
+  rest:
+  - health_medicare-provider
+  method: GET
+  path: /api/health/medicare-provider
+  binding: rest
+  confidence: high
+  price_usd: 0.0072
+- tool: health.mortality-stats
+  category: health
+  rest:
+  - health_mortality-stats
+  method: GET
+  path: /api/health/mortality-stats
+  binding: rest
+  confidence: high
+  price_usd: 0.006
+- tool: health.open-payments
+  category: health
+  rest:
+  - health_open-payments
+  method: GET
+  path: /api/health/open-payments
+  binding: rest
+  confidence: high
+  price_usd: 0.003
+- tool: health.provider-profile
+  category: health
+  rest:
+  - health_provider-profile
+  method: GET
+  path: /api/health/provider-profile
+  binding: rest
+  confidence: high
+  price_usd: 0.0144
+- tool: html.to-markdown
+  category: html
+  rest:
+  - html_to-markdown
+  method: POST
+  path: /api/html/to-markdown
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: image.compress
+  category: image
+  rest:
+  - image_compress
+  method: POST
+  path: /api/image/compress
+  binding: rest
+  confidence: high
+  price_usd: 0.006
+- tool: inflation.calculator
+  category: inflation
+  rest:
+  - inflation_calculator
+  method: GET
+  path: /api/inflation/calculator
+  binding: rest
+  confidence: high
+  price_usd: 0.003
+- tool: inflation.expectations
+  category: inflation
+  rest:
+  - inflation_expectations
+  method: GET
+  path: /api/inflation/expectations
+  binding: rest
+  confidence: high
+  price_usd: 0.003
+- tool: inflation.hicp
+  category: inflation
+  rest:
+  - inflation_hicp
+  method: GET
+  path: /api/inflation/hicp
+  binding: rest
+  confidence: high
+  price_usd: 0.003
+- tool: inflation.rates
+  category: inflation
+  rest:
+  - inflation_rates
+  method: GET
+  path: /api/inflation/rates
+  binding: rest
+  confidence: high
+  price_usd: 0.0036
+- tool: ipinfo.bulk
+  category: ipinfo
+  rest:
+  - ipinfo_bulk
+  method: POST
+  path: /api/ipinfo/bulk
+  binding: rest
+  confidence: high
+  price_usd: 0.015
+- tool: iso.currency
+  category: iso
+  rest:
+  - iso_currency
+  method: GET
+  path: /api/iso/currency
+  binding: rest
+  confidence: high
+  price_usd: 0.003
+- tool: iso.language
+  category: iso
+  rest:
+  - iso_language
+  method: GET
+  path: /api/iso/language
+  binding: rest
+  confidence: high
+  price_usd: 0.003
+- tool: iso.subdivision
+  category: iso
+  rest:
+  - iso_subdivision
+  method: GET
+  path: /api/iso/subdivision
+  binding: rest
+  confidence: high
+  price_usd: 0.003
+- tool: job.federal-codes
+  category: job
+  rest:
+  - job_federal-codes
+  method: GET
+  path: /api/job/federal-codes
+  binding: rest
+  confidence: high
+  price_usd: 0.003
+- tool: job.federal-search
+  category: job
+  rest:
+  - job_federal-search
+  method: GET
+  path: /api/job/federal-search
+  binding: rest
+  confidence: high
+  price_usd: 0.003
+- tool: labor.openings
+  category: labor
+  rest:
+  - labor_openings
+  method: GET
+  path: /api/labor/openings
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: labor.unemployment
+  category: labor
+  rest:
+  - labor_unemployment
+  method: GET
+  path: /api/labor/unemployment
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: labor.wages
+  category: labor
+  rest:
+  - labor_wages
+  method: GET
+  path: /api/labor/wages
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: law.attorney-lookup
+  category: law
+  rest:
+  - law_attorney-lookup
+  method: GET
+  path: /api/law/attorney-lookup
+  binding: rest
+  confidence: high
+  price_usd: 0.009
+- tool: law.case-search
+  category: law
+  rest:
+  - law_case-search
+  method: GET
+  path: /api/law/case-search
+  binding: rest
+  confidence: high
+  price_usd: 0.009
+- tool: law.case-verify
+  category: law
+  rest:
+  - law_case-verify
+  method: POST
+  path: /api/law/case-verify
+  binding: rest
+  confidence: high
+  price_usd: 0.015
+- tool: law.cfr-section
+  category: law
+  rest:
+  - law_cfr-section
+  method: GET
+  path: /api/law/cfr-section
+  binding: rest
+  confidence: high
+  price_usd: 0.0045
+- tool: law.citation-check
+  category: law
+  rest:
+  - law_citation-check
+  method: POST
+  path: /api/law/citation-check
+  binding: rest
+  confidence: high
+  price_usd: 0.018
+- tool: law.docket-search
+  category: law
+  rest:
+  - law_docket-search
+  method: GET
+  path: /api/law/docket-search
+  binding: rest
+  confidence: high
+  price_usd: 0.012
+- tool: law.federal-register
+  category: law
+  rest:
+  - law_federal-register
+  method: GET
+  path: /api/law/federal-register
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: law.judge-lookup
+  category: law
+  rest:
+  - law_judge-lookup
+  method: GET
+  path: /api/law/judge-lookup
+  binding: rest
+  confidence: high
+  price_usd: 0.009
+- tool: law.opinion
+  category: law
+  rest:
+  - law_opinion
+  method: POST
+  path: /api/law/opinion
+  binding: rest
+  confidence: high
+  price_usd: 0.012
+- tool: law.sanctions-check
+  category: law
+  rest:
+  - law_sanctions-check
+  method: POST
+  path: /api/law/sanctions-check
+  binding: rest
+  confidence: high
+  price_usd: 0.012
+- tool: law.trademark-status
+  category: law
+  rest:
+  - law_trademark-status
+  method: GET
+  path: /api/law/trademark-status
+  binding: rest
+  confidence: high
+  price_usd: 0.0045
+- tool: law.usc-section
+  category: law
+  rest:
+  - law_usc-section
+  method: GET
+  path: /api/law/usc-section
+  binding: rest
+  confidence: high
+  price_usd: 0.0045
+- tool: license.broker
+  category: license
+  rest:
+  - license_broker
+  method: GET
+  path: /api/license/broker
+  binding: rest
+  confidence: high
+  price_usd: 0.003
+- tool: license.medical
+  category: license
+  rest:
+  - license_medical
+  method: GET
+  path: /api/license/medical
+  binding: rest
+  confidence: high
+  price_usd: 0.003
+- tool: license.real-estate
+  category: license
+  rest:
+  - license_real-estate
+  method: GET
+  path: /api/license/real-estate
+  binding: rest
+  confidence: high
+  price_usd: 0.0072
+- tool: license.trades
+  category: license
+  rest:
+  - license_trades
+  method: GET
+  path: /api/license/trades
+  binding: rest
+  confidence: high
+  price_usd: 0.0072
+- tool: lock.acquire
+  category: lock
+  rest:
+  - lock_acquire
+  method: POST
+  path: /api/lock/acquire
+  binding: rest
+  confidence: high
+  price_usd: 0.005
+- tool: lock.release
+  category: lock
+  rest:
+  - lock_release
+  method: POST
+  path: /api/lock/release
+  binding: rest
+  confidence: high
+  price_usd: 0.005
+- tool: lock.renew
+  category: lock
+  rest:
+  - lock_renew
+  method: POST
+  path: /api/lock/renew
+  binding: rest
+  confidence: high
+  price_usd: 0.005
+- tool: maritime.cases
+  category: maritime
+  rest:
+  - maritime_cases
+  method: GET
+  path: /api/maritime/cases
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: maritime.port
+  category: maritime
+  rest:
+  - maritime_port
+  method: GET
+  path: /api/maritime/port
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: maritime.vessel
+  category: maritime
+  rest:
+  - maritime_vessel
+  method: GET
+  path: /api/maritime/vessel
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: markets.holiday
+  category: markets
+  rest:
+  - markets_holiday
+  method: GET
+  path: /api/markets/holiday
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: markets.status
+  category: markets
+  rest:
+  - markets_status
+  method: GET
+  path: /api/markets/status
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: medical.device-510k
+  category: medical
+  rest:
+  - medical_device-510k
+  method: GET
+  path: /api/medical/device-510k
+  binding: rest
+  confidence: high
+  price_usd: 0.0045
+- tool: medical.device-classification
+  category: medical
+  rest:
+  - medical_device-classification
+  method: GET
+  path: /api/medical/device-classification
+  binding: rest
+  confidence: high
+  price_usd: 0.0045
+- tool: medical.device-recall
+  category: medical
+  rest:
+  - medical_device-recall
+  method: GET
+  path: /api/medical/device-recall
+  binding: rest
+  confidence: high
+  price_usd: 0.0045
+- tool: medical.device-udi
+  category: medical
+  rest:
+  - medical_device-udi
+  method: GET
+  path: /api/medical/device-udi
+  binding: rest
+  confidence: high
+  price_usd: 0.0045
+- tool: medical.drug-approval
+  category: medical
+  rest:
+  - medical_drug-approval
+  method: GET
+  path: /api/medical/drug-approval
+  binding: rest
+  confidence: high
+  price_usd: 0.0045
+- tool: medical.drug-label
+  category: medical
+  rest:
+  - medical_drug-label
+  method: GET
+  path: /api/medical/drug-label
+  binding: rest
+  confidence: high
+  price_usd: 0.0045
+- tool: medical.drug-price
+  category: medical
+  rest:
+  - medical_drug-price
+  method: GET
+  path: /api/medical/drug-price
+  binding: rest
+  confidence: high
+  price_usd: 0.0036
+- tool: medical.drug-status
+  category: medical
+  rest:
+  - medical_drug-status
+  method: GET
+  path: /api/medical/drug-status
+  binding: rest
+  confidence: high
+  price_usd: 0.015
+- tool: medical.genetics
+  category: medical
+  rest:
+  - medical_genetics
+  method: GET
+  path: /api/medical/genetics
+  binding: rest
+  confidence: high
+  price_usd: 0.0027
+- tool: medical.icd10
+  category: medical
+  rest:
+  - medical_icd10
+  method: GET
+  path: /api/medical/icd10
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: medical.npi
+  category: medical
+  rest:
+  - medical_npi
+  method: GET
+  path: /api/medical/npi
+  binding: rest
+  confidence: high
+  price_usd: 0.0027
+- tool: medical.provider-id-resolve
+  category: medical
+  rest:
+  - medical_provider-id-resolve
+  method: GET
+  path: /api/medical/provider-id-resolve
+  binding: rest
+  confidence: high
+  price_usd: 0.009
+- tool: medical.rxnorm
+  category: medical
+  rest:
+  - medical_rxnorm
+  method: GET
+  path: /api/medical/rxnorm
+  binding: rest
+  confidence: high
+  price_usd: 0.003
+- tool: medical.taxonomy-specialty
+  category: medical
+  rest:
+  - medical_taxonomy-specialty
+  method: GET
+  path: /api/medical/taxonomy-specialty
+  binding: rest
+  confidence: high
+  price_usd: 0.009
+- tool: music.artist
+  category: music
+  rest:
+  - music_artist
+  method: GET
+  path: /api/music/artist
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: music.recording
+  category: music
+  rest:
+  - music_recording
+  method: GET
+  path: /api/music/recording
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: music.release
+  category: music
+  rest:
+  - music_release
+  method: GET
+  path: /api/music/release
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: net.asn
+  category: net
+  rest:
+  - net_asn
+  method: GET
+  path: /api/net/asn
+  binding: rest
+  confidence: high
+  price_usd: 0.003
+- tool: net.ip-resolve
+  category: net
+  rest:
+  - net_ip-resolve
+  method: GET
+  path: /api/net/ip-resolve
+  binding: rest
+  confidence: high
+  price_usd: 0.009
+- tool: net.mac-vendor
+  category: net
+  rest:
+  - net_mac-vendor
+  method: GET
+  path: /api/net/mac-vendor
+  binding: rest
+  confidence: high
+  price_usd: 0.003
+- tool: net.rpki-validity
+  category: net
+  rest:
+  - net_rpki-validity
+  method: GET
+  path: /api/net/rpki-validity
+  binding: rest
+  confidence: high
+  price_usd: 0.0036
+- tool: news.hn-item
+  category: news
+  rest:
+  - news_hn-item
+  method: GET
+  path: /api/news/hn-item
+  binding: rest
+  confidence: high
+  price_usd: 0.003
+- tool: news.hn-search
+  category: news
+  rest:
+  - news_hn-search
+  method: GET
+  path: /api/news/hn-search
+  binding: rest
+  confidence: high
+  price_usd: 0.003
+- tool: news.hn-top
+  category: news
+  rest:
+  - news_hn-top
+  method: GET
+  path: /api/news/hn-top
+  binding: rest
+  confidence: high
+  price_usd: 0.003
+- tool: news.hn-user
+  category: news
+  rest:
+  - news_hn-user
+  method: GET
+  path: /api/news/hn-user
+  binding: rest
+  confidence: high
+  price_usd: 0.003
+- tool: news.search
+  category: news
+  rest:
+  - news_search
+  method: GET
+  path: /api/news/search
+  binding: rest
+  confidence: high
+  price_usd: 0.0225
+- tool: nonprofit.screen
+  category: nonprofit
+  rest:
+  - nonprofit_screen
+  method: GET
+  path: /api/nonprofit/screen
+  binding: rest
+  confidence: high
+  price_usd: 0.0126
+- tool: nonprofit.search
+  category: nonprofit
+  rest:
+  - nonprofit_search
+  method: GET
+  path: /api/nonprofit/search
+  binding: rest
+  confidence: high
+  price_usd: 0.003
+- tool: nutrition.food
+  category: nutrition
+  rest:
+  - nutrition_food
+  method: GET
+  path: /api/nutrition/food
+  binding: rest
+  confidence: high
+  price_usd: 0.003
+- tool: occupation.profile
+  category: occupation
+  rest:
+  - occupation_profile
+  method: GET
+  path: /api/occupation/profile
+  binding: rest
+  confidence: high
+  price_usd: 0.0036
+- tool: occupation.related
+  category: occupation
+  rest:
+  - occupation_related
+  method: GET
+  path: /api/occupation/related
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: occupation.search
+  category: occupation
+  rest:
+  - occupation_search
+  method: GET
+  path: /api/occupation/search
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: paper.doi-lookup
+  category: paper
+  rest:
+  - paper_doi-lookup
+  method: GET
+  path: /api/paper/doi-lookup
+  binding: rest
+  confidence: high
+  price_usd: 0.003
+- tool: papers.citations
+  category: papers
+  rest:
+  - papers_citations
+  method: GET
+  path: /api/papers/citations
+  binding: rest
+  confidence: high
+  price_usd: 0.006
+- tool: papers.search
+  category: papers
+  rest:
+  - papers_search
+  method: GET
+  path: /api/papers/search
+  binding: rest
+  confidence: high
+  price_usd: 0.006
+- tool: park.lookup
+  category: park
+  rest:
+  - park_lookup
+  method: GET
+  path: /api/park/lookup
+  binding: rest
+  confidence: high
+  price_usd: 0.003
+- tool: patents.detail
+  category: patents
+  rest:
+  - patents_detail
+  method: GET
+  path: /api/patents/detail
+  binding: rest
+  confidence: high
+  price_usd: 0.0045
+- tool: patents.documents
+  category: patents
+  rest:
+  - patents_documents
+  method: GET
+  path: /api/patents/documents
+  binding: rest
+  confidence: high
+  price_usd: 0.0045
+- tool: patents.epo-biblio
+  category: patents
+  rest:
+  - patents_epo-biblio
+  method: GET
+  path: /api/patents/epo-biblio
+  binding: rest
+  confidence: high
+  price_usd: 0.0045
+- tool: patents.epo-family
+  category: patents
+  rest:
+  - patents_epo-family
+  method: GET
+  path: /api/patents/epo-family
+  binding: rest
+  confidence: high
+  price_usd: 0.0045
+- tool: patents.epo-legal
+  category: patents
+  rest:
+  - patents_epo-legal
+  method: GET
+  path: /api/patents/epo-legal
+  binding: rest
+  confidence: high
+  price_usd: 0.0045
+- tool: patents.epo-search
+  category: patents
+  rest:
+  - patents_epo-search
+  method: GET
+  path: /api/patents/epo-search
+  binding: rest
+  confidence: high
+  price_usd: 0.0045
+- tool: patents.search
+  category: patents
+  rest:
+  - patents_search
+  method: GET
+  path: /api/patents/search
+  binding: rest
+  confidence: high
+  price_usd: 0.0045
+- tool: person.cross-registry
+  category: person
+  rest:
+  - person_cross-registry
+  method: GET
+  path: /api/person/cross-registry
+  binding: rest
+  confidence: high
+  price_usd: 0.018
+- tool: phone.normalize
+  category: phone
+  rest:
+  - phone_normalize
+  method: GET
+  path: /api/phone/normalize
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: poi.near
+  category: poi
+  rest:
+  - poi_near
+  method: GET
+  path: /api/poi/near
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: predict.activity
+  category: predict
+  rest:
+  - predict_activity
+  method: GET
+  path: /api/predict/activity
+  binding: rest
+  confidence: high
+  price_usd: 0.012
+- tool: predict.crypto-updown
+  category: predict
+  rest:
+  - predict_crypto-updown
+  method: GET
+  path: /api/predict/crypto-updown
+  binding: rest
+  confidence: high
+  price_usd: 0.012
+- tool: predict.events
+  category: predict
+  rest:
+  - predict_events
+  method: GET
+  path: /api/predict/events
+  binding: rest
+  confidence: high
+  price_usd: 0.012
+- tool: predict.holders
+  category: predict
+  rest:
+  - predict_holders
+  method: GET
+  path: /api/predict/holders
+  binding: rest
+  confidence: high
+  price_usd: 0.003
+- tool: predict.kalshi-events
+  category: predict
+  rest:
+  - predict_kalshi-events
+  method: GET
+  path: /api/predict/kalshi-events
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: predict.kalshi-market
+  category: predict
+  rest:
+  - predict_kalshi-market
+  method: GET
+  path: /api/predict/kalshi-market
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: predict.kalshi-markets
+  category: predict
+  rest:
+  - predict_kalshi-markets
+  method: GET
+  path: /api/predict/kalshi-markets
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: predict.kalshi-orderbook
+  category: predict
+  rest:
+  - predict_kalshi-orderbook
+  method: GET
+  path: /api/predict/kalshi-orderbook
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: predict.kalshi-trades
+  category: predict
+  rest:
+  - predict_kalshi-trades
+  method: GET
+  path: /api/predict/kalshi-trades
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: predict.leaderboard
+  category: predict
+  rest:
+  - predict_leaderboard
+  method: GET
+  path: /api/predict/leaderboard
+  binding: rest
+  confidence: high
+  price_usd: 0.012
+- tool: predict.limitless-markets
+  category: predict
+  rest:
+  - predict_limitless-markets
+  method: GET
+  path: /api/predict/limitless-markets
+  binding: rest
+  confidence: high
+  price_usd: 0.003
+- tool: predict.market
+  category: predict
+  rest:
+  - predict_market
+  method: GET
+  path: /api/predict/market
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: predict.markets
+  category: predict
+  rest:
+  - predict_markets
+  method: GET
+  path: /api/predict/markets
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: predict.matched-pairs
+  category: predict
+  rest:
+  - predict_matched-pairs
+  method: GET
+  path: /api/predict/matched-pairs
+  binding: rest
+  confidence: high
+  price_usd: 0.012
+- tool: predict.orderbook
+  category: predict
+  rest:
+  - predict_orderbook
+  method: GET
+  path: /api/predict/orderbook
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: predict.positions
+  category: predict
+  rest:
+  - predict_positions
+  method: GET
+  path: /api/predict/positions
+  binding: rest
+  confidence: high
+  price_usd: 0.012
+- tool: predict.price
+  category: predict
+  rest:
+  - predict_price
+  method: GET
+  path: /api/predict/price
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: predict.price-history
+  category: predict
+  rest:
+  - predict_price-history
+  method: GET
+  path: /api/predict/price-history
+  binding: rest
+  confidence: high
+  price_usd: 0.004998
+- tool: predict.search
+  category: predict
+  rest:
+  - predict_search
+  method: GET
+  path: /api/predict/search
+  binding: rest
+  confidence: high
+  price_usd: 0.012
+- tool: predict.sports
+  category: predict
+  rest:
+  - predict_sports
+  method: GET
+  path: /api/predict/sports
+  binding: rest
+  confidence: high
+  price_usd: 0.012
+- tool: predict.trades
+  category: predict
+  rest:
+  - predict_trades
+  method: GET
+  path: /api/predict/trades
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: predict.wallet
+  category: predict
+  rest:
+  - predict_wallet
+  method: GET
+  path: /api/predict/wallet
+  binding: rest
+  confidence: high
+  price_usd: 0.004998
+- tool: predict.whales
+  category: predict
+  rest:
+  - predict_whales
+  method: GET
+  path: /api/predict/whales
+  binding: rest
+  confidence: high
+  price_usd: 0.004998
+- tool: product.gtin
+  category: product
+  rest:
+  - product_gtin
+  method: GET
+  path: /api/product/gtin
+  binding: rest
+  confidence: high
+  price_usd: 0.0036
+- tool: property.nyc-deed-history
+  category: property
+  rest:
+  - property_nyc-deed-history
+  method: GET
+  path: /api/property/nyc-deed-history
+  binding: rest
+  confidence: high
+  price_usd: 0.003
+- tool: property.nyc-parcel-lookup
+  category: property
+  rest:
+  - property_nyc-parcel-lookup
+  method: GET
+  path: /api/property/nyc-parcel-lookup
+  binding: rest
+  confidence: high
+  price_usd: 0.003
+- tool: property.nyc-permits
+  category: property
+  rest:
+  - property_nyc-permits
+  method: GET
+  path: /api/property/nyc-permits
+  binding: rest
+  confidence: high
+  price_usd: 0.003
+- tool: property.nyc-violations
+  category: property
+  rest:
+  - property_nyc-violations
+  method: GET
+  path: /api/property/nyc-violations
+  binding: rest
+  confidence: high
+  price_usd: 0.003
+- tool: pubsub.create-topic
+  category: pubsub
+  rest:
+  - pubsub_create-topic
+  method: POST
+  path: /api/pubsub/create-topic
+  binding: rest
+  confidence: high
+  price_usd: 0.005
+- tool: pubsub.publish
+  category: pubsub
+  rest:
+  - pubsub_publish
+  method: POST
+  path: /api/pubsub/publish
+  binding: rest
+  confidence: high
+  price_usd: 0.005
+- tool: pubsub.subscribe
+  category: pubsub
+  rest:
+  - pubsub_subscribe
+  method: POST
+  path: /api/pubsub/subscribe
+  binding: rest
+  confidence: high
+  price_usd: 0.005
+- tool: pubsub.unsubscribe
+  category: pubsub
+  rest:
+  - pubsub_unsubscribe
+  method: POST
+  path: /api/pubsub/unsubscribe
+  binding: rest
+  confidence: high
+  price_usd: 0.005
+- tool: quakes.recent
+  category: quakes
+  rest:
+  - quakes_recent
+  method: GET
+  path: /api/quakes/recent
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: queue.ack
+  category: queue
+  rest:
+  - queue_ack
+  method: POST
+  path: /api/queue/ack
+  binding: rest
+  confidence: high
+  price_usd: 0.005
+- tool: queue.enqueue
+  category: queue
+  rest:
+  - queue_enqueue
+  method: POST
+  path: /api/queue/enqueue
+  binding: rest
+  confidence: high
+  price_usd: 0.005
+- tool: queue.lease
+  category: queue
+  rest:
+  - queue_lease
+  method: POST
+  path: /api/queue/lease
+  binding: rest
+  confidence: high
+  price_usd: 0.005
+- tool: queue.stats
+  category: queue
+  rest:
+  - queue_stats
+  method: POST
+  path: /api/queue/stats
+  binding: rest
+  confidence: high
+  price_usd: 0.005
+- tool: recreation.search
+  category: recreation
+  rest:
+  - recreation_search
+  method: GET
+  path: /api/recreation/search
+  binding: rest
+  confidence: high
+  price_usd: 0.003
+- tool: registry.npm-lookup
+  category: registry
+  rest:
+  - registry_npm-lookup
+  method: GET
+  path: /api/registry/npm-lookup
+  binding: rest
+  confidence: high
+  price_usd: 0.003
+- tool: registry.pypi-lookup
+  category: registry
+  rest:
+  - registry_pypi-lookup
+  method: GET
+  path: /api/registry/pypi-lookup
+  binding: rest
+  confidence: high
+  price_usd: 0.003
+- tool: research.author
+  category: research
+  rest:
+  - research_author
+  method: GET
+  path: /api/research/author
+  binding: rest
+  confidence: high
+  price_usd: 0.003
+- tool: research.funding
+  category: research
+  rest:
+  - research_funding
+  method: GET
+  path: /api/research/funding
+  binding: rest
+  confidence: high
+  price_usd: 0.0045
+- tool: research.org
+  category: research
+  rest:
+  - research_org
+  method: GET
+  path: /api/research/org
+  binding: rest
+  confidence: high
+  price_usd: 0.003
+- tool: schedule.cancel
+  category: schedule
+  rest:
+  - schedule_cancel
+  method: POST
+  path: /api/schedule/cancel
+  binding: rest
+  confidence: high
+  price_usd: 0.005
+- tool: schedule.create
+  category: schedule
+  rest:
+  - schedule_create
+  method: POST
+  path: /api/schedule/create
+  binding: rest
+  confidence: high
+  price_usd: 0.125
+- tool: schedule.status
+  category: schedule
+  rest:
+  - schedule_status
+  method: POST
+  path: /api/schedule/status
+  binding: rest
+  confidence: high
+  price_usd: 0.005
+- tool: search.ai
+  category: search
+  rest:
+  - search_ai
+  method: GET
+  path: /api/search/ai
+  binding: rest
+  confidence: high
+  price_usd: 0.045
+- tool: search.crawl
+  category: search
+  rest:
+  - search_crawl
+  method: POST
+  path: /api/search/crawl
+  binding: rest
+  confidence: high
+  price_usd: 0.12
+- tool: search.endpoints
+  category: search
+  rest:
+  - search_endpoints
+  method: GET
+  path: /api/search/endpoints
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: search.extract
+  category: search
+  rest:
+  - search_extract
+  method: POST
+  path: /api/search/extract
+  binding: rest
+  confidence: high
+  price_usd: 0.045
+- tool: search.web
+  category: search
+  rest:
+  - search_web
+  method: GET
+  path: /api/search/web
+  binding: rest
+  confidence: high
+  price_usd: 0.0225
+- tool: security.attack
+  category: security
+  rest:
+  - security_attack
+  method: GET
+  path: /api/security/attack
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: security.capec
+  category: security
+  rest:
+  - security_capec
+  method: GET
+  path: /api/security/capec
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: security.cve
+  category: security
+  rest:
+  - security_cve
+  method: GET
+  path: /api/security/cve
+  binding: rest
+  confidence: high
+  price_usd: 0.0045
+- tool: security.cve-changes
+  category: security
+  rest:
+  - security_cve-changes
+  method: GET
+  path: /api/security/cve-changes
+  binding: rest
+  confidence: high
+  price_usd: 0.0054
+- tool: security.cve-search
+  category: security
+  rest:
+  - security_cve-search
+  method: GET
+  path: /api/security/cve-search
+  binding: rest
+  confidence: high
+  price_usd: 0.0054
+- tool: security.cwe
+  category: security
+  rest:
+  - security_cwe
+  method: GET
+  path: /api/security/cwe
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: security.exploit-availability
+  category: security
+  rest:
+  - security_exploit-availability
+  method: GET
+  path: /api/security/exploit-availability
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: security.http-headers
+  category: security
+  rest:
+  - security_http-headers
+  method: GET
+  path: /api/security/http-headers
+  binding: rest
+  confidence: high
+  price_usd: 0.0045
+- tool: security.ics-advisories
+  category: security
+  rest:
+  - security_ics-advisories
+  method: GET
+  path: /api/security/ics-advisories
+  binding: rest
+  confidence: high
+  price_usd: 0.012
+- tool: security.ioc-reputation
+  category: security
+  rest:
+  - security_ioc-reputation
+  method: GET
+  path: /api/security/ioc-reputation
+  binding: rest
+  confidence: high
+  price_usd: 0.0054
+- tool: security.ip-abuse
+  category: security
+  rest:
+  - security_ip-abuse
+  method: GET
+  path: /api/security/ip-abuse
+  binding: rest
+  confidence: high
+  price_usd: 0.0054
+- tool: security.ip-blacklist
+  category: security
+  rest:
+  - security_ip-blacklist
+  method: GET
+  path: /api/security/ip-blacklist
+  binding: rest
+  confidence: high
+  price_usd: 0.006
+- tool: security.ip-block
+  category: security
+  rest:
+  - security_ip-block
+  method: GET
+  path: /api/security/ip-block
+  binding: rest
+  confidence: high
+  price_usd: 0.006
+- tool: security.ip-reputation
+  category: security
+  rest:
+  - security_ip-reputation
+  method: GET
+  path: /api/security/ip-reputation
+  binding: rest
+  confidence: high
+  price_usd: 0.009
+- tool: security.package
+  category: security
+  rest:
+  - security_package
+  method: GET
+  path: /api/security/package
+  binding: rest
+  confidence: high
+  price_usd: 0.0054
+- tool: security.password-exposure
+  category: security
+  rest:
+  - security_password-exposure
+  method: POST
+  path: /api/security/password-exposure
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: soil.hardiness-zone
+  category: soil
+  rest:
+  - soil_hardiness-zone
+  method: GET
+  path: /api/soil/hardiness-zone
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: soil.profile
+  category: soil
+  rest:
+  - soil_profile
+  method: GET
+  path: /api/soil/profile
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: space.body
+  category: space
+  rest:
+  - space_body
+  method: GET
+  path: /api/space/body
+  binding: rest
+  confidence: high
+  price_usd: 0.0036
+- tool: space.close-approaches
+  category: space
+  rest:
+  - space_close-approaches
+  method: GET
+  path: /api/space/close-approaches
+  binding: rest
+  confidence: high
+  price_usd: 0.0036
+- tool: space.exoplanet
+  category: space
+  rest:
+  - space_exoplanet
+  method: GET
+  path: /api/space/exoplanet
+  binding: rest
+  confidence: high
+  price_usd: 0.0036
+- tool: space.launches
+  category: space
+  rest:
+  - space_launches
+  method: GET
+  path: /api/space/launches
+  binding: rest
+  confidence: high
+  price_usd: 0.0036
+- tool: space.observe
+  category: space
+  rest:
+  - space_observe
+  method: GET
+  path: /api/space/observe
+  binding: rest
+  confidence: high
+  price_usd: 0.0072
+- tool: space.satellite
+  category: space
+  rest:
+  - space_satellite
+  method: GET
+  path: /api/space/satellite
+  binding: rest
+  confidence: high
+  price_usd: 0.0036
+- tool: space.satellites
+  category: space
+  rest:
+  - space_satellites
+  method: GET
+  path: /api/space/satellites
+  binding: rest
+  confidence: high
+  price_usd: 0.003
+- tool: space.sky-tonight
+  category: space
+  rest:
+  - space_sky-tonight
+  method: GET
+  path: /api/space/sky-tonight
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: space.skywatch
+  category: space
+  rest:
+  - space_skywatch
+  method: GET
+  path: /api/space/skywatch
+  binding: rest
+  confidence: high
+  price_usd: 0.0072
+- tool: space.system
+  category: space
+  rest:
+  - space_system
+  method: GET
+  path: /api/space/system
+  binding: rest
+  confidence: high
+  price_usd: 0.0072
+- tool: space.weather
+  category: space
+  rest:
+  - space_weather
+  method: GET
+  path: /api/space/weather
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: sports.mlb-schedule
+  category: sports
+  rest:
+  - sports_mlb-schedule
+  method: GET
+  path: /api/sports/mlb-schedule
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: sports.mlb-standings
+  category: sports
+  rest:
+  - sports_mlb-standings
+  method: GET
+  path: /api/sports/mlb-standings
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: sports.nba-games
+  category: sports
+  rest:
+  - sports_nba-games
+  method: GET
+  path: /api/sports/nba-games
+  binding: rest
+  confidence: high
+  price_usd: 0.012
+- tool: sports.nba-players
+  category: sports
+  rest:
+  - sports_nba-players
+  method: GET
+  path: /api/sports/nba-players
+  binding: rest
+  confidence: high
+  price_usd: 0.012
+- tool: sports.nba-teams
+  category: sports
+  rest:
+  - sports_nba-teams
+  method: GET
+  path: /api/sports/nba-teams
+  binding: rest
+  confidence: high
+  price_usd: 0.012
+- tool: sports.nfl-games
+  category: sports
+  rest:
+  - sports_nfl-games
+  method: GET
+  path: /api/sports/nfl-games
+  binding: rest
+  confidence: high
+  price_usd: 0.012
+- tool: sports.nfl-players
+  category: sports
+  rest:
+  - sports_nfl-players
+  method: GET
+  path: /api/sports/nfl-players
+  binding: rest
+  confidence: high
+  price_usd: 0.012
+- tool: sports.nfl-teams
+  category: sports
+  rest:
+  - sports_nfl-teams
+  method: GET
+  path: /api/sports/nfl-teams
+  binding: rest
+  confidence: high
+  price_usd: 0.012
+- tool: sports.nhl-schedule
+  category: sports
+  rest:
+  - sports_nhl-schedule
+  method: GET
+  path: /api/sports/nhl-schedule
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: sports.nhl-scores
+  category: sports
+  rest:
+  - sports_nhl-scores
+  method: GET
+  path: /api/sports/nhl-scores
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: sports.nhl-standings
+  category: sports
+  rest:
+  - sports_nhl-standings
+  method: GET
+  path: /api/sports/nhl-standings
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: stocks.company-news
+  category: stocks
+  rest:
+  - stocks_company-news
+  method: GET
+  path: /api/stocks/company-news
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: stocks.earnings-surprises
+  category: stocks
+  rest:
+  - stocks_earnings-surprises
+  method: GET
+  path: /api/stocks/earnings-surprises
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: stocks.financials-reported
+  category: stocks
+  rest:
+  - stocks_financials-reported
+  method: GET
+  path: /api/stocks/financials-reported
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: stocks.gov-spending
+  category: stocks
+  rest:
+  - stocks_gov-spending
+  method: GET
+  path: /api/stocks/gov-spending
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: stocks.h1b-visas
+  category: stocks
+  rest:
+  - stocks_h1b-visas
+  method: GET
+  path: /api/stocks/h1b-visas
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: stocks.insider-sentiment
+  category: stocks
+  rest:
+  - stocks_insider-sentiment
+  method: GET
+  path: /api/stocks/insider-sentiment
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: stocks.lobbying
+  category: stocks
+  rest:
+  - stocks_lobbying
+  method: GET
+  path: /api/stocks/lobbying
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: stocks.metrics
+  category: stocks
+  rest:
+  - stocks_metrics
+  method: GET
+  path: /api/stocks/metrics
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: stocks.patents
+  category: stocks
+  rest:
+  - stocks_patents
+  method: GET
+  path: /api/stocks/patents
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: stocks.peers
+  category: stocks
+  rest:
+  - stocks_peers
+  method: GET
+  path: /api/stocks/peers
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: stocks.quote
+  category: stocks
+  rest:
+  - stocks_quote
+  method: GET
+  path: /api/stocks/quote
+  binding: rest
+  confidence: high
+  price_usd: 0.0045
+- tool: stocks.recommendations
+  category: stocks
+  rest:
+  - stocks_recommendations
+  method: GET
+  path: /api/stocks/recommendations
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: stocks.screener
+  category: stocks
+  rest:
+  - stocks_screener
+  method: GET
+  path: /api/stocks/screener
+  binding: rest
+  confidence: high
+  price_usd: 0.012
+- tool: stocks.symbols
+  category: stocks
+  rest:
+  - stocks_symbols
+  method: GET
+  path: /api/stocks/symbols
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: store.blob-delete
+  category: store
+  rest:
+  - store_blob-delete
+  method: POST
+  path: /api/store/blob-delete
+  binding: rest
+  confidence: high
+  price_usd: 0.005
+- tool: store.blob-get
+  category: store
+  rest:
+  - store_blob-get
+  method: POST
+  path: /api/store/blob-get
+  binding: rest
+  confidence: high
+  price_usd: 0.025
+- tool: store.blob-list
+  category: store
+  rest:
+  - store_blob-list
+  method: POST
+  path: /api/store/blob-list
+  binding: rest
+  confidence: high
+  price_usd: 0.005
+- tool: store.blob-put
+  category: store
+  rest:
+  - store_blob-put
+  method: POST
+  path: /api/store/blob-put
+  binding: rest
+  confidence: high
+  price_usd: 0.025
+- tool: store.doc-delete
+  category: store
+  rest:
+  - store_doc-delete
+  method: POST
+  path: /api/store/doc-delete
+  binding: rest
+  confidence: high
+  price_usd: 0.005
+- tool: store.doc-get
+  category: store
+  rest:
+  - store_doc-get
+  method: POST
+  path: /api/store/doc-get
+  binding: rest
+  confidence: high
+  price_usd: 0.005
+- tool: store.doc-put
+  category: store
+  rest:
+  - store_doc-put
+  method: POST
+  path: /api/store/doc-put
+  binding: rest
+  confidence: high
+  price_usd: 0.005
+- tool: store.doc-search
+  category: store
+  rest:
+  - store_doc-search
+  method: POST
+  path: /api/store/doc-search
+  binding: rest
+  confidence: high
+  price_usd: 0.005
+- tool: store.kv-delete
+  category: store
+  rest:
+  - store_kv-delete
+  method: POST
+  path: /api/store/kv-delete
+  binding: rest
+  confidence: high
+  price_usd: 0.005
+- tool: store.kv-get
+  category: store
+  rest:
+  - store_kv-get
+  method: POST
+  path: /api/store/kv-get
+  binding: rest
+  confidence: high
+  price_usd: 0.005
+- tool: store.kv-put
+  category: store
+  rest:
+  - store_kv-put
+  method: POST
+  path: /api/store/kv-put
+  binding: rest
+  confidence: high
+  price_usd: 0.005
+- tool: store.kv-scan
+  category: store
+  rest:
+  - store_kv-scan
+  method: POST
+  path: /api/store/kv-scan
+  binding: rest
+  confidence: high
+  price_usd: 0.005
+- tool: store.usage
+  category: store
+  rest:
+  - store_usage
+  method: POST
+  path: /api/store/usage
+  binding: rest
+  confidence: high
+  price_usd: 0.005
+- tool: store.vector-delete
+  category: store
+  rest:
+  - store_vector-delete
+  method: POST
+  path: /api/store/vector-delete
+  binding: rest
+  confidence: high
+  price_usd: 0.005
+- tool: store.vector-query
+  category: store
+  rest:
+  - store_vector-query
+  method: POST
+  path: /api/store/vector-query
+  binding: rest
+  confidence: high
+  price_usd: 0.025
+- tool: store.vector-upsert
+  category: store
+  rest:
+  - store_vector-upsert
+  method: POST
+  path: /api/store/vector-upsert
+  binding: rest
+  confidence: high
+  price_usd: 0.0125
+- tool: sunrise.compute
+  category: sunrise
+  rest:
+  - sunrise_compute
+  method: GET
+  path: /api/sunrise/compute
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: tax.vat
+  category: tax
+  rest:
+  - tax_vat
+  method: GET
+  path: /api/tax/vat
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: tax.vat-rates
+  category: tax
+  rest:
+  - tax_vat-rates
+  method: GET
+  path: /api/tax/vat-rates
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: tcg.card
+  category: tcg
+  rest:
+  - tcg_card
+  method: GET
+  path: /api/tcg/card
+  binding: rest
+  confidence: high
+  price_usd: 0.012
+- tool: tcg.games
+  category: tcg
+  rest:
+  - tcg_games
+  method: GET
+  path: /api/tcg/games
+  binding: rest
+  confidence: high
+  price_usd: 0.012
+- tool: tcg.set-prices
+  category: tcg
+  rest:
+  - tcg_set-prices
+  method: GET
+  path: /api/tcg/set-prices
+  binding: rest
+  confidence: high
+  price_usd: 0.012
+- tool: tcg.sets
+  category: tcg
+  rest:
+  - tcg_sets
+  method: GET
+  path: /api/tcg/sets
+  binding: rest
+  confidence: high
+  price_usd: 0.012
+- tool: telecom.fcc-filings
+  category: telecom
+  rest:
+  - telecom_fcc-filings
+  method: GET
+  path: /api/telecom/fcc-filings
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: telecom.market-area
+  category: telecom
+  rest:
+  - telecom_market-area
+  method: GET
+  path: /api/telecom/market-area
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: text.redact
+  category: text
+  rest:
+  - text_redact
+  method: POST
+  path: /api/text/redact
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: tides.now
+  category: tides
+  rest:
+  - tides_now
+  method: GET
+  path: /api/tides/now
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: time.parse
+  category: time
+  rest:
+  - time_parse
+  method: GET
+  path: /api/time/parse
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: timezone.lookup
+  category: timezone
+  rest:
+  - timezone_lookup
+  method: GET
+  path: /api/timezone/lookup
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: tld.info
+  category: tld
+  rest:
+  - tld_info
+  method: GET
+  path: /api/tld/info
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: tls.cert-info
+  category: tls
+  rest:
+  - tls_cert-info
+  method: GET
+  path: /api/tls/cert-info
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: trade.commodity-resolve
+  category: trade
+  rest:
+  - trade_commodity-resolve
+  method: GET
+  path: /api/trade/commodity-resolve
+  binding: rest
+  confidence: high
+  price_usd: 0.009
+- tool: trade.flows
+  category: trade
+  rest:
+  - trade_flows
+  method: GET
+  path: /api/trade/flows
+  binding: rest
+  confidence: high
+  price_usd: 0.009
+- tool: trade.locode
+  category: trade
+  rest:
+  - trade_locode
+  method: GET
+  path: /api/trade/locode
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: trade.tariff
+  category: trade
+  rest:
+  - trade_tariff
+  method: GET
+  path: /api/trade/tariff
+  binding: rest
+  confidence: high
+  price_usd: 0.0045
+- tool: transcribe.audio
+  category: transcribe
+  rest:
+  - transcribe_audio
+  method: POST
+  path: /api/transcribe/audio
+  binding: rest
+  confidence: high
+  price_usd: 0.32625
+- tool: travel.advisory
+  category: travel
+  rest:
+  - travel_advisory
+  method: GET
+  path: /api/travel/advisory
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: travel.visa
+  category: travel
+  rest:
+  - travel_visa
+  method: GET
+  path: /api/travel/visa
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: treasury.cash
+  category: treasury
+  rest:
+  - treasury_cash
+  method: GET
+  path: /api/treasury/cash
+  binding: rest
+  confidence: high
+  price_usd: 0.003
+- tool: treasury.debt
+  category: treasury
+  rest:
+  - treasury_debt
+  method: GET
+  path: /api/treasury/debt
+  binding: rest
+  confidence: high
+  price_usd: 0.003
+- tool: treasury.exchange-rates
+  category: treasury
+  rest:
+  - treasury_exchange-rates
+  method: GET
+  path: /api/treasury/exchange-rates
+  binding: rest
+  confidence: high
+  price_usd: 0.003
+- tool: treasury.monthly-statement
+  category: treasury
+  rest:
+  - treasury_monthly-statement
+  method: GET
+  path: /api/treasury/monthly-statement
+  binding: rest
+  confidence: high
+  price_usd: 0.003
+- tool: url.clean
+  category: url
+  rest:
+  - url_clean
+  method: GET
+  path: /api/url/clean
+  binding: rest
+  confidence: high
+  price_usd: 0.0027
+- tool: url.map
+  category: url
+  rest:
+  - url_map
+  method: GET
+  path: /api/url/map
+  binding: rest
+  confidence: high
+  price_usd: 0.0027
+- tool: url.render
+  category: url
+  rest:
+  - url_render
+  method: GET
+  path: /api/url/render
+  binding: rest
+  confidence: high
+  price_usd: 0.015
+- tool: url.unfurl
+  category: url
+  rest:
+  - url_unfurl
+  method: GET
+  path: /api/url/unfurl
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: validate.aba
+  category: validate
+  rest:
+  - validate_aba
+  method: GET
+  path: /api/validate/aba
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: validate.batch
+  category: validate
+  rest:
+  - validate_batch
+  method: POST
+  path: /api/validate/batch
+  binding: rest
+  confidence: high
+  price_usd: 0.003
+- tool: validate.bic
+  category: validate
+  rest:
+  - validate_bic
+  method: GET
+  path: /api/validate/bic
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: validate.cusip
+  category: validate
+  rest:
+  - validate_cusip
+  method: GET
+  path: /api/validate/cusip
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: validate.gln
+  category: validate
+  rest:
+  - validate_gln
+  method: GET
+  path: /api/validate/gln
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: validate.gtin
+  category: validate
+  rest:
+  - validate_gtin
+  method: GET
+  path: /api/validate/gtin
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: validate.iban
+  category: validate
+  rest:
+  - validate_iban
+  method: GET
+  path: /api/validate/iban
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: validate.isin
+  category: validate
+  rest:
+  - validate_isin
+  method: GET
+  path: /api/validate/isin
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: validate.lei
+  category: validate
+  rest:
+  - validate_lei
+  method: GET
+  path: /api/validate/lei
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: validate.sscc
+  category: validate
+  rest:
+  - validate_sscc
+  method: GET
+  path: /api/validate/sscc
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: vehicle.canadian-specs
+  category: vehicle
+  rest:
+  - vehicle_canadian-specs
+  method: GET
+  path: /api/vehicle/canadian-specs
+  binding: rest
+  confidence: high
+  price_usd: 0.0036
+- tool: vehicle.complaints
+  category: vehicle
+  rest:
+  - vehicle_complaints
+  method: GET
+  path: /api/vehicle/complaints
+  binding: rest
+  confidence: high
+  price_usd: 0.006
+- tool: vehicle.decode-wmi
+  category: vehicle
+  rest:
+  - vehicle_decode-wmi
+  method: GET
+  path: /api/vehicle/decode-wmi
+  binding: rest
+  confidence: high
+  price_usd: 0.006
+- tool: vehicle.fuel-economy
+  category: vehicle
+  rest:
+  - vehicle_fuel-economy
+  method: GET
+  path: /api/vehicle/fuel-economy
+  binding: rest
+  confidence: high
+  price_usd: 0.0045
+- tool: vehicle.investigations
+  category: vehicle
+  rest:
+  - vehicle_investigations
+  method: GET
+  path: /api/vehicle/investigations
+  binding: rest
+  confidence: high
+  price_usd: 0.006
+- tool: vehicle.manufacturers
+  category: vehicle
+  rest:
+  - vehicle_manufacturers
+  method: GET
+  path: /api/vehicle/manufacturers
+  binding: rest
+  confidence: high
+  price_usd: 0.006
+- tool: vehicle.models
+  category: vehicle
+  rest:
+  - vehicle_models
+  method: GET
+  path: /api/vehicle/models
+  binding: rest
+  confidence: high
+  price_usd: 0.006
+- tool: vehicle.profile
+  category: vehicle
+  rest:
+  - vehicle_profile
+  method: GET
+  path: /api/vehicle/profile
+  binding: rest
+  confidence: high
+  price_usd: 0.0144
+- tool: vehicle.recalls
+  category: vehicle
+  rest:
+  - vehicle_recalls
+  method: GET
+  path: /api/vehicle/recalls
+  binding: rest
+  confidence: high
+  price_usd: 0.006
+- tool: vehicle.safety-ratings
+  category: vehicle
+  rest:
+  - vehicle_safety-ratings
+  method: GET
+  path: /api/vehicle/safety-ratings
+  binding: rest
+  confidence: high
+  price_usd: 0.0075
+- tool: vehicle.vin-decode
+  category: vehicle
+  rest:
+  - vehicle_vin-decode
+  method: GET
+  path: /api/vehicle/vin-decode
+  binding: rest
+  confidence: high
+  price_usd: 0.006
+- tool: watchers.business-earnings
+  category: watchers
+  rest:
+  - watchers_business-earnings
+  method: POST
+  path: /api/watchers/business-earnings
+  binding: rest
+  confidence: high
+  price_usd: 0.125
+- tool: watchers.cancel
+  category: watchers
+  rest:
+  - watchers_cancel
+  method: POST
+  path: /api/watchers/cancel
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: watchers.company-news
+  category: watchers
+  rest:
+  - watchers_company-news
+  method: POST
+  path: /api/watchers/company-news
+  binding: rest
+  confidence: high
+  price_usd: 0.125
+- tool: watchers.crypto-address-activity
+  category: watchers
+  rest:
+  - watchers_crypto-address-activity
+  method: POST
+  path: /api/watchers/crypto-address-activity
+  binding: rest
+  confidence: high
+  price_usd: 0.125
+- tool: watchers.dns
+  category: watchers
+  rest:
+  - watchers_dns
+  method: POST
+  path: /api/watchers/dns
+  binding: rest
+  confidence: high
+  price_usd: 0.125
+- tool: watchers.earthquake
+  category: watchers
+  rest:
+  - watchers_earthquake
+  method: POST
+  path: /api/watchers/earthquake
+  binding: rest
+  confidence: high
+  price_usd: 0.125
+- tool: watchers.fear-greed
+  category: watchers
+  rest:
+  - watchers_fear-greed
+  method: POST
+  path: /api/watchers/fear-greed
+  binding: rest
+  confidence: high
+  price_usd: 0.125
+- tool: watchers.federal-register
+  category: watchers
+  rest:
+  - watchers_federal-register
+  method: POST
+  path: /api/watchers/federal-register
+  binding: rest
+  confidence: high
+  price_usd: 0.125
+- tool: watchers.flight-status
+  category: watchers
+  rest:
+  - watchers_flight-status
+  method: POST
+  path: /api/watchers/flight-status
+  binding: rest
+  confidence: high
+  price_usd: 0.125
+- tool: watchers.fred-series
+  category: watchers
+  rest:
+  - watchers_fred-series
+  method: POST
+  path: /api/watchers/fred-series
+  binding: rest
+  confidence: high
+  price_usd: 0.125
+- tool: watchers.funding-rate
+  category: watchers
+  rest:
+  - watchers_funding-rate
+  method: POST
+  path: /api/watchers/funding-rate
+  binding: rest
+  confidence: high
+  price_usd: 0.125
+- tool: watchers.fx-rate
+  category: watchers
+  rest:
+  - watchers_fx-rate
+  method: POST
+  path: /api/watchers/fx-rate
+  binding: rest
+  confidence: high
+  price_usd: 0.125
+- tool: watchers.gas-price
+  category: watchers
+  rest:
+  - watchers_gas-price
+  method: POST
+  path: /api/watchers/gas-price
+  binding: rest
+  confidence: high
+  price_usd: 0.125
+- tool: watchers.http-headers
+  category: watchers
+  rest:
+  - watchers_http-headers
+  method: POST
+  path: /api/watchers/http-headers
+  binding: rest
+  confidence: high
+  price_usd: 0.125
+- tool: watchers.ioc-reputation
+  category: watchers
+  rest:
+  - watchers_ioc-reputation
+  method: POST
+  path: /api/watchers/ioc-reputation
+  binding: rest
+  confidence: high
+  price_usd: 0.125
+- tool: watchers.ipo
+  category: watchers
+  rest:
+  - watchers_ipo
+  method: POST
+  path: /api/watchers/ipo
+  binding: rest
+  confidence: high
+  price_usd: 0.125
+- tool: watchers.package-release
+  category: watchers
+  rest:
+  - watchers_package-release
+  method: POST
+  path: /api/watchers/package-release
+  binding: rest
+  confidence: high
+  price_usd: 0.125
+- tool: watchers.paper
+  category: watchers
+  rest:
+  - watchers_paper
+  method: POST
+  path: /api/watchers/paper
+  binding: rest
+  confidence: high
+  price_usd: 0.125
+- tool: watchers.patent
+  category: watchers
+  rest:
+  - watchers_patent
+  method: POST
+  path: /api/watchers/patent
+  binding: rest
+  confidence: high
+  price_usd: 0.125
+- tool: watchers.prediction-market
+  category: watchers
+  rest:
+  - watchers_prediction-market
+  method: POST
+  path: /api/watchers/prediction-market
+  binding: rest
+  confidence: high
+  price_usd: 0.125
+- tool: watchers.product-recall
+  category: watchers
+  rest:
+  - watchers_product-recall
+  method: POST
+  path: /api/watchers/product-recall
+  binding: rest
+  confidence: high
+  price_usd: 0.125
+- tool: watchers.sec-filing
+  category: watchers
+  rest:
+  - watchers_sec-filing
+  method: POST
+  path: /api/watchers/sec-filing
+  binding: rest
+  confidence: high
+  price_usd: 0.125
+- tool: watchers.status
+  category: watchers
+  rest:
+  - watchers_status
+  method: GET
+  path: /api/watchers/status
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: watchers.stock-price
+  category: watchers
+  rest:
+  - watchers_stock-price
+  method: POST
+  path: /api/watchers/stock-price
+  binding: rest
+  confidence: high
+  price_usd: 0.125
+- tool: watchers.token-price
+  category: watchers
+  rest:
+  - watchers_token-price
+  method: POST
+  path: /api/watchers/token-price
+  binding: rest
+  confidence: high
+  price_usd: 0.125
+- tool: watchers.weather-alert
+  category: watchers
+  rest:
+  - watchers_weather-alert
+  method: POST
+  path: /api/watchers/weather-alert
+  binding: rest
+  confidence: high
+  price_usd: 0.125
+- tool: watchers.whois
+  category: watchers
+  rest:
+  - watchers_whois
+  method: POST
+  path: /api/watchers/whois
+  binding: rest
+  confidence: high
+  price_usd: 0.125
+- tool: water.gauge
+  category: water
+  rest:
+  - water_gauge
+  method: GET
+  path: /api/water/gauge
+  binding: rest
+  confidence: high
+  price_usd: 0.003
+- tool: weather.air-quality
+  category: weather
+  rest:
+  - weather_air-quality
+  method: GET
+  path: /api/weather/air-quality
+  binding: rest
+  confidence: high
+  price_usd: 0.003
+- tool: weather.alerts
+  category: weather
+  rest:
+  - weather_alerts
+  method: GET
+  path: /api/weather/alerts
+  binding: rest
+  confidence: high
+  price_usd: 0.003
+- tool: weather.current
+  category: weather
+  rest:
+  - weather_current
+  method: GET
+  path: /api/weather/current
+  binding: rest
+  confidence: high
+  price_usd: 0.003
+- tool: weather.forecast
+  category: weather
+  rest:
+  - weather_forecast
+  method: GET
+  path: /api/weather/forecast
+  binding: rest
+  confidence: high
+  price_usd: 0.0036
+- tool: weather.forecast-global
+  category: weather
+  rest:
+  - weather_forecast-global
+  method: GET
+  path: /api/weather/forecast-global
+  binding: rest
+  confidence: high
+  price_usd: 0.0036
+- tool: weather.history
+  category: weather
+  rest:
+  - weather_history
+  method: GET
+  path: /api/weather/history
+  binding: rest
+  confidence: high
+  price_usd: 0.0036
+- tool: weather.marine
+  category: weather
+  rest:
+  - weather_marine
+  method: GET
+  path: /api/weather/marine
+  binding: rest
+  confidence: high
+  price_usd: 0.003
+- tool: weather.zip
+  category: weather
+  rest:
+  - weather_zip
+  method: GET
+  path: /api/weather/zip
+  binding: rest
+  confidence: high
+  price_usd: 0.003
+- tool: wikidata.entity
+  category: wikidata
+  rest:
+  - wikidata_entity
+  method: GET
+  path: /api/wikidata/entity
+  binding: rest
+  confidence: high
+  price_usd: 0.003
+- tool: wikipedia.summary
+  category: wikipedia
+  rest:
+  - wikipedia_summary
+  method: GET
+  path: /api/wikipedia/summary
+  binding: rest
+  confidence: high
+  price_usd: 0.0025
+- tool: word.define
+  category: word
+  rest:
+  - word_define
+  method: GET
+  path: /api/word/define
+  binding: rest
+  confidence: high
+  price_usd: 0.003
+- tool: word.related
+  category: word
+  rest:
+  - word_related
+  method: GET
+  path: /api/word/related
+  binding: rest
+  confidence: high
+  price_usd: 0.003
+- tool: worldbank.indicator
+  category: worldbank
+  rest:
+  - worldbank_indicator
+  method: GET
+  path: /api/worldbank/indicator
+  binding: rest
+  confidence: high
+  price_usd: 0.003
+mcp_only: []
+rest_only: []
+group_descriptions:
+  agent: Agent-native knowledge-delta primitive
+  agriculture: Drought monitor & USDA stats
+  ai: Summarize, translate, extract, screenshot & describe
+  airport: Airport lookup & nearest airports
+  aviation: METAR, TAF, SIGMET & accident records
+  bank: Bank routing lookup
+  barcode: Barcode generation
+  batch: Run many endpoints in one settled call
+  bio: Species, genes & proteins
+  bls: BLS time-series data
+  book: Book search
+  business: Company registries, LEI, KYB & entity screening
+  calendar: Business days, holidays, earnings & IPO calendars
+  census: ACS demographics & ZIP geographies
+  chem: Chemical compound data
+  chinese: Chinese data & lookups
+  class: Class data & lookups
+  climate: Station history & nearest stations
+  clinical: ClinicalTrials search & study detail
+  code: Repo lookup & code tools
+  convert: Currency & unit conversion
+  countdown: Countdown GIF generator
+  country: Country reference data
+  crypto: Prices, gas, fees, DeFi, contracts & on-chain data
+  dev: RFC lookup & deploy preflight
+  dns: DNS record lookup
+  domain: WHOIS, intel, CT logs & email security
+  earth: Natural events & planetary now
+  econ: FRED series, releases, vintages, yield curve & indicators
+  edi: Parse, generate & acknowledge X12 / EDIFACT
+  edu: College Scorecard & school lookup
+  email: Email address validation
+  energy: Prices, generation mix, utility rates & solar resource
+  factcheck: Fact-check claim search
+  feedback: Send a message to the 2s team
+  finance: SEC EDGAR filings, 13F, company facts & FIGI
+  flight: Live flight status
+  food: UK hygiene ratings & barcode lookup
+  fx: Foreign-exchange rates & time series
+  geo: Geocoding, elevation, flood zones, IP & dossiers
+  geocode: Address ↔ coordinate, forward & reverse
+  github: Repos, users, commits, issues, PRs & code search
+  gov: 'Federal data: Congress, FEC, FDA, SAM, FEMA & more'
+  hash: Hash computation
+  health: Hospitals, providers, Medicare, mortality & surveillance
+  html: HTML → Markdown conversion
+  image: Image compression
+  inflation: CPI calculator, rates, expectations & HICP
+  ipinfo: Bulk IP geolocation
+  iso: ISO currency, language & subdivision codes
+  job: Federal job search & occupation codes
+  labor: BLS openings, unemployment & wages
+  law: OFAC sanctions, case law & dockets
+  license: Verify broker, medical, real-estate & trade licenses
+  lock: Distributed locks/leases — one agent at a time
+  maritime: Vessels, ports & maritime case records
+  markets: Exchange open/closed status & market holidays
+  medical: ICD-10, NPI, drug labels, approvals & device data
+  music: MusicBrainz artists, releases & recordings
+  net: ASN / BGP, MAC vendor & RPKI validity
+  news: Hacker News items, top stories & web news search
+  nonprofit: Nonprofit search & screening
+  nutrition: Food & nutrition facts
+  occupation: O*NET occupation profiles, search & relations
+  paper: DOI metadata lookup
+  papers: Academic paper search & citation graphs (arXiv, OpenAlex & more)
+  park: US National Park lookup
+  patents: USPTO patent search, detail & documents
+  person: Cross-registry person lookup
+  phone: Phone number normalization
+  poi: Points of interest nearby
+  predict: Polymarket prediction markets, prices, trades & whales
+  product: GTIN / UPC / EAN identity
+  property: NYC deeds, parcels, permits & violations
+  pubsub: Topics + fan-out signed callbacks for agent coordination
+  quakes: Recent earthquakes (USGS)
+  queue: 'Durable task queues: enqueue, lease, ack, dead-letter'
+  recreation: Recreation.gov facility search
+  registry: npm & PyPI package lookups
+  research: ORCID authors, ROR orgs & NIH funding
+  schedule: Time-driven signed callbacks — cron for agents
+  search: Endpoint discovery & web search
+  security: CVEs, KEV, EPSS, IOC reputation, headers, exposure
+  soil: Soil profiles & USDA hardiness zones
+  space: Launches, satellites, exoplanets, sky & space weather
+  sports: MLB & NHL schedules, scores & standings
+  stocks: Quotes, metrics, analyst, earnings, news, gov/alt data
+  store: 'Wallet-keyed persistence: KV, documents, vector search & private files'
+  sunrise: Sunrise / sunset times
+  tax: VAT validation & EU VAT-rate tables
+  tcg: Tcg data & lookups
+  telecom: FCC filings & telecom market areas
+  text: Text data & lookups
+  tides: Current tide predictions
+  time: Time data & lookups
+  timezone: Timezone by coordinate
+  tld: Top-level-domain info
+  tls: TLS certificate inspection
+  trade: UN Comtrade flows, tariffs & LOCODE
+  transcribe: Audio transcription
+  travel: Travel advisories & visa requirements
+  treasury: US Treasury cash, debt, rates & monthly statements
+  url: Render, map, clean & unfurl any URL
+  validate: IBAN, BIC, ISIN, CUSIP, GTIN & check-digit checks
+  vehicle: VIN decode, recalls, complaints, safety ratings
+  watchers: Watchers data & lookups
+  water: USGS stream-gauge readings
+  weather: Global conditions & forecasts, NWS alerts, marine & air quality
+  wikidata: Wikidata entity lookup
+  wikipedia: Wikipedia article summaries
+  word: Definitions & related words
+  worldbank: World Bank development indicators
+coverage:
+  mcp_tools_named: 575
+  mcp_tools_bound: 575
+  a2a_skills_named: 1
+  a2a_skills_bound: 1
+  mcp_only: 0
+  rest_operations_total: 575
+  rest_operations_with_a_tool_or_skill: 575
+  confidence:
+    high: 575
+  note: 'Complete 1:1 coverage: the MCP server is a mechanical projection of the OpenAPI (one tool per operation,
+    same ids, same schemas), so an agent may treat either surface as the contract. The A2A surface adds nothing
+    executable — it is a discovery front door over the same catalog.'

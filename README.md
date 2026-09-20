@@ -64,5 +64,12 @@
 > Full detail: **[Where this data comes from](https://apievangelist.com/about/where-our-data-comes-from)**
 <!-- API-EVANGELIST-PROVENANCE:END -->
 
-2s is a company surfaced via the API Evangelist harvest backlog (source: a2a-registry) and added to the network as a stub for full-pipeline profiling.
-- https://2s.io/
+2s ("the (most) everything API") is a pay-per-call REST API built for AI agents: 575 endpoints across 112 groups on one origin — US public records and government data, company and legal identifiers, SEC filings, crypto and web3, security and CVEs, patents and case law, medical codes, weather and geocoding, X12/EDIFACT EDI, an OpenAI-compatible AI gateway and wallet-scoped agent infrastructure (store, locks, queues, schedules, pub/sub and signed-callback watchers). No accounts and no API keys: every call is paid in USDC on Base or Solana through x402, with a free trial call per endpoint per hour. The same catalog is published as an OpenAPI 3.1.0 contract, a remote MCP server at https://2s.io/mcp (and npx @2sio/mcp), an A2A 0.3.0 agent card, an RFC 9727 API catalog, an APIs.json index, an llms.txt and an ERC-8004 agent registration.
+
+- Website: https://2s.io/
+- Guides: https://2s.io/learn/x402
+- Endpoint directory and prices: https://2s.io/discover
+- OpenAPI: https://2s.io/openapi.json
+- Status and changelog: https://2s.io/status
+- SDKs: https://github.com/2s-io/sdk
+- Profiled 2026-09-19 from the provider's public surface; first surfaced through a2aregistry.org.

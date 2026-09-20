@@ -1,0 +1,81 @@
+generated: '2026-09-19'
+method: searched
+source: https://2s.io/changelog.json
+docs:
+- https://2s.io/llms.txt
+- https://2s.io/openapi.json
+- https://2s.io/status
+limit_count: 6
+summary: >-
+  2s publishes no requests-per-second ceiling and no rate-limit headers; the SDK skill states there is "no
+  rate-limit tier to negotiate" because payment is the throttle. What it does publish is (a) the exhaustion
+  SIGNAL — 429 with code RATE_LIMITED is 2s's own limiter, 503 UPSTREAM_RATE_LIMIT is an upstream throttle to
+  retry without backoff (changelog 1.80.1) — and (b) a set of hard caps: the trial allowance, per-wallet tenant
+  quotas on the agent-infrastructure primitives, batch size, and per-endpoint result and payload caps stated in
+  the contract. No Retry-After, RateLimit-* or X-RateLimit-* header is declared or documented, and none was
+  observed on the 400 or 402 responses probed.
+rate_limits:
+- name: Trial calls
+  scope: per-endpoint (per caller)
+  limit: 1
+  window: 1 hour
+  metric: free real call
+  applies_to: every operation except feedback_send
+  exhaustion: the endpoint returns the normal 402 until the hour resets
+  source: 'https://2s.io/llms.txt — "one free real call per endpoint per hour"; components.parameters.TrialMode'
+- name: Storage per wallet
+  scope: per-wallet (the x402 payer)
+  limit: 50 MB
+  window: rolling — objects expire 90 days after last touch
+  metric: bytes across kv / documents / vectors / files
+  applies_to: [store_kv-put, store_doc-put, store_vector-upsert, store_blob-put]
+  signal_in_body: store_usage reports totalBytes + capBytes
+  source: 'openapi store_kv-put ("50 MB total per wallet across kv/documents/vectors/files"); changelog 1.80.0'
+- name: Queue depth per wallet
+  scope: per-wallet
+  limit: 1000
+  metric: queued messages
+  applies_to: [queue_enqueue]
+  source: 'https://2s.io/changelog.json 1.80.0 — "per-tenant quotas (50 MB storage across kv/doc/vector/blob, 1,000 queue depth, 100 concurrent locks)"'
+- name: Concurrent locks per wallet
+  scope: per-wallet
+  limit: 100
+  metric: held locks
+  applies_to: [lock_acquire]
+  source: https://2s.io/changelog.json 1.80.0
+- name: Batch size
+  scope: per-request
+  limit: 50
+  metric: sub-calls
+  applies_to: [batch_run]
+  source: 'openapi batch_run — calls[] maxItems 50; no nested batch'
+- name: Pub/sub subscribers per topic
+  scope: per-topic
+  limit: 100
+  metric: subscribers (one per URL)
+  applies_to: [pubsub_subscribe]
+  source: 'openapi pubsub_subscribe — "Up to 100 subscribers per topic, one per URL"'
+size_and_time_limits:
+- {name: Watcher lifetime, limit: 'expiresInSeconds default 2,592,000 (30 days), max 7,776,000 (90 days); maxFires default 25, max 1000', source: 'openapi watchers_crypto-address-activity requestBody'}
+- {name: Schedule lifetime, limit: 'expiresInSeconds default and max 90 days; maxFires default 25, max 1000; everySeconds ≥ 60', source: 'openapi schedule_create requestBody'}
+- {name: Lock TTL, limit: 'ttlSeconds 1–86400', source: 'openapi lock_acquire'}
+- {name: Queue lease, limit: 'count ≤ 100 per lease; visibilitySeconds default 30, max 3600', source: 'openapi queue_lease'}
+- {name: Store value size, limit: '1 MB per value', source: 'openapi store_kv-put'}
+- {name: Image input, limit: '1 MB', source: 'openapi ai_describe-image'}
+- {name: Screenshot viewport / timeout, limit: '320–3840 × 320–2160; timeoutMs 1–15 s', source: 'openapi ai_screenshot'}
+- {name: USDA QuickStats rows, limit: '50,000 rows → 400 RESULT_TOO_LARGE', source: 'openapi agriculture_stats'}
+- {name: Knowledge-delta events, limit: 'maxEvents 1–50', source: 'openapi agent_knowledge-delta'}
+exhaustion:
+  status: 429
+  code: RATE_LIMITED
+  headers: none documented
+  media_type: application/json
+  envelope: '{"error": {"code": "RATE_LIMITED", "message": …}}'
+  upstream_throttle:
+    status: 503
+    code: UPSTREAM_RATE_LIMIT
+    guidance: '"429 RATE_LIMITED now always means OUR limiter; retry upstream throttles without client-side backoff" (changelog 1.80.1)'
+  note: >-
+    Neither 429 nor 503 is declared in the OpenAPI responses; both are documented in the changelog and the
+    error-code names are the provider's. Not observed live (no limit was hit during profiling). The provider's
+    x402 model means the practical throttle is the caller's USDC balance and the facilitator's ~2 s settlement.

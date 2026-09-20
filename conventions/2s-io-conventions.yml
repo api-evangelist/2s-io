@@ -1,0 +1,204 @@
+generated: '2026-09-19'
+method: searched
+source: https://2s.io/llms.txt
+derived_from: openapi/2s-io-openapi.json
+docs:
+- https://2s.io/learn/x402
+- https://2s.io/status
+- https://2s.io/changelog.json
+- https://2s.io/.well-known/2s-attestation.json
+base_url: https://2s.io
+api_style: REST over HTTPS; JSON requests (POST) and query parameters (GET); JSON responses in a normalized envelope, raw bytes on 10 media endpoints
+auth:
+  style: >-
+    No authentication scheme at all — payment IS the gate. Every operation declares the x402Payment apiKey
+    scheme (header PAYMENT-SIGNATURE; X-PAYMENT accepted for v1 clients): call with no credential, receive a
+    402 x402 v2 envelope, sign a USDC authorization for the quoted amount (EIP-3009 on Base or a partial SPL
+    transfer on Solana), retry with the signature. There is no account, no API key, no OAuth. The hosted MCP
+    server takes the caller's EVM private key in an X-EVM-Private-Key header so it can sign on the caller's
+    behalf. Trial mode (?trial=1 or X-2s-Trial: 1) bypasses payment for one real call per endpoint per hour.
+  detail: authentication/2s-io-authentication.yml
+idempotency:
+  supported: true
+  coverage: partial
+  mechanism: idempotent-by-construction on named operations; no client-supplied key
+  header: null
+  scope:
+  - lock_release
+  - watchers_cancel
+  - pubsub_create-topic
+  - store_kv-delete
+  - store_doc-delete
+  - store_vector-delete
+  - store_blob-delete
+  - text_redact
+  retention: not applicable — no replay store; the operations are naturally idempotent
+  description: >-
+    No Idempotency-Key header, parameter or body field exists on any of the 105 write operations and the docs
+    describe none. Eight operations state idempotency in their own descriptions — lock_release ("Idempotent —
+    releasing an already-gone lock returns released:false"), watchers_cancel ("Idempotent"), the four store_*-delete
+    operations, pubsub_create-topic and text_redact — and schedule_cancel behaves the same way ("Returns
+    cancelled:false if it was already done/cancelled") without using the word. The one true composite,
+    batch_run, is atomic rather than idempotent: "every sub-call must succeed or nothing is charged — the
+    failing calls are returned and you can retry for free." Everything else that creates state
+    (watchers_*, schedule_create, store_*-put/upsert, queue_enqueue, lock_acquire, pubsub_publish) will create
+    it again on a retry, and each retry is a separate x402 payment.
+  gaps:
+  - No idempotency key on the 27 watchers_* arming operations or schedule_create — a retried arm is a second $0.125 watcher.
+  - No idempotency key on store_kv-put / store_doc-put / store_vector-upsert / store_blob-put (last write wins, but each write is paid).
+  - No documented safe-retry guidance for an ambiguous outcome (timeout after a paid 200); the payment-side mitigation is that "a failed handler is never charged on-chain".
+dry_run_mode:
+  supported: false
+  status: not-a-dry-run
+  nearest_mechanism: trial mode
+  surfaces:
+  - operation: 'any operation with ?trial=1 or X-2s-Trial: 1 (components.parameters.TrialMode)'
+    cost: free
+    description: >-
+      "One free real call per endpoint per hour (the actual handler runs and returns real data, marked
+      meta.trial)." This rehearses the payment-free path with real side effects, which for a watcher or store
+      write means the state IS created — so it is a free real call, not a dry run. feedback_send excludes trial.
+  - operation: batch_run
+    description: Atomic execution — failing sub-calls are returned uncharged and can be retried free, which functions as a post-hoc validation of a batch.
+reversibility:
+  grade: documented
+  docs: https://2s.io/openapi.json
+  note: >-
+    Reversal operations exist for every kind of durable state a wallet can create — cancel for watchers and
+    schedules, release for locks, ack for leased queue messages, unsubscribe for pub/sub, delete for each store
+    family — and the contract states what each does. No REVERSAL WINDOW beyond the object's own lifetime is
+    stated for any of them, and the contract states explicitly that cancelling refunds nothing, so the grade is
+    documented (0.4), not verified. The payment leg is one-way by design: a settled x402 transfer is not
+    refundable through the API, and the provider's stated commitment is on the other side of the ledger — a
+    failed handler is never charged. Nothing below asserts a window the provider has not written down.
+  write_surfaces:
+  - operation: watchers_* (26 arming operations)
+    action: Arm a signed-callback watcher for a flat $0.125
+    reversal: watchers_cancel — "it stops watching immediately"
+    reversal_operation: watchers_cancel
+    window: 'while the watcher is armed — bounded by expiresInSeconds (default 30 days, max 90) or maxFires (default 25, max 1000), whichever first'
+    refund: 'none — "Flat-fee model: no refund of the unused window (nothing is held or owed)"'
+    grade: documented
+  - operation: schedule_create
+    action: Arm a time-driven callback for $0.125
+    reversal: schedule_cancel — "stop an active schedule immediately … No more callbacks will fire"
+    reversal_operation: schedule_cancel
+    window: 'while active — bounded by expiresInSeconds (default and max 90 days) or maxFires'
+    refund: 'none — "No refund of the unused window"'
+    grade: documented
+  - operation: lock_acquire
+    action: Take a distributed lock for ttlSeconds (1–86400)
+    reversal: lock_release (idempotent; requires the acquire token) or automatic expiry at ttlSeconds
+    reversal_operation: lock_release
+    window: until ttlSeconds elapses; lock_renew extends it
+    grade: documented
+  - operation: queue_lease
+    action: Claim up to 100 messages, hidden for visibilitySeconds (default 30, max 3600)
+    reversal: automatic — "if you don't ack in time, the message is redelivered"; queue_ack makes the removal permanent
+    reversal_operation: null
+    window: visibilitySeconds
+    grade: documented
+    note: The reversal here is the ABSENCE of an ack; queue_ack is the irreversible step ("deletes it").
+  - operation: store_kv-put / store_doc-put / store_vector-upsert / store_blob-put
+    action: Persist wallet-scoped data (value up to 1 MB; 50 MB per wallet)
+    reversal: store_kv-delete / store_doc-delete / store_vector-delete / store_blob-delete (each idempotent); otherwise automatic expiry on "a rolling 90-day window that resets every time you touch the object"
+    reversal_operation: store_kv-delete
+    window: 90 days since last touch
+    restore: none — no trash or undelete is documented
+    grade: documented
+  - operation: pubsub_subscribe
+    action: Attach a callbackUrl to a topic (confirmation challenge required)
+    reversal: pubsub_unsubscribe by subscriptionId
+    reversal_operation: pubsub_unsubscribe
+    window: null
+    grade: documented
+  - operation: pubsub_publish / feedback_send / edi_* / ai_* / all read operations
+    action: One-shot calls with no durable state on 2s (publish fans out immediately; feedback emails the team)
+    reversal: none — a delivered message or email cannot be recalled
+    grade: na
+  - operation: the x402 payment on every call
+    action: Transfer USDC to the treasury for one call
+    reversal: none through the API
+    stated_terms:
+    - source: https://2s.io/status.json
+      verbatim: 'You pay only for calls that succeed. A failed handler is never charged on-chain. You pay the price shown on the 402 — the exact customer price, with no hidden math.'
+    - source: openapi batch_run
+      verbatim: 'Atomic: every sub-call must succeed or nothing is charged — the failing calls are returned and you can retry for free.'
+    grade: na
+    note: Recorded so an agent knows the money side has no undo; the mitigation is pre-payment (trial mode, upto billing on AI endpoints) rather than post-payment reversal.
+pagination:
+  style: mixed
+  note: >-
+    No single convention. Across the 575 operations: limit (210), offset (46), page (30), pageSize (6),
+    cursor (7, with nextCursor in 10 response schemas), per_page (4). Each endpoint documents its own
+    parameters; the normalized envelope's data.total ("Total matching rows upstream; null when unknown") is the
+    only cross-cutting count field.
+filtering_and_sorting:
+  supported: per-endpoint
+  note: Query parameters are endpoint-specific and documented in each operation; there is no shared filter grammar.
+field_expansion:
+  supported: false
+sparse_fieldsets:
+  supported: false
+metadata:
+  supported: partial
+  note: 'watchers_* and schedule_create accept an arbitrary JSON payload that is "echoed back verbatim in every callback so you can route/identify" — metadata on a subscription, not on a stored object.'
+response_envelope:
+  shape: '{ "data": { "ok": true, "items": [...] | <object>, "total": int|null, "source": { provider, url, license }, "meta": {...} }, "meta": CallMeta }'
+  applies_to: 565 of 575 operations (x-2s-response-shape "normalized"); 10 media operations return raw bytes with no JSON
+  provenance: 'components.schemas.Source — "Provenance of the data: upstream provider, source URL, and license" — is present on every normalized response; the status page commits that "each response carries a per-source license + attribution".'
+  call_meta: 'components.schemas.CallMeta — "Per-call meta envelope — endpoint id, cost, caller kind, settlement details" (schema body undeclared); trial calls are marked meta.trial.'
+request_id_tracing:
+  supported: partial
+  note: >-
+    No request-id header is declared or documented. The attestation descriptor names an X-2s-Endpoint response
+    header (the endpoint id) and, when ?sign=1 is sent, X-2s-Attestation-Signer / -Alg / -Version / -Signed-At /
+    -Hash / -Signature. Paid 200s carry X-PAYMENT-TX (the settlement transaction), which is the strongest
+    per-call correlation id the provider offers. x-vercel-id is the platform's trace id, not a contract.
+response_attestation:
+  supported: true
+  trigger: '?sign=1 (or ?sign=true) on any endpoint'
+  signer: '0xC20d180f1d8aaf2117d13252C5E803895F0D7717'
+  alg: secp256k1-eip191-sha256
+  message_template: '2s.io-attestation\nv:<version>\nendpoint:<X-2s-Endpoint>\nsignedAt:<X-2s-Attestation-Signed-At>\nsha256:<X-2s-Attestation-Hash>'
+  docs: https://2s.io/.well-known/2s-attestation.json
+  note: The body is never mutated; signed and unsigned bodies are byte-identical. Recorded because it is the provider's answer to "how does an agent prove what 2s said" — a convention with no equivalent in most catalog entries.
+versioning:
+  scheme: unversioned paths; service version on the status page; breaking changes absorbed by the SDKs
+  current: 1.80.5 (service) / 1.82.0 (SDKs)
+  detail: lifecycle/2s-io-lifecycle.yml
+  changelog: changelog/2s-io-changelog.yml
+errors:
+  envelope: '{"error": {"code", "message", "details"?}} — not RFC 9457'
+  media_type: application/json
+  json_rpc: JSON-RPC 2.0 error objects on /mcp and /a2a
+  detail: errors/2s-io-problem-types.yml
+rate_limit_signaling:
+  exhaustion_status: 429
+  exhaustion_code: RATE_LIMITED
+  upstream_throttle: 503 UPSTREAM_RATE_LIMIT (retry without backoff, per the provider)
+  headers: none documented
+  detail: rate-limits/2s-io-rate-limits.yml
+payment:
+  protocol: x402 v2
+  asset: USDC
+  networks: ['Base (eip155:8453) — EIP-3009 transferWithAuthorization', 'Solana mainnet (solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp) — partial SPL token transfer']
+  facilitator: https://api.cdp.coinbase.com/platform/v2/x402 (pays gas)
+  treasury: {base: '0x2b6D4988Db4723E6908Db86Ab2b8dFBc51FC32C5', solana: TW6ntaGzvj63ZgPjszd4FCGmVTGfzv1MAYZbjYcyWhn}
+  headers: {request: 'PAYMENT-SIGNATURE (X-PAYMENT for v1 clients)', response_402: 'PAYMENT-REQUIRED (base64 envelope), x-payment-requirements: x402', response_200: X-PAYMENT-TX}
+  price_discovery: 'x-2s-price / x-payment-info on every operation; accepts[].amount in the 402 (atomic USDC units, 6 decimals); /api/directory and /registry.json'
+  upto_billing: 'AI endpoints (chat, image, council, summarize, extract, translate, entities, pii, research, web-answer, describe-image, ocr, transcribe) also accept the Permit2-based x402 upto scheme: authorize the quoted maximum, settle actual usage (floor $0.001). One-time USDC approval for Permit2 0x000000000022D473030F116dDEE9F6B43aC78BA3. exact stays first in accepts[].'
+  batch: 'batch_run — up to 50 sub-calls behind one payment, price = exact sum, atomic.'
+  trial: '?trial=1 / X-2s-Trial: 1 — one free real call per endpoint per hour; not accepted by feedback_send.'
+tenancy:
+  model: the paying wallet address is the tenant
+  note: 'store_*, lock_*, queue_*, pubsub_* (topics) and watchers_* are "scoped to YOUR wallet (the x402 payer)"; quotas per wallet: 50 MB storage across kv/doc/vector/blob, 1,000 queue depth, 100 concurrent locks (changelog 1.80.0).'
+other_conventions:
+- name: Callback signing
+  detail: 'Watcher, schedule and pub/sub deliveries are EIP-191-signed by the provider''s published key (X-2s-Signature per pubsub_subscribe) and retried with exponential backoff; watchers_status is the pull backstop for missed pushes.'
+- name: Subscription confirmation
+  detail: 'pubsub_subscribe POSTs a one-time challenge (X-2s-Confirmation-Token) that the callback URL must echo before it receives anything — consent-gated fan-out.'
+- name: Response provenance
+  detail: 'Every normalized response carries data.source {provider, url, license}; the status page frames this as a commitment.'
+- name: Media responses
+  detail: 'ai_screenshot returns raw image bytes with X-2s-Render-Ms and X-2s-Image-Bytes headers; 10 operations declare a 200 without a JSON schema.'

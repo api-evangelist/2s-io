@@ -1,0 +1,47 @@
+{
+  "type": "https://eips.ethereum.org/EIPS/eip-8004",
+  "name": "2s",
+  "description": "The (most) everything API: one pay-per-call API giving AI agents ground-truth data across 575+ endpoints — public records, finance, crypto, security, legal, health, geo, and EDI. USDC via x402, no signup, no API keys.",
+  "image": "https://2s.io/og.png",
+  "url": "https://2s.io",
+  "services": [
+    {
+      "type": "MCP",
+      "url": "https://2s.io/mcp"
+    },
+    {
+      "type": "A2A",
+      "url": "https://2s.io/a2a",
+      "card": "https://2s.io/.well-known/agent-card.json"
+    },
+    {
+      "type": "http",
+      "url": "https://2s.io"
+    },
+    {
+      "type": "openapi",
+      "url": "https://2s.io/openapi.json"
+    },
+    {
+      "type": "directory",
+      "url": "https://2s.io/api/directory"
+    }
+  ],
+  "payment": {
+    "protocol": "x402",
+    "networks": [
+      "eip155:8453",
+      "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp"
+    ],
+    "asset": "USDC"
+  },
+  "registrations": [
+    {
+      "agentRegistry": "eip155:8453:0x8004A169FB4a3325136EB29fA0ceB6D2e539a432",
+      "agentId": "57911"
+    }
+  ],
+  "supportedTrust": [
+    "reputation"
+  ]
+}

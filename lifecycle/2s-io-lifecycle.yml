@@ -1,0 +1,69 @@
+generated: '2026-09-19'
+method: searched
+source: https://2s.io/status.json
+derived_from: openapi/2s-io-openapi.json
+docs:
+- https://2s.io/status
+- https://2s.io/changelog.json
+- https://github.com/2s-io/sdk/releases
+versioning:
+  scheme: unversioned paths; a service version on the status page and semver on the SDKs
+  current_version: '1.80.5 (service, status.json 2026-09-19) / 1.82.0 (SDK, MCP and Python packages, 2026-08-21) / OpenAPI info.version "1" / MCP serverInfo 1.0.0 / agent card 1.0.0'
+  spec_url: https://2s.io/openapi.json
+  base_url: https://2s.io
+  policy_published: true
+  policy_url: https://2s.io/status
+  policy_verbatim: 'Breaking changes are versioned in the SDKs. New endpoints are additive. See /changelog.json.'
+  note: >-
+    Paths carry no version segment and every operation's x-2s-version is null; /api/directory exposes a
+    versions[] array per endpoint (currently one entry each, version null, deprecated false), which is the
+    slot a future breaking change would use. The service version (1.80.5) and the SDK version (1.82.0) have
+    diverged by two minors, consistent with the stated policy that breaking changes are absorbed by the SDKs.
+deprecation:
+  policy_published: false
+  sunset_header: false
+  deprecation_header: false
+  rfc8594: false
+  deprecated_operations: []
+  note: >-
+    Zero of 575 operations carry deprecated: true (the spec sets the field explicitly on every operation).
+    The directory carries a per-version deprecated flag and batch_run's description excludes "deprecated"
+    endpoints from batches, so the provider has a deprecation state in its model, but no policy page, notice
+    period, Sunset header or dated retirement is published anywhere found. No Deprecation pointer is emitted.
+status_page:
+  url: https://2s.io/status
+  machine_readable: https://2s.io/status.json
+  probed:
+  - {url: 'https://2s.io/status', status: 200}
+  - {url: 'https://2s.io/status.json', status: 200}
+  observed: >-
+    "All systems operational · v1.80.5 · 575 endpoints across 112 groups"; five subsystems (API, x402 settlement
+    (CDP facilitator), Discovery surfaces, Packages (npm / PyPI / MCP registry), Response attestation) each
+    "operational"; generatedAt 2026-09-19T23:08:32Z.
+  note: A live, provider-generated status document with named subsystems. It carries no incident history or uptime figure. StatusPage pointer emitted.
+sla:
+  published: false
+  verbatim: 'Best-effort. No formal SLA — 2s is an autonomously-operated, pay-per-call API; there is no subscription or minimum commitment, so there is no uptime guarantee or service credit.'
+  source: https://2s.io/status.json (commitments.uptime)
+  other_commitments:
+    payment: 'You pay only for calls that succeed. A failed handler is never charged on-chain. You pay the price shown on the 402 — the exact customer price, with no hidden math.'
+    data: 'Each response carries a per-source license + attribution. Data is sourced live or from cadence-refreshed public datasets; freshness varies by source and is described per endpoint. Not legal, financial, or professional advice.'
+    support: 'Issues: thumbs-down in-product feedback, or the contact on 2s.io.'
+changelog:
+  published: true
+  url: https://2s.io/changelog.json
+  human_url: https://2s.io/status
+  detail: changelog/2s-io-changelog.yml
+  latest: {version: 1.80.5, date: '2026-07-22'}
+  oldest: {version: 1.25.0, date: '2026-06-14'}
+  entries: 39
+  note: Dated, versioned, machine-readable. The SDK repo adds GitHub releases (v1.82.0 on 2026-08-21) but no CHANGELOG.md.
+support_lifetime:
+  stated: false
+  note: No support period for endpoints or SDK majors is stated; the status page's "changes" commitment is the closest text.
+dated_signals:
+- {date: '2026-09-19', what: 'status.json generatedAt; registry.json generatedAt; apis.json modified'}
+- {date: '2026-08-21', what: 'SDK/MCP/Python 1.82.0 published; last push to github.com/2s-io/sdk'}
+- {date: '2026-07-22', what: 'service 1.80.5 — latest changelog entry'}
+- {date: '2026-06-14', what: 'apis.json created; oldest changelog entry (1.25.0)'}
+- {date: '2026-05-28', what: 'github.com/2s-io/sdk created'}

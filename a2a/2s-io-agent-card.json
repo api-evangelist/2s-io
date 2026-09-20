@@ -1,0 +1,62 @@
+{
+  "protocolVersion": "0.3.0",
+  "name": "2s",
+  "description": "The (most) everything API for AI agents, exposed as an A2A agent. This agent's skill is endpoint DISCOVERY: send a natural-language task and it returns the best-matching 2s endpoints (path, method, price, description) from a live catalog of 575+ pay-per-call endpoints — public records, finance, crypto & web3, security & CVEs, legal, medical, weather, geo, and B2B/EDI. Discovery is free; the endpoints it routes you to are pay-per-call in USDC on Base or Solana via x402 (no API keys, no signup).",
+  "url": "https://2s.io/a2a",
+  "preferredTransport": "JSONRPC",
+  "additionalInterfaces": [
+    {
+      "transport": "JSONRPC",
+      "url": "https://2s.io/a2a"
+    }
+  ],
+  "version": "1.0.0",
+  "provider": {
+    "organization": "2s",
+    "url": "https://2s.io"
+  },
+  "documentationUrl": "https://2s.io/llms.txt",
+  "iconUrl": "https://2s.io/icon-512.png",
+  "capabilities": {
+    "streaming": false,
+    "pushNotifications": false,
+    "stateTransitionHistory": false
+  },
+  "defaultInputModes": [
+    "text/plain"
+  ],
+  "defaultOutputModes": [
+    "application/json",
+    "text/plain"
+  ],
+  "skills": [
+    {
+      "id": "discover-endpoints",
+      "name": "Discover 2s endpoints",
+      "description": "Given a natural-language description of a task, returns the best-matching 2s API endpoints — each with its id, HTTP path, method, group, description, and per-call USD price — so you can call the one that answers your question. Deterministic keyword + synonym ranking over the live 2s catalog (no LLM, zero upstream). The routing result is free; the endpoints it returns are pay-per-call via x402.",
+      "tags": [
+        "discovery",
+        "routing",
+        "catalog",
+        "api",
+        "x402",
+        "search"
+      ],
+      "examples": [
+        "check if a domain can be spoofed",
+        "is this CVE being exploited",
+        "screen a company for sanctions",
+        "decode a VIN",
+        "weather forecast for a ZIP code",
+        "validate an IBAN"
+      ],
+      "inputModes": [
+        "text/plain"
+      ],
+      "outputModes": [
+        "application/json",
+        "text/plain"
+      ]
+    }
+  ]
+}

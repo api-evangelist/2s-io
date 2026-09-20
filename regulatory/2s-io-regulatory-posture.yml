@@ -1,0 +1,85 @@
+generated: '2026-09-19'
+method: searched
+probe: true
+source: https://2s.io/status.json
+signals: {}
+probed_absent:
+- signal: subprocessors
+  urls:
+  - {url: 'https://2s.io/legal/subprocessors', status: 404}
+  - {url: 'https://2s.io/privacy', status: 404}
+  - {url: 'https://2s.io/privacy-policy', status: 404}
+  note: >-
+    No privacy policy and no subprocessor list exist at any conventional path. The provider does disclose
+    upstream data sources per response (data.source {provider, url, license}) and names its payment
+    facilitator (Coinbase CDP, https://api.cdp.coinbase.com/platform/v2/x402) and hosting platform (Vercel,
+    from response headers), but a per-response data attribution is not a dated subprocessor table and is not
+    recorded as one.
+- signal: data_subject_request
+  urls:
+  - {url: 'https://2s.io/privacy/requests', status: 404}
+  - {url: 'https://2s.io/privacy', status: 404}
+  note: No privacy policy, no DSR channel. The service's own design collects no account data ("no accounts, no API keys"); wallet-scoped stored data can be deleted by the wallet through store_*-delete, which is a product capability, not a published rights process.
+- signal: incident_notification
+  urls:
+  - {url: 'https://2s.io/legal/dpa', status: 404}
+  note: No DPA, no breach-notification commitment. The status page states best-effort uptime and no SLA.
+- signal: ai_transparency
+  urls:
+  - {url: 'https://2s.io/ai/transparency', status: 404}
+  - {url: 'https://2s.io/transparency', status: 404}
+  note: >-
+    The AI gateway endpoints (ai_chat, ai_council, ai_image, …) disclose in their contract descriptions that
+    they route to named third-party models (GPT-5, Claude, Gemini, Grok, DeepSeek, Llama, Mistral) and that
+    agent_knowledge-delta and several ai_* operations are "LLM-backed"; the status page adds "Not legal,
+    financial, or professional advice." That is model disclosure inside the contract, not a published AI
+    transparency statement toward end users, so it is not recorded as the signal.
+- signal: training_data_summary
+  note: 2s is a model consumer, not a model provider; no training-data summary is published and none is expected.
+- signal: accessibility_conformance
+  urls:
+  - {url: 'https://2s.io/accessibility', status: 404}
+  - {url: 'https://2s.io/accessibility/vpat', status: 404}
+- signal: sbom
+  urls:
+  - {url: 'https://2s.io/security/sbom', status: 404}
+  note: No bill of materials published. Never derived — search only. (The SDK monorepo is MIT and public, but a repository is not an SBOM.)
+- signal: support_lifetime
+  urls:
+  - {url: 'https://2s.io/status', status: 200}
+  note: 'The status page states "Breaking changes are versioned in the SDKs. New endpoints are additive." — a change policy, not a stated support period. Recorded in lifecycle/, not here.'
+- signal: data_residency
+  urls:
+  - {url: 'https://2s.io/docs/data-residency', status: 404}
+  note: No residency choice or region statement. Response headers show Vercel iad1 (US-East) for every probe; that is an observation, not a published commitment.
+- signal: global_privacy_control
+  note: No published statement that Sec-GPC is honored. Not tested by sending a header.
+- signal: age_assurance
+  note: Nothing published; the service has no user accounts.
+- signal: notice_and_action
+  urls:
+  - {url: 'https://2s.io/legal/report-content', status: 404}
+  note: 'No report-content channel. feedback_send ($0.25 via x402) is a general contact channel to the team, not a notice-and-action process.'
+- signal: transparency_report
+  urls:
+  - {url: 'https://2s.io/transparency', status: 404}
+- signal: exit_assistance
+  note: >-
+    Nothing published as a policy. Structurally, every stored object is readable back through the API
+    (store_kv-get/scan, store_doc-get, store_blob-get/list) and expires after 90 days untouched, and there is
+    no account to close — but no export or portability commitment is written down.
+legal_pages_probed:
+- {url: 'https://2s.io/terms', status: 404}
+- {url: 'https://2s.io/tos', status: 404}
+- {url: 'https://2s.io/terms-of-service', status: 404}
+- {url: 'https://2s.io/legal', status: 404}
+- {url: 'https://2s.io/privacy', status: 404}
+- {url: 'https://2s.io/about', status: 404}
+- {url: 'https://2s.io/contact', status: 404}
+note: >-
+  An empty signals map is the finding. 2s publishes an exceptionally complete MACHINE discovery layer and an
+  almost entirely absent LEGAL layer: no terms of service, no privacy policy, no legal entity name or address
+  anywhere on the site. The only policy text is the status page's five "service commitments" and the
+  ai-plugin.json legal_info_url, which points at the homepage. The maintainer identity is an email
+  (alley@2s.io in the OpenAPI and APIs.json; alley@alleyford.com in ai-plugin.json). Which regimes reach the
+  provider is decided by the Kin Score regime map, not here.

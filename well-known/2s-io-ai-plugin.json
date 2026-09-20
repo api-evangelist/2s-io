@@ -1,0 +1,38 @@
+{
+  "schema_version": "v1",
+  "name_for_human": "2s",
+  "name_for_model": "twosio",
+  "description_for_human": "The (most) everything API — one pay-per-call API giving AI agents ground-truth data across hundreds of endpoints: public records, finance, crypto, security, legal, medical, weather, geo, and EDI. Settled in USDC on Base or Solana via x402. No accounts, no API keys.",
+  "description_for_model": "The (most) everything API: one unified REST API giving autonomous agents real, ground-truth data across hundreds of endpoints (public records, finance, crypto/web3, security/CVE, legal, medical, weather, geo, EDI, and more). Every endpoint is pay-per-call with no signup: send the request with no auth, receive HTTP 402 with an x402 PaymentRequirements envelope, sign a USDC micropayment on Base (EIP-3009) or Solana (partial SPL transfer), and retry with the PAYMENT-SIGNATURE header. The full machine-readable endpoint catalog and request/response schemas are in the OpenAPI spec linked under api.url; each operation's price is in its 402 response and in /api/directory.",
+  "auth": {
+    "type": "none"
+  },
+  "api": {
+    "type": "openapi",
+    "url": "https://2s.io/openapi.json",
+    "is_user_authenticated": false
+  },
+  "logo_url": "https://2s.io/icon.svg",
+  "contact_email": "alley@alleyford.com",
+  "legal_info_url": "https://2s.io",
+  "x-payment": {
+    "protocol": "x402",
+    "version": 2,
+    "asset": "USDC",
+    "spec": "https://x402.org",
+    "networks": [
+      {
+        "network": "eip155:8453",
+        "family": "evm",
+        "asset": "USDC",
+        "assetAddress": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
+      },
+      {
+        "network": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
+        "family": "svm",
+        "asset": "USDC",
+        "assetAddress": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+      }
+    ]
+  }
+}

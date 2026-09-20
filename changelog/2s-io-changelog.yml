@@ -1,0 +1,167 @@
+generated: '2026-09-19'
+method: probed
+source: https://2s.io/changelog.json
+docs:
+- https://2s.io/status
+- https://github.com/2s-io/sdk/releases
+scheme: semver-style service versions (major.minor.patch), dated; served as JSON with {service, latest, releases[]
+  {version, date, summary, highlights[]}}
+current_version: 1.80.5
+current_date: '2026-07-22'
+entry_count: 39
+window: 2026-06-14 (1.25.0) to 2026-07-22 (1.80.5)
+breaking_change_policy: 'Per https://2s.io/status: "Breaking changes are versioned in the SDKs. New endpoints are
+  additive." The changelog carries no breaking flag per entry; none of the 39 entries describes a removed or renamed
+  endpoint, and the 1.80.1 entry documents an error-code normalization (429 vs 503) as a behaviour change.'
+sdk_releases:
+  source: https://api.github.com/repos/2s-io/sdk/releases
+  latest: v1.82.0
+  date: '2026-08-21'
+  recent:
+  - v1.82.0 2026-08-21
+  - v1.81.0 2026-08-03
+  - v1.80.4 2026-07-20
+  - v1.80.2 2026-07-13
+  - v1.80.0 2026-07-02
+  note: SDK releases run ahead of the service changelog (1.82.0 vs 1.80.5) and carry no release notes body beyond
+    the tag.
+entries:
+- version: 1.80.5
+  date: '2026-07-22'
+  summary: 'Integrity-audit fixes: honest threat-feed availability on security.ioc-reputation, storage-cleanup hardening,
+    watcher status/scan-set fixes.'
+  breaking: false
+  additions: 3
+  highlights:
+  - 'security.ioc-reputation — a down threat feed is no longer reported as "not listed": unavailable sources are
+    excluded from sourcesChecked and surfaced in a new sourcesUnavailable field; if every source is unreachable
+    the endpoint returns 502 instead of a clean verdict'
+  - 'Store TTL cleanup hardening: expired-blob metadata rows are only dropped once their bytes are confirmed deleted,
+    and mass-expiry waves are processed in bounded batches per run'
+  - watchers.status now reports firesRemaining 0 for cancelled/completed/expired watchers; fixed a create/retire
+    race that could leave a newly armed watcher out of the poll scan set
+- version: 1.80.1
+  date: '2026-07-08'
+  summary: 'Integrity-audit fixes: country.lookup dataset backfill, space.weather feed repoint, upstream rate-limit
+    error-code normalization.'
+  breaking: false
+  additions: 3
+  highlights:
+  - country.lookup — population, flagSvg/flagPng, Google/OpenStreetMap URLs, drivingSide, and timezones are now
+    populated for all 250 countries (the bundled dataset had shipped them null/empty)
+  - space.weather — repointed the solar-wind plasma feed after NOAA SWPC removed /products/solar-wind/ (now the
+    geospace propagated-solar-wind product, with an independent RTSW fallback)
+  - 'Error-code normalization: upstream throttles now return 503 UPSTREAM_RATE_LIMIT everywhere (previously some
+    endpoints returned 429 RATE_LIMITED for an upstream throttle — crypto.*, github.*, sports.*, search.web, business/GLEIF
+    lookups, SEC form 144, dev.*). 429 RATE_LIMITED now always means OUR limiter; retry upstream throttles without
+    client-side backoff'
+- version: 1.80.0
+  date: '2026-07-02'
+  summary: 'upto billing (x402 first): authorize the quoted max, pay actual usage — live on all AI endpoints.'
+  breaking: false
+  additions: 4
+  highlights:
+  - 'upto billing — 2s is the first x402 API to settle ACTUAL usage: AI endpoints (chat, image, council, summarize,
+    extract, translate, entities, pii, research, web-answer, describe-image, ocr, transcribe) also accept the Permit2-based
+    x402 upto scheme. Authorize the quoted worst-case, settle only what your request used — a real on-chain call
+    authorized $0.0549 and settled $0.0013. Exact-scheme clients are unchanged; exact stays first in accepts'
+  - 'Agent store/control-plane hardening: per-tenant quotas (50 MB storage across kv/doc/vector/blob, 1,000 queue
+    depth, 100 concurrent locks); store.usage now reports totalBytes + capBytes headroom'
+  - 'Per-model image pricing: per-image-billed models (FLUX, Imagen, Recraft, Seedream, Grok Imagine) priced from
+    verified list prices; unpriced models are refused instead of mispriced; /api/ai/models now classifies by real
+    model type'
+  - SDK / MCP / Python 1.80.0 with refreshed catalogs and docs
+- version: 1.77.0
+  date: '2026-06-21'
+  summary: econ.fred-regional — FRED regional economic data across all states/counties/metros.
+  breaking: false
+  additions: 3
+  highlights:
+  - 'econ.fred-regional — one snapshot of a regional FRED series across ALL its geographies (every US state, county,
+    or metro) for a single period: each region’s name, FIPS region code, value, and per-region series id'
+  - Pass a regional series id (e.g. WIPCPI = per-capita personal income by state) + optional date for a point-in-time
+    cross-section; returns units, frequency, and available date range
+  - Authoritative St. Louis Fed (GeoFRED) data agents can’t recite — per-state income, county unemployment, regional
+    GDP; free, public-domain; companion to econ.fred + econ.fred-categories
+- version: 1.76.0
+  date: '2026-06-20'
+  summary: econ.fred-categories (FRED browse tree) + gov.eu-tenders (EU procurement).
+  breaking: false
+  additions: 3
+  highlights:
+  - 'econ.fred-categories — browse the FRED category tree to discover series: category + child categories + most-popular
+    series, then fetch with econ.fred'
+  - gov.eu-tenders — search EU public-procurement notices from TED (Tenders Electronic Daily) by country/CPV/keyword
+    or raw expert query; English-normalized buyer, title, deadline, CPV, value + links
+  - Both keyless live-wraps; TED is reusable EU open data
+- version: 1.75.0
+  date: '2026-06-20'
+  summary: product.gtin — barcode decode/validate + GS1 country + fresh open-data identity.
+  breaking: false
+  additions: 3
+  highlights:
+  - 'product.gtin — decode & validate any UPC/EAN/GTIN/ISBN barcode: GS1 mod-10 check digit, symbology, GTIN-14
+    form, GS1 prefix → issuing org + country (an LLM gets check digits + prefixes wrong)'
+  - Fresh best-effort product identity (name/brand/category/image) across the open ODbL Open*Facts federation —
+    always live, no caching; reliable for food/beverage/beauty, sparse for general retail
+  - NEW product group. Broad commercial product-name coverage is resale-restricted (RED) and intentionally not wrapped
+- version: 1.74.0
+  date: '2026-06-20'
+  summary: FRED release calendar + ALFRED vintage (point-in-time) data.
+  breaking: false
+  additions: 3
+  highlights:
+  - 'econ.fred-releases — the US economic-data release CALENDAR: upcoming report publication dates (filter by name
+    for next CPI / jobs / GDP / FOMC, or by releaseId) — future dates an LLM cannot know'
+  - 'econ.fred-vintage — ALFRED point-in-time data: a figure AS FIRST REPORTED / as known on a past date, plus its
+    full revision-date history — eliminates look-ahead bias for honest backtesting'
+  - econ.fred docs expanded into a usage guide (search→id workflow + popular series ids + companion endpoints)
+- version: 1.73.0
+  date: '2026-06-20'
+  summary: econ.fred (full FRED catalog) + business.uk-companies (Companies House).
+  breaking: false
+  additions: 3
+  highlights:
+  - econ.fred — the full FRED catalog (800k+ economic series) by id (metadata + observations) or full-text search
+  - 'business.uk-companies — official UK registry: name search OR companyNumber → profile + officers + filings/charges
+    flags'
+  - econ.fred is the generic catalog (vs curated econ.indicator); uk-companies is OGL, complements business.lei
+    + br-cnpj
+- version: 1.72.0
+  date: '2026-06-20'
+  summary: finance.figi + figi-search — OpenFIGI security symbology.
+  breaking: false
+  additions: 3
+  highlights:
+  - finance.figi — map an identifier (ISIN/CUSIP/SEDOL/TICKER/FIGI) to FIGI(s) + security metadata across listings
+  - finance.figi-search — free-text security search across global exchanges (+ filters + cursor)
+  - Open symbology (Bloomberg OpenFIGI); FIGI is an open OMG/ANNA standard
+- version: 1.71.0
+  date: '2026-06-20'
+  summary: medical.npi live — CMS NPPES provider registry (~9.6M).
+  breaking: false
+  additions: 3
+  highlights:
+  - medical.npi — US healthcare provider lookup by NPI, name, or organization (+state/taxonomy)
+  - Returns identity, taxonomies (code + NUCC description + license), and practice address
+  - Loaded off-box from the CMS monthly dissemination file into Neon (npiregistry.cms.gov blocks datacenter IPs)
+- version: 1.70.0
+  date: '2026-06-20'
+  summary: finance.bin (card BIN lookup) + NPPES NPI ingest staged.
+  breaking: false
+  additions: 2
+  highlights:
+  - finance.bin — card BIN/IIN → brand, type, issuing bank, country (CC-BY binlist-data, ~343k rows in Neon)
+  - 'medical.npi infrastructure staged: off-box NPPES ingest script + Neon-backed lib (awaiting first load on the
+    box)'
+- version: 1.69.0
+  date: '2026-06-20'
+  summary: Net-new keyless — Bitcoin fees, Brazil CNPJ, India IFSC, UK crime/food/grid.
+  breaking: false
+  additions: 4
+  highlights:
+  - crypto.btc-fees — Bitcoin fee rates + mempool (mempool.space)
+  - business.br-cnpj — Brazilian company registry by CNPJ
+  - finance.ifsc-india — Indian bank branch by IFSC
+  - gov.uk-crime, food.hygiene-uk, energy.carbon-intensity-uk — UK open-government data (OGL)
+note: Recent window only (12 of 39 entries, verbatim highlights). The full document is 21 KB and answers unauthenticated.

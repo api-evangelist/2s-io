@@ -1,0 +1,89 @@
+generated: '2026-09-19'
+method: derived
+source: openapi/2s-io-openapi.json
+probed: true
+docs:
+- https://2s.io/changelog.json
+- https://2s.io/status
+format: json-error-object
+envelope:
+  media_type: application/json
+  shape: '{ "error": { "code": <UPPER_SNAKE string>, "message": <string>, "details"?: <object> } }'
+  fields:
+  - name: error.code
+    description: Machine code in UPPER_SNAKE_CASE — observed BAD_REQUEST; documented RATE_LIMITED, UPSTREAM_RATE_LIMIT, RESULT_TOO_LARGE, NOT_FOUND.
+  - name: error.message
+    description: Short human sentence ("Invalid parameters.").
+  - name: error.details
+    description: 'Optional. On 400 a Zod-style validation report: details.issues[] with code, expected, received, path[], message.'
+  observed:
+  - status: 400
+    url: 'GET https://2s.io/api/validate/iban?trial=1 (required iban omitted; free trial mode, no payment)'
+    body: '{"error":{"code":"BAD_REQUEST","message":"Invalid parameters.","details":{"issues":[{"code":"invalid_type","expected":"string","received":"undefined","path":["iban"],"message":"Required"}]}}}'
+    note: Validation runs before the handler and before any charge; the trial call was not consumed by a 400.
+  - status: 402
+    url: 'GET https://2s.io/api/validate/iban?iban=… (no auth, no trial)'
+    body_shape: 'x402 v2 PaymentRequirements envelope — {x402Version 2, accepts[], resource{}, error "PAYMENT-SIGNATURE required", extensions.bazaar{}} — NOT the error envelope above; see conformance/2s-io-conformance.yml for the full observation.'
+    headers: [PAYMENT-REQUIRED (base64 of the same envelope), 'x-payment-requirements: x402']
+  - status: 404
+    url: https://2s.io/api/status
+    body: Next.js HTML error document (text/html, ~526 KB) — the site-wide 404 for unknown paths, including unknown /api/* paths. Not JSON.
+  - status: 405
+    url: GET https://2s.io/mcp
+    body: '{"jsonrpc":"2.0","id":null,"error":{"code":-32000,"message":"This MCP endpoint is POST-only (no SSE stream). Send JSON-RPC ..."}}'
+  note: >-
+    Not RFC 9457 — no type URI, title, status or instance fields and no application/problem+json. The success
+    envelope on 565 of 575 operations is {data: {ok, items|…, total, source, meta}, meta} (the "normalized"
+    x-2s-response-shape); the other 10 return raw bytes. The JSON-RPC surfaces (/mcp, /a2a) use JSON-RPC 2.0
+    error objects.
+problem_types:
+- status: 400
+  code: BAD_REQUEST
+  title: Invalid parameters
+  declared_on: 575 operations (components.responses.BadRequest, "Bad request — invalid parameters.")
+  observed: true
+  remediation: Read details.issues[].path and fix the named field; nothing was charged.
+- status: 400
+  code: RESULT_TOO_LARGE
+  title: Query too broad
+  declared_on: agriculture_stats description — "QuickStats caps results at 50,000 rows, so narrow broad queries (a 400 RESULT_TOO_LARGE tells you to add filters)"
+  remediation: Add filters (year range, state, county, statistic category).
+- status: 402
+  code: null
+  title: Payment required (x402 envelope)
+  declared_on: 575 operations (components.responses.PaymentRequired → X402PaymentRequiredV2)
+  observed: true
+  remediation: 'Pick an accepts[] entry, sign for that rail (EIP-3009 on Base, partial SPL transfer on Solana), retry with PAYMENT-SIGNATURE (X-PAYMENT accepted for v1 clients); or add ?trial=1 for one free real call per endpoint per hour. feedback_send refuses trial calls.'
+- status: 404
+  code: NOT_FOUND
+  title: No such record
+  declared_on: 'airport_lookup description ("or 404 NOT_FOUND"); not declared in responses{} on any operation'
+  note: A record-level 404 inside the JSON envelope, distinct from the site-wide HTML 404 for unknown paths.
+- status: 405
+  title: Method not allowed
+  declared_on: 575 operations (components.responses.MethodNotAllowed — "see Allow header for the supported method")
+- status: 429
+  code: RATE_LIMITED
+  title: 2s's own rate limiter
+  declared_on: 'not declared in the OpenAPI; documented in changelog 1.80.1 (2026-07-08): "429 RATE_LIMITED now always means OUR limiter"'
+  headers: none documented (no Retry-After or RateLimit-* stated)
+  remediation: Back off client-side. See rate-limits/2s-io-rate-limits.yml.
+- status: 500
+  title: Internal server error
+  declared_on: 575 operations (components.responses.ServerError)
+- status: 502
+  title: Upstream provider error
+  declared_on: 575 operations (components.responses.UpstreamError); changelog 1.80.5 adds that security_ioc-reputation returns 502 when every threat feed is unreachable rather than a clean verdict
+  remediation: A failed handler is never charged on-chain (status page commitment); retry later.
+- status: 503
+  code: UPSTREAM_RATE_LIMIT
+  title: Upstream throttle
+  declared_on: 'not declared in the OpenAPI; changelog 1.80.1: "upstream throttles now return 503 UPSTREAM_RATE_LIMIT everywhere … retry upstream throttles without client-side backoff"'
+  remediation: Retry immediately (provider guidance) — this is not the caller's limit.
+json_rpc_errors:
+- {code: -32000, message: 'This MCP endpoint is POST-only (no SSE stream)…', surfaces: [/mcp], trigger: GET}
+- {code: -32601, message: 'Method not found: resources/list | prompts/list', surfaces: [/mcp]}
+- {code: -32601, message: 'Method not found: "tasks/get". This agent supports "message/send".', surfaces: [/a2a]}
+batch_semantics:
+  operation: batch_run
+  note: '"Atomic: every sub-call must succeed or nothing is charged — the failing calls are returned and you can retry for free." Up to 50 sub-calls; no nested batch, no variable-priced or metered-upstream endpoints.'

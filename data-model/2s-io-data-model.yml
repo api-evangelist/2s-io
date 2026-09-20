@@ -1,0 +1,134 @@
+generated: '2026-09-19'
+method: derived
+source: openapi/2s-io-openapi.json
+docs:
+- https://2s.io/llms.txt
+- https://2s.io/api/directory
+summary: >-
+  Derived from the 3 component schemas (Source, CallMeta, X402PaymentRequiredV2), the inline request/response
+  objects of the 575 operations, and the identity model the contract repeats on every stateful operation. There
+  is no object graph in the classic sense — 470 of 575 operations are stateless reads over upstream datasets
+  whose entities (a CVE, a patent, a company, an airport) belong to the upstream, not to 2s, and each response
+  carries a Source {provider, url, license} saying whose they are. What 2s itself owns is a small set of
+  WALLET-scoped agent-infrastructure objects — Watcher, Schedule, Lock, Queue message, Topic/Subscription and
+  four Store families — plus the Endpoint catalog entry and the Payment. The contract links by id field
+  (watcherId, scheduleId, topicId, subscriptionId, leaseToken, token, ns/key) and returns whole objects; there
+  are no $ref links between top-level schemas and no expansion parameter.
+id_style:
+  format: opaque strings; documented length bounds on some
+  prefixes: []
+  documented_ids:
+  - {entity: Endpoint, example: 'weather.zip', note: 'x-2s-id — group.name; also the MCP tool name and the batch_run calls[].endpoint pattern ^[a-z0-9-]+\.[a-z0-9-]+$'}
+  - {entity: Watcher, field: watcherId, constraints: 'string 8–80 chars'}
+  - {entity: Schedule, field: scheduleId}
+  - {entity: Subscription, field: subscriptionId}
+  - {entity: Topic, field: topicId}
+  - {entity: Lock, field: 'key (≤256 chars of [A-Za-z0-9._:/-]) + token (returned by lock_acquire)'}
+  - {entity: Store object, field: 'ns (1–64 chars of [A-Za-z0-9._:-]) + key (≤256 chars)'}
+  - {entity: Wallet, example: '0x… EVM address on Base, or a Solana address', note: 'the tenant id; never sent explicitly — inferred from the x402 payer'}
+  - {entity: Payment, example: 'X-PAYMENT-TX — an on-chain transaction hash'}
+entities:
+- name: Wallet
+  description: The x402 payer. The only identity in the system — every stateful object is "scoped to YOUR wallet (the x402 payer)", and quotas (50 MB storage, 1,000 queue depth, 100 locks) attach here.
+  schemas: []
+  relationships:
+  - {has_many: Payment, via: payTo/X-PAYMENT-TX}
+  - {has_many: Watcher, via: x402 payer}
+  - {has_many: Schedule, via: x402 payer}
+  - {has_many: Lock, via: x402 payer}
+  - {has_many: Queue, via: x402 payer}
+  - {has_many: Topic, via: 'x402 payer (owner)'}
+  - {has_many: Subscription, via: 'x402 payer (subscriber)'}
+  - {has_many: StoreObject, via: x402 payer + ns}
+- name: Endpoint
+  description: A catalog entry — id (group.name), method, path, description, price, accepts, responseShape, params schema. The unit the directory, registry, x402 manifest, MCP tool list and A2A discovery skill all enumerate.
+  schemas: []
+  relationships:
+  - {belongs_to: Group, via: 'id prefix / tags[0]'}
+  - {has_many: Payment, via: resource.url in the 402}
+- name: Group
+  description: One of 112 endpoint families (gov, crypto, watchers, …), each with a description in catalog.txt and a per-group OpenAPI sub-spec at /api/openapi?group=<g>.
+  schemas: []
+  relationships:
+  - {has_many: Endpoint, via: tag}
+- name: Payment
+  description: 'An x402 settlement: the 402 envelope (X402PaymentRequiredV2 — x402Version, accepts[], resource, error, extensions) answered by a signed authorization, settled by the facilitator, referenced by X-PAYMENT-TX on the 200.'
+  schemas: [X402PaymentRequiredV2]
+  relationships:
+  - {belongs_to: Wallet, via: signer}
+  - {belongs_to: Endpoint, via: resource.url}
+  - {has_one: CallMeta, via: 'meta on the 200 (cost, settlement details)'}
+- name: Response
+  description: 'The normalized envelope on 565 operations: data {ok, items|object, total, source, meta} + meta (CallMeta). Ten media operations return raw bytes instead.'
+  schemas: [Source, CallMeta]
+  relationships:
+  - {has_one: Source, via: data.source}
+  - {has_one: CallMeta, via: meta}
+- name: Source
+  description: 'Provenance of the data: upstream provider, source URL, and license. Present on every normalized response.'
+  schemas: [Source]
+  relationships: []
+- name: Watcher
+  description: 'An armed event subscription (27 kinds) with callbackUrl, filters, payload, expiresInSeconds, maxFires, label; state armed | completed | expired | cancelled; fires used/remaining; recent deliveries and undelivered events.'
+  schemas: []
+  relationships:
+  - {belongs_to: Wallet, via: x402 payer}
+  - {has_many: Delivery, via: watchers_status.deliveries}
+- name: Schedule
+  description: 'A time-driven callback (at | everySeconds) with payload, maxFires, expiresInSeconds; callbacks carry scheduleId, fireNumber, firedAt.'
+  schemas: []
+  relationships:
+  - {belongs_to: Wallet, via: x402 payer}
+  - {has_many: Delivery, via: fires}
+- name: Delivery
+  description: One EIP-191-signed HTTP POST to a callbackUrl with HTTP result and attempt count; undelivered events are retained with their full bodies for pull-back.
+  schemas: []
+  relationships:
+  - {belongs_to: Watcher, via: watcherId}
+  - {belongs_to: Schedule, via: scheduleId}
+  - {belongs_to: Subscription, via: subscriptionId}
+- name: Lock
+  description: A distributed lease on a key with ttlSeconds (1–86400) and a holder token; renew extends, release (idempotent) ends, expiry auto-releases.
+  schemas: []
+  relationships:
+  - {belongs_to: Wallet, via: x402 payer}
+- name: Queue
+  description: A named durable FIFO per wallet (depth ≤ 1,000); messages are enqueued, leased (hidden for visibilitySeconds, FOR UPDATE SKIP LOCKED) and acked (deleted).
+  schemas: []
+  relationships:
+  - {belongs_to: Wallet, via: x402 payer}
+  - {has_many: QueueMessage, via: queue name}
+- name: QueueMessage
+  description: A message with a leaseToken while claimed; redelivered if not acked in time.
+  schemas: []
+  relationships:
+  - {belongs_to: Queue, via: queue}
+- name: Topic
+  description: A pub/sub topic owned by the creating wallet (pubsub_create-topic, idempotent); the owner publishes, anyone with the topicId may subscribe.
+  schemas: []
+  relationships:
+  - {belongs_to: Wallet, via: owner}
+  - {has_many: Subscription, via: 'topicId (≤ 100, one per URL)'}
+- name: Subscription
+  description: A confirmed callbackUrl on a topic (challenge via X-2s-Confirmation-Token must be echoed); auto-disabled after repeated delivery failure; removed by pubsub_unsubscribe.
+  schemas: []
+  relationships:
+  - {belongs_to: Topic, via: topicId}
+  - {belongs_to: Wallet, via: subscriber}
+  - {has_many: Delivery, via: published messages}
+- name: StoreObject
+  description: 'Four families under a wallet + namespace: KV (JSON value ≤ 1 MB, key), Document (full-text indexed, id), Vector (namespaced embeddings, id), Blob (file bytes, id). 50 MB per wallet; rolling 90-day expiry reset on touch; each family has put/get/delete (+ scan/list/search/query).'
+  schemas: []
+  relationships:
+  - {belongs_to: Wallet, via: x402 payer}
+  - {belongs_to: Namespace, via: ns}
+- name: Batch
+  description: 'batch_run — up to 50 {endpoint, params} calls behind one Payment; atomic; failing calls returned for free retry.'
+  schemas: []
+  relationships:
+  - {has_many: Endpoint, via: 'calls[].endpoint'}
+  - {has_one: Payment, via: the single x402 charge}
+render: null
+notes:
+- The upstream entities the read endpoints return (Company, CVE, Patent, Filing, Airport, …) are not modelled here because 2s does not own them; each response names its owner in data.source.
+- CallMeta's schema body is undeclared in the contract ("endpoint id, cost, caller kind, settlement details" in prose only).

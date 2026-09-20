@@ -1,0 +1,1969 @@
+{
+  "linkset": [
+    {
+      "anchor": "https://2s.io",
+      "service-desc": [
+        {
+          "href": "https://2s.io/openapi.json",
+          "type": "application/vnd.oai.openapi+json;version=3.1",
+          "title": "Full OpenAPI 3.1 spec (every endpoint)"
+        },
+        {
+          "href": "https://2s.io/apis.json",
+          "type": "application/json",
+          "title": "APIs.json discovery index"
+        }
+      ],
+      "service-doc": [
+        {
+          "href": "https://2s.io/llms.txt",
+          "type": "text/markdown",
+          "title": "llms.txt manifest"
+        },
+        {
+          "href": "https://2s.io/discover",
+          "type": "text/html",
+          "title": "Endpoint catalog"
+        }
+      ],
+      "service-meta": [
+        {
+          "href": "https://2s.io/api/directory",
+          "type": "application/json",
+          "title": "Machine-readable directory"
+        },
+        {
+          "href": "https://2s.io/.well-known/x402",
+          "type": "application/json",
+          "title": "x402 payment manifest"
+        },
+        {
+          "href": "https://2s.io/.well-known/ai-plugin.json",
+          "type": "application/json",
+          "title": "AI plugin manifest"
+        },
+        {
+          "href": "https://2s.io/.well-known/mcp/server-card.json",
+          "type": "application/json",
+          "title": "MCP server card"
+        },
+        {
+          "href": "https://2s.io/.well-known/agent-card.json",
+          "type": "application/json",
+          "title": "A2A agent card"
+        }
+      ],
+      "status-page": [
+        {
+          "href": "https://2s.io/status",
+          "type": "text/html",
+          "title": "Status"
+        }
+      ]
+    },
+    {
+      "anchor": "https://2s.io/agent",
+      "service-desc": [
+        {
+          "href": "https://2s.io/api/openapi?group=agent",
+          "type": "application/vnd.oai.openapi+json;version=3.1",
+          "title": "Self-contained OpenAPI sub-spec for the \"agent\" group"
+        }
+      ],
+      "service-doc": [
+        {
+          "href": "https://2s.io/agent",
+          "type": "text/html",
+          "title": "2s agent endpoints"
+        }
+      ]
+    },
+    {
+      "anchor": "https://2s.io/agriculture",
+      "service-desc": [
+        {
+          "href": "https://2s.io/api/openapi?group=agriculture",
+          "type": "application/vnd.oai.openapi+json;version=3.1",
+          "title": "Self-contained OpenAPI sub-spec for the \"agriculture\" group"
+        }
+      ],
+      "service-doc": [
+        {
+          "href": "https://2s.io/agriculture",
+          "type": "text/html",
+          "title": "2s agriculture endpoints"
+        }
+      ]
+    },
+    {
+      "anchor": "https://2s.io/ai",
+      "service-desc": [
+        {
+          "href": "https://2s.io/api/openapi?group=ai",
+          "type": "application/vnd.oai.openapi+json;version=3.1",
+          "title": "Self-contained OpenAPI sub-spec for the \"ai\" group"
+        }
+      ],
+      "service-doc": [
+        {
+          "href": "https://2s.io/ai",
+          "type": "text/html",
+          "title": "2s ai endpoints"
+        }
+      ]
+    },
+    {
+      "anchor": "https://2s.io/airport",
+      "service-desc": [
+        {
+          "href": "https://2s.io/api/openapi?group=airport",
+          "type": "application/vnd.oai.openapi+json;version=3.1",
+          "title": "Self-contained OpenAPI sub-spec for the \"airport\" group"
+        }
+      ],
+      "service-doc": [
+        {
+          "href": "https://2s.io/airport",
+          "type": "text/html",
+          "title": "2s airport endpoints"
+        }
+      ]
+    },
+    {
+      "anchor": "https://2s.io/aviation",
+      "service-desc": [
+        {
+          "href": "https://2s.io/api/openapi?group=aviation",
+          "type": "application/vnd.oai.openapi+json;version=3.1",
+          "title": "Self-contained OpenAPI sub-spec for the \"aviation\" group"
+        }
+      ],
+      "service-doc": [
+        {
+          "href": "https://2s.io/aviation",
+          "type": "text/html",
+          "title": "2s aviation endpoints"
+        }
+      ]
+    },
+    {
+      "anchor": "https://2s.io/bank",
+      "service-desc": [
+        {
+          "href": "https://2s.io/api/openapi?group=bank",
+          "type": "application/vnd.oai.openapi+json;version=3.1",
+          "title": "Self-contained OpenAPI sub-spec for the \"bank\" group"
+        }
+      ],
+      "service-doc": [
+        {
+          "href": "https://2s.io/bank",
+          "type": "text/html",
+          "title": "2s bank endpoints"
+        }
+      ]
+    },
+    {
+      "anchor": "https://2s.io/barcode",
+      "service-desc": [
+        {
+          "href": "https://2s.io/api/openapi?group=barcode",
+          "type": "application/vnd.oai.openapi+json;version=3.1",
+          "title": "Self-contained OpenAPI sub-spec for the \"barcode\" group"
+        }
+      ],
+      "service-doc": [
+        {
+          "href": "https://2s.io/barcode",
+          "type": "text/html",
+          "title": "2s barcode endpoints"
+        }
+      ]
+    },
+    {
+      "anchor": "https://2s.io/batch",
+      "service-desc": [
+        {
+          "href": "https://2s.io/api/openapi?group=batch",
+          "type": "application/vnd.oai.openapi+json;version=3.1",
+          "title": "Self-contained OpenAPI sub-spec for the \"batch\" group"
+        }
+      ],
+      "service-doc": [
+        {
+          "href": "https://2s.io/batch",
+          "type": "text/html",
+          "title": "2s batch endpoints"
+        }
+      ]
+    },
+    {
+      "anchor": "https://2s.io/bio",
+      "service-desc": [
+        {
+          "href": "https://2s.io/api/openapi?group=bio",
+          "type": "application/vnd.oai.openapi+json;version=3.1",
+          "title": "Self-contained OpenAPI sub-spec for the \"bio\" group"
+        }
+      ],
+      "service-doc": [
+        {
+          "href": "https://2s.io/bio",
+          "type": "text/html",
+          "title": "2s bio endpoints"
+        }
+      ]
+    },
+    {
+      "anchor": "https://2s.io/bls",
+      "service-desc": [
+        {
+          "href": "https://2s.io/api/openapi?group=bls",
+          "type": "application/vnd.oai.openapi+json;version=3.1",
+          "title": "Self-contained OpenAPI sub-spec for the \"bls\" group"
+        }
+      ],
+      "service-doc": [
+        {
+          "href": "https://2s.io/bls",
+          "type": "text/html",
+          "title": "2s bls endpoints"
+        }
+      ]
+    },
+    {
+      "anchor": "https://2s.io/book",
+      "service-desc": [
+        {
+          "href": "https://2s.io/api/openapi?group=book",
+          "type": "application/vnd.oai.openapi+json;version=3.1",
+          "title": "Self-contained OpenAPI sub-spec for the \"book\" group"
+        }
+      ],
+      "service-doc": [
+        {
+          "href": "https://2s.io/book",
+          "type": "text/html",
+          "title": "2s book endpoints"
+        }
+      ]
+    },
+    {
+      "anchor": "https://2s.io/business",
+      "service-desc": [
+        {
+          "href": "https://2s.io/api/openapi?group=business",
+          "type": "application/vnd.oai.openapi+json;version=3.1",
+          "title": "Self-contained OpenAPI sub-spec for the \"business\" group"
+        }
+      ],
+      "service-doc": [
+        {
+          "href": "https://2s.io/business",
+          "type": "text/html",
+          "title": "2s business endpoints"
+        }
+      ]
+    },
+    {
+      "anchor": "https://2s.io/calendar",
+      "service-desc": [
+        {
+          "href": "https://2s.io/api/openapi?group=calendar",
+          "type": "application/vnd.oai.openapi+json;version=3.1",
+          "title": "Self-contained OpenAPI sub-spec for the \"calendar\" group"
+        }
+      ],
+      "service-doc": [
+        {
+          "href": "https://2s.io/calendar",
+          "type": "text/html",
+          "title": "2s calendar endpoints"
+        }
+      ]
+    },
+    {
+      "anchor": "https://2s.io/census",
+      "service-desc": [
+        {
+          "href": "https://2s.io/api/openapi?group=census",
+          "type": "application/vnd.oai.openapi+json;version=3.1",
+          "title": "Self-contained OpenAPI sub-spec for the \"census\" group"
+        }
+      ],
+      "service-doc": [
+        {
+          "href": "https://2s.io/census",
+          "type": "text/html",
+          "title": "2s census endpoints"
+        }
+      ]
+    },
+    {
+      "anchor": "https://2s.io/chem",
+      "service-desc": [
+        {
+          "href": "https://2s.io/api/openapi?group=chem",
+          "type": "application/vnd.oai.openapi+json;version=3.1",
+          "title": "Self-contained OpenAPI sub-spec for the \"chem\" group"
+        }
+      ],
+      "service-doc": [
+        {
+          "href": "https://2s.io/chem",
+          "type": "text/html",
+          "title": "2s chem endpoints"
+        }
+      ]
+    },
+    {
+      "anchor": "https://2s.io/chinese",
+      "service-desc": [
+        {
+          "href": "https://2s.io/api/openapi?group=chinese",
+          "type": "application/vnd.oai.openapi+json;version=3.1",
+          "title": "Self-contained OpenAPI sub-spec for the \"chinese\" group"
+        }
+      ],
+      "service-doc": [
+        {
+          "href": "https://2s.io/chinese",
+          "type": "text/html",
+          "title": "2s chinese endpoints"
+        }
+      ]
+    },
+    {
+      "anchor": "https://2s.io/class",
+      "service-desc": [
+        {
+          "href": "https://2s.io/api/openapi?group=class",
+          "type": "application/vnd.oai.openapi+json;version=3.1",
+          "title": "Self-contained OpenAPI sub-spec for the \"class\" group"
+        }
+      ],
+      "service-doc": [
+        {
+          "href": "https://2s.io/class",
+          "type": "text/html",
+          "title": "2s class endpoints"
+        }
+      ]
+    },
+    {
+      "anchor": "https://2s.io/climate",
+      "service-desc": [
+        {
+          "href": "https://2s.io/api/openapi?group=climate",
+          "type": "application/vnd.oai.openapi+json;version=3.1",
+          "title": "Self-contained OpenAPI sub-spec for the \"climate\" group"
+        }
+      ],
+      "service-doc": [
+        {
+          "href": "https://2s.io/climate",
+          "type": "text/html",
+          "title": "2s climate endpoints"
+        }
+      ]
+    },
+    {
+      "anchor": "https://2s.io/clinical",
+      "service-desc": [
+        {
+          "href": "https://2s.io/api/openapi?group=clinical",
+          "type": "application/vnd.oai.openapi+json;version=3.1",
+          "title": "Self-contained OpenAPI sub-spec for the \"clinical\" group"
+        }
+      ],
+      "service-doc": [
+        {
+          "href": "https://2s.io/clinical",
+          "type": "text/html",
+          "title": "2s clinical endpoints"
+        }
+      ]
+    },
+    {
+      "anchor": "https://2s.io/code",
+      "service-desc": [
+        {
+          "href": "https://2s.io/api/openapi?group=code",
+          "type": "application/vnd.oai.openapi+json;version=3.1",
+          "title": "Self-contained OpenAPI sub-spec for the \"code\" group"
+        }
+      ],
+      "service-doc": [
+        {
+          "href": "https://2s.io/code",
+          "type": "text/html",
+          "title": "2s code endpoints"
+        }
+      ]
+    },
+    {
+      "anchor": "https://2s.io/convert",
+      "service-desc": [
+        {
+          "href": "https://2s.io/api/openapi?group=convert",
+          "type": "application/vnd.oai.openapi+json;version=3.1",
+          "title": "Self-contained OpenAPI sub-spec for the \"convert\" group"
+        }
+      ],
+      "service-doc": [
+        {
+          "href": "https://2s.io/convert",
+          "type": "text/html",
+          "title": "2s convert endpoints"
+        }
+      ]
+    },
+    {
+      "anchor": "https://2s.io/countdown",
+      "service-desc": [
+        {
+          "href": "https://2s.io/api/openapi?group=countdown",
+          "type": "application/vnd.oai.openapi+json;version=3.1",
+          "title": "Self-contained OpenAPI sub-spec for the \"countdown\" group"
+        }
+      ],
+      "service-doc": [
+        {
+          "href": "https://2s.io/countdown",
+          "type": "text/html",
+          "title": "2s countdown endpoints"
+        }
+      ]
+    },
+    {
+      "anchor": "https://2s.io/country",
+      "service-desc": [
+        {
+          "href": "https://2s.io/api/openapi?group=country",
+          "type": "application/vnd.oai.openapi+json;version=3.1",
+          "title": "Self-contained OpenAPI sub-spec for the \"country\" group"
+        }
+      ],
+      "service-doc": [
+        {
+          "href": "https://2s.io/country",
+          "type": "text/html",
+          "title": "2s country endpoints"
+        }
+      ]
+    },
+    {
+      "anchor": "https://2s.io/crypto",
+      "service-desc": [
+        {
+          "href": "https://2s.io/api/openapi?group=crypto",
+          "type": "application/vnd.oai.openapi+json;version=3.1",
+          "title": "Self-contained OpenAPI sub-spec for the \"crypto\" group"
+        }
+      ],
+      "service-doc": [
+        {
+          "href": "https://2s.io/crypto",
+          "type": "text/html",
+          "title": "2s crypto endpoints"
+        }
+      ]
+    },
+    {
+      "anchor": "https://2s.io/dev",
+      "service-desc": [
+        {
+          "href": "https://2s.io/api/openapi?group=dev",
+          "type": "application/vnd.oai.openapi+json;version=3.1",
+          "title": "Self-contained OpenAPI sub-spec for the \"dev\" group"
+        }
+      ],
+      "service-doc": [
+        {
+          "href": "https://2s.io/dev",
+          "type": "text/html",
+          "title": "2s dev endpoints"
+        }
+      ]
+    },
+    {
+      "anchor": "https://2s.io/dns",
+      "service-desc": [
+        {
+          "href": "https://2s.io/api/openapi?group=dns",
+          "type": "application/vnd.oai.openapi+json;version=3.1",
+          "title": "Self-contained OpenAPI sub-spec for the \"dns\" group"
+        }
+      ],
+      "service-doc": [
+        {
+          "href": "https://2s.io/dns",
+          "type": "text/html",
+          "title": "2s dns endpoints"
+        }
+      ]
+    },
+    {
+      "anchor": "https://2s.io/domain",
+      "service-desc": [
+        {
+          "href": "https://2s.io/api/openapi?group=domain",
+          "type": "application/vnd.oai.openapi+json;version=3.1",
+          "title": "Self-contained OpenAPI sub-spec for the \"domain\" group"
+        }
+      ],
+      "service-doc": [
+        {
+          "href": "https://2s.io/domain",
+          "type": "text/html",
+          "title": "2s domain endpoints"
+        }
+      ]
+    },
+    {
+      "anchor": "https://2s.io/earth",
+      "service-desc": [
+        {
+          "href": "https://2s.io/api/openapi?group=earth",
+          "type": "application/vnd.oai.openapi+json;version=3.1",
+          "title": "Self-contained OpenAPI sub-spec for the \"earth\" group"
+        }
+      ],
+      "service-doc": [
+        {
+          "href": "https://2s.io/earth",
+          "type": "text/html",
+          "title": "2s earth endpoints"
+        }
+      ]
+    },
+    {
+      "anchor": "https://2s.io/econ",
+      "service-desc": [
+        {
+          "href": "https://2s.io/api/openapi?group=econ",
+          "type": "application/vnd.oai.openapi+json;version=3.1",
+          "title": "Self-contained OpenAPI sub-spec for the \"econ\" group"
+        }
+      ],
+      "service-doc": [
+        {
+          "href": "https://2s.io/econ",
+          "type": "text/html",
+          "title": "2s econ endpoints"
+        }
+      ]
+    },
+    {
+      "anchor": "https://2s.io/edi",
+      "service-desc": [
+        {
+          "href": "https://2s.io/api/openapi?group=edi",
+          "type": "application/vnd.oai.openapi+json;version=3.1",
+          "title": "Self-contained OpenAPI sub-spec for the \"edi\" group"
+        }
+      ],
+      "service-doc": [
+        {
+          "href": "https://2s.io/edi",
+          "type": "text/html",
+          "title": "2s edi endpoints"
+        }
+      ]
+    },
+    {
+      "anchor": "https://2s.io/edu",
+      "service-desc": [
+        {
+          "href": "https://2s.io/api/openapi?group=edu",
+          "type": "application/vnd.oai.openapi+json;version=3.1",
+          "title": "Self-contained OpenAPI sub-spec for the \"edu\" group"
+        }
+      ],
+      "service-doc": [
+        {
+          "href": "https://2s.io/edu",
+          "type": "text/html",
+          "title": "2s edu endpoints"
+        }
+      ]
+    },
+    {
+      "anchor": "https://2s.io/email",
+      "service-desc": [
+        {
+          "href": "https://2s.io/api/openapi?group=email",
+          "type": "application/vnd.oai.openapi+json;version=3.1",
+          "title": "Self-contained OpenAPI sub-spec for the \"email\" group"
+        }
+      ],
+      "service-doc": [
+        {
+          "href": "https://2s.io/email",
+          "type": "text/html",
+          "title": "2s email endpoints"
+        }
+      ]
+    },
+    {
+      "anchor": "https://2s.io/energy",
+      "service-desc": [
+        {
+          "href": "https://2s.io/api/openapi?group=energy",
+          "type": "application/vnd.oai.openapi+json;version=3.1",
+          "title": "Self-contained OpenAPI sub-spec for the \"energy\" group"
+        }
+      ],
+      "service-doc": [
+        {
+          "href": "https://2s.io/energy",
+          "type": "text/html",
+          "title": "2s energy endpoints"
+        }
+      ]
+    },
+    {
+      "anchor": "https://2s.io/factcheck",
+      "service-desc": [
+        {
+          "href": "https://2s.io/api/openapi?group=factcheck",
+          "type": "application/vnd.oai.openapi+json;version=3.1",
+          "title": "Self-contained OpenAPI sub-spec for the \"factcheck\" group"
+        }
+      ],
+      "service-doc": [
+        {
+          "href": "https://2s.io/factcheck",
+          "type": "text/html",
+          "title": "2s factcheck endpoints"
+        }
+      ]
+    },
+    {
+      "anchor": "https://2s.io/feedback",
+      "service-desc": [
+        {
+          "href": "https://2s.io/api/openapi?group=feedback",
+          "type": "application/vnd.oai.openapi+json;version=3.1",
+          "title": "Self-contained OpenAPI sub-spec for the \"feedback\" group"
+        }
+      ],
+      "service-doc": [
+        {
+          "href": "https://2s.io/feedback",
+          "type": "text/html",
+          "title": "2s feedback endpoints"
+        }
+      ]
+    },
+    {
+      "anchor": "https://2s.io/finance",
+      "service-desc": [
+        {
+          "href": "https://2s.io/api/openapi?group=finance",
+          "type": "application/vnd.oai.openapi+json;version=3.1",
+          "title": "Self-contained OpenAPI sub-spec for the \"finance\" group"
+        }
+      ],
+      "service-doc": [
+        {
+          "href": "https://2s.io/finance",
+          "type": "text/html",
+          "title": "2s finance endpoints"
+        }
+      ]
+    },
+    {
+      "anchor": "https://2s.io/flight",
+      "service-desc": [
+        {
+          "href": "https://2s.io/api/openapi?group=flight",
+          "type": "application/vnd.oai.openapi+json;version=3.1",
+          "title": "Self-contained OpenAPI sub-spec for the \"flight\" group"
+        }
+      ],
+      "service-doc": [
+        {
+          "href": "https://2s.io/flight",
+          "type": "text/html",
+          "title": "2s flight endpoints"
+        }
+      ]
+    },
+    {
+      "anchor": "https://2s.io/food",
+      "service-desc": [
+        {
+          "href": "https://2s.io/api/openapi?group=food",
+          "type": "application/vnd.oai.openapi+json;version=3.1",
+          "title": "Self-contained OpenAPI sub-spec for the \"food\" group"
+        }
+      ],
+      "service-doc": [
+        {
+          "href": "https://2s.io/food",
+          "type": "text/html",
+          "title": "2s food endpoints"
+        }
+      ]
+    },
+    {
+      "anchor": "https://2s.io/fx",
+      "service-desc": [
+        {
+          "href": "https://2s.io/api/openapi?group=fx",
+          "type": "application/vnd.oai.openapi+json;version=3.1",
+          "title": "Self-contained OpenAPI sub-spec for the \"fx\" group"
+        }
+      ],
+      "service-doc": [
+        {
+          "href": "https://2s.io/fx",
+          "type": "text/html",
+          "title": "2s fx endpoints"
+        }
+      ]
+    },
+    {
+      "anchor": "https://2s.io/geo",
+      "service-desc": [
+        {
+          "href": "https://2s.io/api/openapi?group=geo",
+          "type": "application/vnd.oai.openapi+json;version=3.1",
+          "title": "Self-contained OpenAPI sub-spec for the \"geo\" group"
+        }
+      ],
+      "service-doc": [
+        {
+          "href": "https://2s.io/geo",
+          "type": "text/html",
+          "title": "2s geo endpoints"
+        }
+      ]
+    },
+    {
+      "anchor": "https://2s.io/geocode",
+      "service-desc": [
+        {
+          "href": "https://2s.io/api/openapi?group=geocode",
+          "type": "application/vnd.oai.openapi+json;version=3.1",
+          "title": "Self-contained OpenAPI sub-spec for the \"geocode\" group"
+        }
+      ],
+      "service-doc": [
+        {
+          "href": "https://2s.io/geocode",
+          "type": "text/html",
+          "title": "2s geocode endpoints"
+        }
+      ]
+    },
+    {
+      "anchor": "https://2s.io/github",
+      "service-desc": [
+        {
+          "href": "https://2s.io/api/openapi?group=github",
+          "type": "application/vnd.oai.openapi+json;version=3.1",
+          "title": "Self-contained OpenAPI sub-spec for the \"github\" group"
+        }
+      ],
+      "service-doc": [
+        {
+          "href": "https://2s.io/github",
+          "type": "text/html",
+          "title": "2s github endpoints"
+        }
+      ]
+    },
+    {
+      "anchor": "https://2s.io/gov",
+      "service-desc": [
+        {
+          "href": "https://2s.io/api/openapi?group=gov",
+          "type": "application/vnd.oai.openapi+json;version=3.1",
+          "title": "Self-contained OpenAPI sub-spec for the \"gov\" group"
+        }
+      ],
+      "service-doc": [
+        {
+          "href": "https://2s.io/gov",
+          "type": "text/html",
+          "title": "2s gov endpoints"
+        }
+      ]
+    },
+    {
+      "anchor": "https://2s.io/hash",
+      "service-desc": [
+        {
+          "href": "https://2s.io/api/openapi?group=hash",
+          "type": "application/vnd.oai.openapi+json;version=3.1",
+          "title": "Self-contained OpenAPI sub-spec for the \"hash\" group"
+        }
+      ],
+      "service-doc": [
+        {
+          "href": "https://2s.io/hash",
+          "type": "text/html",
+          "title": "2s hash endpoints"
+        }
+      ]
+    },
+    {
+      "anchor": "https://2s.io/health",
+      "service-desc": [
+        {
+          "href": "https://2s.io/api/openapi?group=health",
+          "type": "application/vnd.oai.openapi+json;version=3.1",
+          "title": "Self-contained OpenAPI sub-spec for the \"health\" group"
+        }
+      ],
+      "service-doc": [
+        {
+          "href": "https://2s.io/health",
+          "type": "text/html",
+          "title": "2s health endpoints"
+        }
+      ]
+    },
+    {
+      "anchor": "https://2s.io/html",
+      "service-desc": [
+        {
+          "href": "https://2s.io/api/openapi?group=html",
+          "type": "application/vnd.oai.openapi+json;version=3.1",
+          "title": "Self-contained OpenAPI sub-spec for the \"html\" group"
+        }
+      ],
+      "service-doc": [
+        {
+          "href": "https://2s.io/html",
+          "type": "text/html",
+          "title": "2s html endpoints"
+        }
+      ]
+    },
+    {
+      "anchor": "https://2s.io/image",
+      "service-desc": [
+        {
+          "href": "https://2s.io/api/openapi?group=image",
+          "type": "application/vnd.oai.openapi+json;version=3.1",
+          "title": "Self-contained OpenAPI sub-spec for the \"image\" group"
+        }
+      ],
+      "service-doc": [
+        {
+          "href": "https://2s.io/image",
+          "type": "text/html",
+          "title": "2s image endpoints"
+        }
+      ]
+    },
+    {
+      "anchor": "https://2s.io/inflation",
+      "service-desc": [
+        {
+          "href": "https://2s.io/api/openapi?group=inflation",
+          "type": "application/vnd.oai.openapi+json;version=3.1",
+          "title": "Self-contained OpenAPI sub-spec for the \"inflation\" group"
+        }
+      ],
+      "service-doc": [
+        {
+          "href": "https://2s.io/inflation",
+          "type": "text/html",
+          "title": "2s inflation endpoints"
+        }
+      ]
+    },
+    {
+      "anchor": "https://2s.io/ipinfo",
+      "service-desc": [
+        {
+          "href": "https://2s.io/api/openapi?group=ipinfo",
+          "type": "application/vnd.oai.openapi+json;version=3.1",
+          "title": "Self-contained OpenAPI sub-spec for the \"ipinfo\" group"
+        }
+      ],
+      "service-doc": [
+        {
+          "href": "https://2s.io/ipinfo",
+          "type": "text/html",
+          "title": "2s ipinfo endpoints"
+        }
+      ]
+    },
+    {
+      "anchor": "https://2s.io/iso",
+      "service-desc": [
+        {
+          "href": "https://2s.io/api/openapi?group=iso",
+          "type": "application/vnd.oai.openapi+json;version=3.1",
+          "title": "Self-contained OpenAPI sub-spec for the \"iso\" group"
+        }
+      ],
+      "service-doc": [
+        {
+          "href": "https://2s.io/iso",
+          "type": "text/html",
+          "title": "2s iso endpoints"
+        }
+      ]
+    },
+    {
+      "anchor": "https://2s.io/job",
+      "service-desc": [
+        {
+          "href": "https://2s.io/api/openapi?group=job",
+          "type": "application/vnd.oai.openapi+json;version=3.1",
+          "title": "Self-contained OpenAPI sub-spec for the \"job\" group"
+        }
+      ],
+      "service-doc": [
+        {
+          "href": "https://2s.io/job",
+          "type": "text/html",
+          "title": "2s job endpoints"
+        }
+      ]
+    },
+    {
+      "anchor": "https://2s.io/labor",
+      "service-desc": [
+        {
+          "href": "https://2s.io/api/openapi?group=labor",
+          "type": "application/vnd.oai.openapi+json;version=3.1",
+          "title": "Self-contained OpenAPI sub-spec for the \"labor\" group"
+        }
+      ],
+      "service-doc": [
+        {
+          "href": "https://2s.io/labor",
+          "type": "text/html",
+          "title": "2s labor endpoints"
+        }
+      ]
+    },
+    {
+      "anchor": "https://2s.io/law",
+      "service-desc": [
+        {
+          "href": "https://2s.io/api/openapi?group=law",
+          "type": "application/vnd.oai.openapi+json;version=3.1",
+          "title": "Self-contained OpenAPI sub-spec for the \"law\" group"
+        }
+      ],
+      "service-doc": [
+        {
+          "href": "https://2s.io/law",
+          "type": "text/html",
+          "title": "2s law endpoints"
+        }
+      ]
+    },
+    {
+      "anchor": "https://2s.io/license",
+      "service-desc": [
+        {
+          "href": "https://2s.io/api/openapi?group=license",
+          "type": "application/vnd.oai.openapi+json;version=3.1",
+          "title": "Self-contained OpenAPI sub-spec for the \"license\" group"
+        }
+      ],
+      "service-doc": [
+        {
+          "href": "https://2s.io/license",
+          "type": "text/html",
+          "title": "2s license endpoints"
+        }
+      ]
+    },
+    {
+      "anchor": "https://2s.io/lock",
+      "service-desc": [
+        {
+          "href": "https://2s.io/api/openapi?group=lock",
+          "type": "application/vnd.oai.openapi+json;version=3.1",
+          "title": "Self-contained OpenAPI sub-spec for the \"lock\" group"
+        }
+      ],
+      "service-doc": [
+        {
+          "href": "https://2s.io/lock",
+          "type": "text/html",
+          "title": "2s lock endpoints"
+        }
+      ]
+    },
+    {
+      "anchor": "https://2s.io/maritime",
+      "service-desc": [
+        {
+          "href": "https://2s.io/api/openapi?group=maritime",
+          "type": "application/vnd.oai.openapi+json;version=3.1",
+          "title": "Self-contained OpenAPI sub-spec for the \"maritime\" group"
+        }
+      ],
+      "service-doc": [
+        {
+          "href": "https://2s.io/maritime",
+          "type": "text/html",
+          "title": "2s maritime endpoints"
+        }
+      ]
+    },
+    {
+      "anchor": "https://2s.io/markets",
+      "service-desc": [
+        {
+          "href": "https://2s.io/api/openapi?group=markets",
+          "type": "application/vnd.oai.openapi+json;version=3.1",
+          "title": "Self-contained OpenAPI sub-spec for the \"markets\" group"
+        }
+      ],
+      "service-doc": [
+        {
+          "href": "https://2s.io/markets",
+          "type": "text/html",
+          "title": "2s markets endpoints"
+        }
+      ]
+    },
+    {
+      "anchor": "https://2s.io/medical",
+      "service-desc": [
+        {
+          "href": "https://2s.io/api/openapi?group=medical",
+          "type": "application/vnd.oai.openapi+json;version=3.1",
+          "title": "Self-contained OpenAPI sub-spec for the \"medical\" group"
+        }
+      ],
+      "service-doc": [
+        {
+          "href": "https://2s.io/medical",
+          "type": "text/html",
+          "title": "2s medical endpoints"
+        }
+      ]
+    },
+    {
+      "anchor": "https://2s.io/music",
+      "service-desc": [
+        {
+          "href": "https://2s.io/api/openapi?group=music",
+          "type": "application/vnd.oai.openapi+json;version=3.1",
+          "title": "Self-contained OpenAPI sub-spec for the \"music\" group"
+        }
+      ],
+      "service-doc": [
+        {
+          "href": "https://2s.io/music",
+          "type": "text/html",
+          "title": "2s music endpoints"
+        }
+      ]
+    },
+    {
+      "anchor": "https://2s.io/net",
+      "service-desc": [
+        {
+          "href": "https://2s.io/api/openapi?group=net",
+          "type": "application/vnd.oai.openapi+json;version=3.1",
+          "title": "Self-contained OpenAPI sub-spec for the \"net\" group"
+        }
+      ],
+      "service-doc": [
+        {
+          "href": "https://2s.io/net",
+          "type": "text/html",
+          "title": "2s net endpoints"
+        }
+      ]
+    },
+    {
+      "anchor": "https://2s.io/news",
+      "service-desc": [
+        {
+          "href": "https://2s.io/api/openapi?group=news",
+          "type": "application/vnd.oai.openapi+json;version=3.1",
+          "title": "Self-contained OpenAPI sub-spec for the \"news\" group"
+        }
+      ],
+      "service-doc": [
+        {
+          "href": "https://2s.io/news",
+          "type": "text/html",
+          "title": "2s news endpoints"
+        }
+      ]
+    },
+    {
+      "anchor": "https://2s.io/nonprofit",
+      "service-desc": [
+        {
+          "href": "https://2s.io/api/openapi?group=nonprofit",
+          "type": "application/vnd.oai.openapi+json;version=3.1",
+          "title": "Self-contained OpenAPI sub-spec for the \"nonprofit\" group"
+        }
+      ],
+      "service-doc": [
+        {
+          "href": "https://2s.io/nonprofit",
+          "type": "text/html",
+          "title": "2s nonprofit endpoints"
+        }
+      ]
+    },
+    {
+      "anchor": "https://2s.io/nutrition",
+      "service-desc": [
+        {
+          "href": "https://2s.io/api/openapi?group=nutrition",
+          "type": "application/vnd.oai.openapi+json;version=3.1",
+          "title": "Self-contained OpenAPI sub-spec for the \"nutrition\" group"
+        }
+      ],
+      "service-doc": [
+        {
+          "href": "https://2s.io/nutrition",
+          "type": "text/html",
+          "title": "2s nutrition endpoints"
+        }
+      ]
+    },
+    {
+      "anchor": "https://2s.io/occupation",
+      "service-desc": [
+        {
+          "href": "https://2s.io/api/openapi?group=occupation",
+          "type": "application/vnd.oai.openapi+json;version=3.1",
+          "title": "Self-contained OpenAPI sub-spec for the \"occupation\" group"
+        }
+      ],
+      "service-doc": [
+        {
+          "href": "https://2s.io/occupation",
+          "type": "text/html",
+          "title": "2s occupation endpoints"
+        }
+      ]
+    },
+    {
+      "anchor": "https://2s.io/paper",
+      "service-desc": [
+        {
+          "href": "https://2s.io/api/openapi?group=paper",
+          "type": "application/vnd.oai.openapi+json;version=3.1",
+          "title": "Self-contained OpenAPI sub-spec for the \"paper\" group"
+        }
+      ],
+      "service-doc": [
+        {
+          "href": "https://2s.io/paper",
+          "type": "text/html",
+          "title": "2s paper endpoints"
+        }
+      ]
+    },
+    {
+      "anchor": "https://2s.io/papers",
+      "service-desc": [
+        {
+          "href": "https://2s.io/api/openapi?group=papers",
+          "type": "application/vnd.oai.openapi+json;version=3.1",
+          "title": "Self-contained OpenAPI sub-spec for the \"papers\" group"
+        }
+      ],
+      "service-doc": [
+        {
+          "href": "https://2s.io/papers",
+          "type": "text/html",
+          "title": "2s papers endpoints"
+        }
+      ]
+    },
+    {
+      "anchor": "https://2s.io/park",
+      "service-desc": [
+        {
+          "href": "https://2s.io/api/openapi?group=park",
+          "type": "application/vnd.oai.openapi+json;version=3.1",
+          "title": "Self-contained OpenAPI sub-spec for the \"park\" group"
+        }
+      ],
+      "service-doc": [
+        {
+          "href": "https://2s.io/park",
+          "type": "text/html",
+          "title": "2s park endpoints"
+        }
+      ]
+    },
+    {
+      "anchor": "https://2s.io/patents",
+      "service-desc": [
+        {
+          "href": "https://2s.io/api/openapi?group=patents",
+          "type": "application/vnd.oai.openapi+json;version=3.1",
+          "title": "Self-contained OpenAPI sub-spec for the \"patents\" group"
+        }
+      ],
+      "service-doc": [
+        {
+          "href": "https://2s.io/patents",
+          "type": "text/html",
+          "title": "2s patents endpoints"
+        }
+      ]
+    },
+    {
+      "anchor": "https://2s.io/person",
+      "service-desc": [
+        {
+          "href": "https://2s.io/api/openapi?group=person",
+          "type": "application/vnd.oai.openapi+json;version=3.1",
+          "title": "Self-contained OpenAPI sub-spec for the \"person\" group"
+        }
+      ],
+      "service-doc": [
+        {
+          "href": "https://2s.io/person",
+          "type": "text/html",
+          "title": "2s person endpoints"
+        }
+      ]
+    },
+    {
+      "anchor": "https://2s.io/phone",
+      "service-desc": [
+        {
+          "href": "https://2s.io/api/openapi?group=phone",
+          "type": "application/vnd.oai.openapi+json;version=3.1",
+          "title": "Self-contained OpenAPI sub-spec for the \"phone\" group"
+        }
+      ],
+      "service-doc": [
+        {
+          "href": "https://2s.io/phone",
+          "type": "text/html",
+          "title": "2s phone endpoints"
+        }
+      ]
+    },
+    {
+      "anchor": "https://2s.io/poi",
+      "service-desc": [
+        {
+          "href": "https://2s.io/api/openapi?group=poi",
+          "type": "application/vnd.oai.openapi+json;version=3.1",
+          "title": "Self-contained OpenAPI sub-spec for the \"poi\" group"
+        }
+      ],
+      "service-doc": [
+        {
+          "href": "https://2s.io/poi",
+          "type": "text/html",
+          "title": "2s poi endpoints"
+        }
+      ]
+    },
+    {
+      "anchor": "https://2s.io/predict",
+      "service-desc": [
+        {
+          "href": "https://2s.io/api/openapi?group=predict",
+          "type": "application/vnd.oai.openapi+json;version=3.1",
+          "title": "Self-contained OpenAPI sub-spec for the \"predict\" group"
+        }
+      ],
+      "service-doc": [
+        {
+          "href": "https://2s.io/predict",
+          "type": "text/html",
+          "title": "2s predict endpoints"
+        }
+      ]
+    },
+    {
+      "anchor": "https://2s.io/product",
+      "service-desc": [
+        {
+          "href": "https://2s.io/api/openapi?group=product",
+          "type": "application/vnd.oai.openapi+json;version=3.1",
+          "title": "Self-contained OpenAPI sub-spec for the \"product\" group"
+        }
+      ],
+      "service-doc": [
+        {
+          "href": "https://2s.io/product",
+          "type": "text/html",
+          "title": "2s product endpoints"
+        }
+      ]
+    },
+    {
+      "anchor": "https://2s.io/property",
+      "service-desc": [
+        {
+          "href": "https://2s.io/api/openapi?group=property",
+          "type": "application/vnd.oai.openapi+json;version=3.1",
+          "title": "Self-contained OpenAPI sub-spec for the \"property\" group"
+        }
+      ],
+      "service-doc": [
+        {
+          "href": "https://2s.io/property",
+          "type": "text/html",
+          "title": "2s property endpoints"
+        }
+      ]
+    },
+    {
+      "anchor": "https://2s.io/pubsub",
+      "service-desc": [
+        {
+          "href": "https://2s.io/api/openapi?group=pubsub",
+          "type": "application/vnd.oai.openapi+json;version=3.1",
+          "title": "Self-contained OpenAPI sub-spec for the \"pubsub\" group"
+        }
+      ],
+      "service-doc": [
+        {
+          "href": "https://2s.io/pubsub",
+          "type": "text/html",
+          "title": "2s pubsub endpoints"
+        }
+      ]
+    },
+    {
+      "anchor": "https://2s.io/quakes",
+      "service-desc": [
+        {
+          "href": "https://2s.io/api/openapi?group=quakes",
+          "type": "application/vnd.oai.openapi+json;version=3.1",
+          "title": "Self-contained OpenAPI sub-spec for the \"quakes\" group"
+        }
+      ],
+      "service-doc": [
+        {
+          "href": "https://2s.io/quakes",
+          "type": "text/html",
+          "title": "2s quakes endpoints"
+        }
+      ]
+    },
+    {
+      "anchor": "https://2s.io/queue",
+      "service-desc": [
+        {
+          "href": "https://2s.io/api/openapi?group=queue",
+          "type": "application/vnd.oai.openapi+json;version=3.1",
+          "title": "Self-contained OpenAPI sub-spec for the \"queue\" group"
+        }
+      ],
+      "service-doc": [
+        {
+          "href": "https://2s.io/queue",
+          "type": "text/html",
+          "title": "2s queue endpoints"
+        }
+      ]
+    },
+    {
+      "anchor": "https://2s.io/recreation",
+      "service-desc": [
+        {
+          "href": "https://2s.io/api/openapi?group=recreation",
+          "type": "application/vnd.oai.openapi+json;version=3.1",
+          "title": "Self-contained OpenAPI sub-spec for the \"recreation\" group"
+        }
+      ],
+      "service-doc": [
+        {
+          "href": "https://2s.io/recreation",
+          "type": "text/html",
+          "title": "2s recreation endpoints"
+        }
+      ]
+    },
+    {
+      "anchor": "https://2s.io/registry",
+      "service-desc": [
+        {
+          "href": "https://2s.io/api/openapi?group=registry",
+          "type": "application/vnd.oai.openapi+json;version=3.1",
+          "title": "Self-contained OpenAPI sub-spec for the \"registry\" group"
+        }
+      ],
+      "service-doc": [
+        {
+          "href": "https://2s.io/registry",
+          "type": "text/html",
+          "title": "2s registry endpoints"
+        }
+      ]
+    },
+    {
+      "anchor": "https://2s.io/research",
+      "service-desc": [
+        {
+          "href": "https://2s.io/api/openapi?group=research",
+          "type": "application/vnd.oai.openapi+json;version=3.1",
+          "title": "Self-contained OpenAPI sub-spec for the \"research\" group"
+        }
+      ],
+      "service-doc": [
+        {
+          "href": "https://2s.io/research",
+          "type": "text/html",
+          "title": "2s research endpoints"
+        }
+      ]
+    },
+    {
+      "anchor": "https://2s.io/schedule",
+      "service-desc": [
+        {
+          "href": "https://2s.io/api/openapi?group=schedule",
+          "type": "application/vnd.oai.openapi+json;version=3.1",
+          "title": "Self-contained OpenAPI sub-spec for the \"schedule\" group"
+        }
+      ],
+      "service-doc": [
+        {
+          "href": "https://2s.io/schedule",
+          "type": "text/html",
+          "title": "2s schedule endpoints"
+        }
+      ]
+    },
+    {
+      "anchor": "https://2s.io/search",
+      "service-desc": [
+        {
+          "href": "https://2s.io/api/openapi?group=search",
+          "type": "application/vnd.oai.openapi+json;version=3.1",
+          "title": "Self-contained OpenAPI sub-spec for the \"search\" group"
+        }
+      ],
+      "service-doc": [
+        {
+          "href": "https://2s.io/search",
+          "type": "text/html",
+          "title": "2s search endpoints"
+        }
+      ]
+    },
+    {
+      "anchor": "https://2s.io/security",
+      "service-desc": [
+        {
+          "href": "https://2s.io/api/openapi?group=security",
+          "type": "application/vnd.oai.openapi+json;version=3.1",
+          "title": "Self-contained OpenAPI sub-spec for the \"security\" group"
+        }
+      ],
+      "service-doc": [
+        {
+          "href": "https://2s.io/security",
+          "type": "text/html",
+          "title": "2s security endpoints"
+        }
+      ]
+    },
+    {
+      "anchor": "https://2s.io/soil",
+      "service-desc": [
+        {
+          "href": "https://2s.io/api/openapi?group=soil",
+          "type": "application/vnd.oai.openapi+json;version=3.1",
+          "title": "Self-contained OpenAPI sub-spec for the \"soil\" group"
+        }
+      ],
+      "service-doc": [
+        {
+          "href": "https://2s.io/soil",
+          "type": "text/html",
+          "title": "2s soil endpoints"
+        }
+      ]
+    },
+    {
+      "anchor": "https://2s.io/space",
+      "service-desc": [
+        {
+          "href": "https://2s.io/api/openapi?group=space",
+          "type": "application/vnd.oai.openapi+json;version=3.1",
+          "title": "Self-contained OpenAPI sub-spec for the \"space\" group"
+        }
+      ],
+      "service-doc": [
+        {
+          "href": "https://2s.io/space",
+          "type": "text/html",
+          "title": "2s space endpoints"
+        }
+      ]
+    },
+    {
+      "anchor": "https://2s.io/sports",
+      "service-desc": [
+        {
+          "href": "https://2s.io/api/openapi?group=sports",
+          "type": "application/vnd.oai.openapi+json;version=3.1",
+          "title": "Self-contained OpenAPI sub-spec for the \"sports\" group"
+        }
+      ],
+      "service-doc": [
+        {
+          "href": "https://2s.io/sports",
+          "type": "text/html",
+          "title": "2s sports endpoints"
+        }
+      ]
+    },
+    {
+      "anchor": "https://2s.io/stocks",
+      "service-desc": [
+        {
+          "href": "https://2s.io/api/openapi?group=stocks",
+          "type": "application/vnd.oai.openapi+json;version=3.1",
+          "title": "Self-contained OpenAPI sub-spec for the \"stocks\" group"
+        }
+      ],
+      "service-doc": [
+        {
+          "href": "https://2s.io/stocks",
+          "type": "text/html",
+          "title": "2s stocks endpoints"
+        }
+      ]
+    },
+    {
+      "anchor": "https://2s.io/store",
+      "service-desc": [
+        {
+          "href": "https://2s.io/api/openapi?group=store",
+          "type": "application/vnd.oai.openapi+json;version=3.1",
+          "title": "Self-contained OpenAPI sub-spec for the \"store\" group"
+        }
+      ],
+      "service-doc": [
+        {
+          "href": "https://2s.io/store",
+          "type": "text/html",
+          "title": "2s store endpoints"
+        }
+      ]
+    },
+    {
+      "anchor": "https://2s.io/sunrise",
+      "service-desc": [
+        {
+          "href": "https://2s.io/api/openapi?group=sunrise",
+          "type": "application/vnd.oai.openapi+json;version=3.1",
+          "title": "Self-contained OpenAPI sub-spec for the \"sunrise\" group"
+        }
+      ],
+      "service-doc": [
+        {
+          "href": "https://2s.io/sunrise",
+          "type": "text/html",
+          "title": "2s sunrise endpoints"
+        }
+      ]
+    },
+    {
+      "anchor": "https://2s.io/tax",
+      "service-desc": [
+        {
+          "href": "https://2s.io/api/openapi?group=tax",
+          "type": "application/vnd.oai.openapi+json;version=3.1",
+          "title": "Self-contained OpenAPI sub-spec for the \"tax\" group"
+        }
+      ],
+      "service-doc": [
+        {
+          "href": "https://2s.io/tax",
+          "type": "text/html",
+          "title": "2s tax endpoints"
+        }
+      ]
+    },
+    {
+      "anchor": "https://2s.io/tcg",
+      "service-desc": [
+        {
+          "href": "https://2s.io/api/openapi?group=tcg",
+          "type": "application/vnd.oai.openapi+json;version=3.1",
+          "title": "Self-contained OpenAPI sub-spec for the \"tcg\" group"
+        }
+      ],
+      "service-doc": [
+        {
+          "href": "https://2s.io/tcg",
+          "type": "text/html",
+          "title": "2s tcg endpoints"
+        }
+      ]
+    },
+    {
+      "anchor": "https://2s.io/telecom",
+      "service-desc": [
+        {
+          "href": "https://2s.io/api/openapi?group=telecom",
+          "type": "application/vnd.oai.openapi+json;version=3.1",
+          "title": "Self-contained OpenAPI sub-spec for the \"telecom\" group"
+        }
+      ],
+      "service-doc": [
+        {
+          "href": "https://2s.io/telecom",
+          "type": "text/html",
+          "title": "2s telecom endpoints"
+        }
+      ]
+    },
+    {
+      "anchor": "https://2s.io/text",
+      "service-desc": [
+        {
+          "href": "https://2s.io/api/openapi?group=text",
+          "type": "application/vnd.oai.openapi+json;version=3.1",
+          "title": "Self-contained OpenAPI sub-spec for the \"text\" group"
+        }
+      ],
+      "service-doc": [
+        {
+          "href": "https://2s.io/text",
+          "type": "text/html",
+          "title": "2s text endpoints"
+        }
+      ]
+    },
+    {
+      "anchor": "https://2s.io/tides",
+      "service-desc": [
+        {
+          "href": "https://2s.io/api/openapi?group=tides",
+          "type": "application/vnd.oai.openapi+json;version=3.1",
+          "title": "Self-contained OpenAPI sub-spec for the \"tides\" group"
+        }
+      ],
+      "service-doc": [
+        {
+          "href": "https://2s.io/tides",
+          "type": "text/html",
+          "title": "2s tides endpoints"
+        }
+      ]
+    },
+    {
+      "anchor": "https://2s.io/time",
+      "service-desc": [
+        {
+          "href": "https://2s.io/api/openapi?group=time",
+          "type": "application/vnd.oai.openapi+json;version=3.1",
+          "title": "Self-contained OpenAPI sub-spec for the \"time\" group"
+        }
+      ],
+      "service-doc": [
+        {
+          "href": "https://2s.io/time",
+          "type": "text/html",
+          "title": "2s time endpoints"
+        }
+      ]
+    },
+    {
+      "anchor": "https://2s.io/timezone",
+      "service-desc": [
+        {
+          "href": "https://2s.io/api/openapi?group=timezone",
+          "type": "application/vnd.oai.openapi+json;version=3.1",
+          "title": "Self-contained OpenAPI sub-spec for the \"timezone\" group"
+        }
+      ],
+      "service-doc": [
+        {
+          "href": "https://2s.io/timezone",
+          "type": "text/html",
+          "title": "2s timezone endpoints"
+        }
+      ]
+    },
+    {
+      "anchor": "https://2s.io/tld",
+      "service-desc": [
+        {
+          "href": "https://2s.io/api/openapi?group=tld",
+          "type": "application/vnd.oai.openapi+json;version=3.1",
+          "title": "Self-contained OpenAPI sub-spec for the \"tld\" group"
+        }
+      ],
+      "service-doc": [
+        {
+          "href": "https://2s.io/tld",
+          "type": "text/html",
+          "title": "2s tld endpoints"
+        }
+      ]
+    },
+    {
+      "anchor": "https://2s.io/tls",
+      "service-desc": [
+        {
+          "href": "https://2s.io/api/openapi?group=tls",
+          "type": "application/vnd.oai.openapi+json;version=3.1",
+          "title": "Self-contained OpenAPI sub-spec for the \"tls\" group"
+        }
+      ],
+      "service-doc": [
+        {
+          "href": "https://2s.io/tls",
+          "type": "text/html",
+          "title": "2s tls endpoints"
+        }
+      ]
+    },
+    {
+      "anchor": "https://2s.io/trade",
+      "service-desc": [
+        {
+          "href": "https://2s.io/api/openapi?group=trade",
+          "type": "application/vnd.oai.openapi+json;version=3.1",
+          "title": "Self-contained OpenAPI sub-spec for the \"trade\" group"
+        }
+      ],
+      "service-doc": [
+        {
+          "href": "https://2s.io/trade",
+          "type": "text/html",
+          "title": "2s trade endpoints"
+        }
+      ]
+    },
+    {
+      "anchor": "https://2s.io/transcribe",
+      "service-desc": [
+        {
+          "href": "https://2s.io/api/openapi?group=transcribe",
+          "type": "application/vnd.oai.openapi+json;version=3.1",
+          "title": "Self-contained OpenAPI sub-spec for the \"transcribe\" group"
+        }
+      ],
+      "service-doc": [
+        {
+          "href": "https://2s.io/transcribe",
+          "type": "text/html",
+          "title": "2s transcribe endpoints"
+        }
+      ]
+    },
+    {
+      "anchor": "https://2s.io/travel",
+      "service-desc": [
+        {
+          "href": "https://2s.io/api/openapi?group=travel",
+          "type": "application/vnd.oai.openapi+json;version=3.1",
+          "title": "Self-contained OpenAPI sub-spec for the \"travel\" group"
+        }
+      ],
+      "service-doc": [
+        {
+          "href": "https://2s.io/travel",
+          "type": "text/html",
+          "title": "2s travel endpoints"
+        }
+      ]
+    },
+    {
+      "anchor": "https://2s.io/treasury",
+      "service-desc": [
+        {
+          "href": "https://2s.io/api/openapi?group=treasury",
+          "type": "application/vnd.oai.openapi+json;version=3.1",
+          "title": "Self-contained OpenAPI sub-spec for the \"treasury\" group"
+        }
+      ],
+      "service-doc": [
+        {
+          "href": "https://2s.io/treasury",
+          "type": "text/html",
+          "title": "2s treasury endpoints"
+        }
+      ]
+    },
+    {
+      "anchor": "https://2s.io/url",
+      "service-desc": [
+        {
+          "href": "https://2s.io/api/openapi?group=url",
+          "type": "application/vnd.oai.openapi+json;version=3.1",
+          "title": "Self-contained OpenAPI sub-spec for the \"url\" group"
+        }
+      ],
+      "service-doc": [
+        {
+          "href": "https://2s.io/url",
+          "type": "text/html",
+          "title": "2s url endpoints"
+        }
+      ]
+    },
+    {
+      "anchor": "https://2s.io/validate",
+      "service-desc": [
+        {
+          "href": "https://2s.io/api/openapi?group=validate",
+          "type": "application/vnd.oai.openapi+json;version=3.1",
+          "title": "Self-contained OpenAPI sub-spec for the \"validate\" group"
+        }
+      ],
+      "service-doc": [
+        {
+          "href": "https://2s.io/validate",
+          "type": "text/html",
+          "title": "2s validate endpoints"
+        }
+      ]
+    },
+    {
+      "anchor": "https://2s.io/vehicle",
+      "service-desc": [
+        {
+          "href": "https://2s.io/api/openapi?group=vehicle",
+          "type": "application/vnd.oai.openapi+json;version=3.1",
+          "title": "Self-contained OpenAPI sub-spec for the \"vehicle\" group"
+        }
+      ],
+      "service-doc": [
+        {
+          "href": "https://2s.io/vehicle",
+          "type": "text/html",
+          "title": "2s vehicle endpoints"
+        }
+      ]
+    },
+    {
+      "anchor": "https://2s.io/watchers",
+      "service-desc": [
+        {
+          "href": "https://2s.io/api/openapi?group=watchers",
+          "type": "application/vnd.oai.openapi+json;version=3.1",
+          "title": "Self-contained OpenAPI sub-spec for the \"watchers\" group"
+        }
+      ],
+      "service-doc": [
+        {
+          "href": "https://2s.io/watchers",
+          "type": "text/html",
+          "title": "2s watchers endpoints"
+        }
+      ]
+    },
+    {
+      "anchor": "https://2s.io/water",
+      "service-desc": [
+        {
+          "href": "https://2s.io/api/openapi?group=water",
+          "type": "application/vnd.oai.openapi+json;version=3.1",
+          "title": "Self-contained OpenAPI sub-spec for the \"water\" group"
+        }
+      ],
+      "service-doc": [
+        {
+          "href": "https://2s.io/water",
+          "type": "text/html",
+          "title": "2s water endpoints"
+        }
+      ]
+    },
+    {
+      "anchor": "https://2s.io/weather",
+      "service-desc": [
+        {
+          "href": "https://2s.io/api/openapi?group=weather",
+          "type": "application/vnd.oai.openapi+json;version=3.1",
+          "title": "Self-contained OpenAPI sub-spec for the \"weather\" group"
+        }
+      ],
+      "service-doc": [
+        {
+          "href": "https://2s.io/weather",
+          "type": "text/html",
+          "title": "2s weather endpoints"
+        }
+      ]
+    },
+    {
+      "anchor": "https://2s.io/wikidata",
+      "service-desc": [
+        {
+          "href": "https://2s.io/api/openapi?group=wikidata",
+          "type": "application/vnd.oai.openapi+json;version=3.1",
+          "title": "Self-contained OpenAPI sub-spec for the \"wikidata\" group"
+        }
+      ],
+      "service-doc": [
+        {
+          "href": "https://2s.io/wikidata",
+          "type": "text/html",
+          "title": "2s wikidata endpoints"
+        }
+      ]
+    },
+    {
+      "anchor": "https://2s.io/wikipedia",
+      "service-desc": [
+        {
+          "href": "https://2s.io/api/openapi?group=wikipedia",
+          "type": "application/vnd.oai.openapi+json;version=3.1",
+          "title": "Self-contained OpenAPI sub-spec for the \"wikipedia\" group"
+        }
+      ],
+      "service-doc": [
+        {
+          "href": "https://2s.io/wikipedia",
+          "type": "text/html",
+          "title": "2s wikipedia endpoints"
+        }
+      ]
+    },
+    {
+      "anchor": "https://2s.io/word",
+      "service-desc": [
+        {
+          "href": "https://2s.io/api/openapi?group=word",
+          "type": "application/vnd.oai.openapi+json;version=3.1",
+          "title": "Self-contained OpenAPI sub-spec for the \"word\" group"
+        }
+      ],
+      "service-doc": [
+        {
+          "href": "https://2s.io/word",
+          "type": "text/html",
+          "title": "2s word endpoints"
+        }
+      ]
+    },
+    {
+      "anchor": "https://2s.io/worldbank",
+      "service-desc": [
+        {
+          "href": "https://2s.io/api/openapi?group=worldbank",
+          "type": "application/vnd.oai.openapi+json;version=3.1",
+          "title": "Self-contained OpenAPI sub-spec for the \"worldbank\" group"
+        }
+      ],
+      "service-doc": [
+        {
+          "href": "https://2s.io/worldbank",
+          "type": "text/html",
+          "title": "2s worldbank endpoints"
+        }
+      ]
+    }
+  ]
+}

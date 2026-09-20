@@ -1,0 +1,145 @@
+generated: '2026-09-19'
+method: probed
+source: https://2s.io/.well-known/agent-card.json
+card:
+  file: a2a/2s-io-agent-card.json
+discovery:
+  path: /.well-known/agent-card.json
+  canonical: true
+  host: 2s.io
+  note: >-
+    Served from the apex host, which is also the OpenAPI servers[] host (https://2s.io), the MCP host
+    (https://2s.io/mcp) and the A2A JSON-RPC host (https://2s.io/a2a) — 2s runs everything on one
+    Vercel-hosted Next.js origin. The site has no catch-all: a negative-control path under /.well-known/
+    (2s-io-… -7f3a9c.json) returned a real HTTP 404 (the Next.js error document), as did /.well-known/security.txt
+    and the OAuth/OIDC discovery paths, so the 200 on agent-card.json is a served document. The legacy
+    /.well-known/agent.json ALSO answers 200, but its body is NOT an A2A card: it is an EIP-8004 / ERC-8004
+    agent-registration file ("type": "https://eips.ethereum.org/EIPS/eip-8004") that lists the MCP, A2A,
+    OpenAPI and directory services and an on-chain registration (agentId 57911 on eip155:8453). It is saved
+    under well-known/2s-io-agent.json and not graded as an A2A card. Ownership is not in question: the card's
+    provider.organization is "2s" with provider.url https://2s.io, the OpenAPI at the same host titles itself
+    "2s — the (most) everything API" with contact alley@2s.io, and the provider's own APIs.json, api-catalog
+    linkset, x402 manifest and MCP server card all cross-reference this exact card URL.
+x-evidence:
+  fetched: '2026-09-19'
+  url: https://2s.io/.well-known/agent-card.json
+  http_status: 200
+  content_type: application/json; charset=utf-8
+  body_bytes: 2206
+  body_parses_as: JSON object with AgentCard shape (protocolVersion, name, description, url, preferredTransport, additionalInterfaces, version, provider, documentationUrl, iconUrl, capabilities, defaultInputModes, defaultOutputModes, skills)
+  corroborating_probes:
+  - url: https://2s.io/.well-known/agent.json
+    http_status: 200
+    content_type: application/json; charset=utf-8
+    note: 200 but an EIP-8004 registration document, not an A2A card (no protocolVersion, capabilities or skills). Recorded in well-known/, not here.
+  - url: https://2s.io/a2a
+    method: GET
+    http_status: 200
+    note: A GET on the declared JSON-RPC endpoint returns the agent card itself (same body as the well-known path).
+  - url: https://2s.io/a2a
+    method: POST
+    body: '{"jsonrpc":"2.0","id":1,"method":"tasks/get","params":{"id":"apievangelist-nonexistent-probe"}}'
+    http_status: 200
+    response: '{"jsonrpc":"2.0","id":1,"error":{"code":-32601,"message":"Method not found: \"tasks/get\". This agent supports \"message/send\"."}}'
+    note: A live JSON-RPC 2.0 responder that implements only message/send. No message was sent and nothing was purchased.
+  - url: https://2s.io/a2a
+    method: POST
+    body: '{"jsonrpc":"2.0","id":1,"method":"agent/getAuthenticatedExtendedCard","params":{}}'
+    http_status: 200
+    response: '{"jsonrpc":"2.0","id":1,"error":{"code":-32601,"message":"Method not found: \"agent/getAuthenticatedExtendedCard\". This agent supports \"message/send\"."}}'
+  - url: https://2s.io/.well-known/2s-io-apievangelist-negative-control-7f3a9c.json
+    http_status: 404
+    note: Negative control — the host does not catch-all /.well-known/*.
+  - url: https://a2aregistry.org
+    note: The card was first seen as one of 415 agents listed on a2aregistry.org (fetched 2026-09-19, author "2s"), which is how this provider entered the harvest backlog. The registry listing was the lead; the card above was fetched directly from the provider's host.
+agent_card:
+  name: 2s
+  description: >-
+    The (most) everything API for AI agents, exposed as an A2A agent. This agent's skill is endpoint DISCOVERY:
+    send a natural-language task and it returns the best-matching 2s endpoints (path, method, price, description)
+    from a live catalog of 575+ pay-per-call endpoints. Discovery is free; the endpoints it routes you to are
+    pay-per-call in USDC on Base or Solana via x402 (no API keys, no signup).
+  url: https://2s.io/a2a
+  version: 1.0.0
+  protocol_version: 0.3.0
+  preferred_transport: JSONRPC
+  additional_interfaces:
+  - {transport: JSONRPC, url: 'https://2s.io/a2a'}
+  provider:
+    organization: 2s
+    url: https://2s.io
+  documentation_url: https://2s.io/llms.txt
+  icon_url: https://2s.io/icon-512.png
+  capabilities:
+    streaming: false
+    push_notifications: false
+    state_transition_history: false
+  default_input_modes: [text/plain]
+  default_output_modes: [application/json, text/plain]
+  security_schemes: null
+  security: null
+  skill_count: 1
+  skills:
+  - id: discover-endpoints
+    name: Discover 2s endpoints
+    tags: [discovery, routing, catalog, api, x402, search]
+    examples: ['check if a domain can be spoofed', 'is this CVE being exploited', 'screen a company for sanctions', 'decode a VIN']
+    price_stated: 'The routing result is free; the endpoints it returns are pay-per-call via x402.'
+    backing_rest_operation: search_endpoints (GET /api/search/endpoints?q=…, $0.0025 via REST; free through the A2A skill per the card)
+  skill_invocation: >-
+    Send a message/send with a text/plain part describing the task; the agent returns application/json
+    listing matching endpoints with id, path, method, group, description and per-call USD price. The
+    ranking is described as deterministic keyword + synonym matching over the live catalog (no LLM).
+conformance:
+  spec: A2A 1.0.0
+  grade: conformant
+  protocol_version: '0.3.0'
+  preferred_transport: JSONRPC
+  hard_checks:
+    capabilities_is_object: true
+    protocol_version_present: true
+    skills_is_array: true
+  optional_fields:
+    default_input_modes: true
+    default_output_modes: true
+    preferred_transport: true
+  grade_basis: >-
+    Graded against the A2A 1.0.0 hard checks. capabilities is an OBJECT (pass) with streaming,
+    pushNotifications and stateTransitionHistory all false. protocolVersion is present at the top level
+    (pass), declared as "0.3.0". skills is an ARRAY (pass) of one fully-populated skill with id, name,
+    description, tags and examples. All three optional discriminators are present: preferredTransport
+    (JSONRPC), defaultInputModes (text/plain) and defaultOutputModes (application/json, text/plain), and
+    additionalInterfaces[] repeats the JSONRPC endpoint. A 0.3.0-shaped card that is internally consistent
+    with the revision it declares.
+  deviations:
+  - field: protocolVersion / url / preferredTransport
+    observed: 0.3.0 top-level triple plus additionalInterfaces[]; no supportedInterfaces[]
+    note: Valid for A2A 0.3.0. A reader written against A2A 1.0.0 looks for supportedInterfaces[].protocolBinding and will not find it. Recorded because both shapes coexist in the catalog, not as a fault.
+  - field: securitySchemes / security
+    observed: absent
+    note: >-
+      The card declares no authentication scheme. That is accurate for the discovery skill, which the card says
+      is free, but it also means the card carries no machine-readable statement that everything the skill
+      routes to is x402-paid; an agent learns the payment model from the description prose, the OpenAPI
+      securitySchemes (x402Payment) and the 402 envelope, not from the card.
+  - field: JSON-RPC method surface
+    observed: only message/send is implemented; tasks/get, agent/getAuthenticatedExtendedCard return -32601
+    note: >-
+      Consistent with capabilities (no streaming, no push, no state history) — a stateless request/response
+      agent. tasks/get being absent means a client cannot poll a task id; the response arrives in-band.
+  - field: capabilities.extensions
+    observed: absent
+    note: >-
+      Unlike other x402 A2A agents in the catalog (01mind-net declares the a2a-x402 extension), 2s declares no
+      payment extension on the card, because the A2A skill itself is free and payment happens on the REST
+      endpoints it points at, not inside the A2A exchange.
+  - field: signatures
+    observed: absent
+    note: No JWS signature block; the card's authenticity rests on TLS to 2s.io. The provider does publish a separate response-attestation scheme (/.well-known/2s-attestation.json) for REST responses, which does not cover the card.
+surface_relationship:
+  note: >-
+    2s publishes four agent-facing projections of ONE 575-endpoint catalog on one host. REST: 575 operations in
+    an OpenAPI 3.1.0 at https://2s.io/openapi.json, every one x402-paid. MCP: the same 575 operations as tools at
+    https://2s.io/mcp (anonymous tools/list; names equal the spec's x-2s-id). A2A: one skill — discovery — that
+    returns pointers into that catalog rather than executing it. Plus an EIP-8004 registration (agent.json /
+    erc8004.json) that names all of the above as services. See mcp/2s-io-tool-crosswalk.yml.

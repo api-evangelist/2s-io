@@ -1,18 +1,151 @@
 aid: 2s-io
 name: 2s
-description: '2s is a company surfaced via the API Evangelist harvest backlog (source: a2a-registry) and
-  added to the network as a stub for full-pipeline profiling.'
+description: >-
+  2s ("the (most) everything API", 2s.io) is a pay-per-call REST API built for AI agents: 575 endpoints across
+  112 groups on one origin — US public records and government data, company and legal identifiers (GLEIF,
+  OFAC, state registries), SEC filings, crypto and web3, security and CVEs, patents and case law, medical
+  codes, weather and geocoding, ANSI X12 / EDIFACT EDI, an OpenAI-compatible AI gateway (chat, image,
+  multi-model council) and wallet-scoped agent infrastructure (kv/doc/vector/blob store, locks, queues,
+  schedules, pub/sub and 26 kinds of signed-callback watchers). There are no accounts and no API keys: every
+  call is paid in USDC on Base or Solana through the x402 protocol (HTTP 402 → sign → retry), with a free trial
+  call per endpoint per hour and actual-usage "upto" billing on AI endpoints. The same catalog is published as
+  an OpenAPI 3.1.0 contract at https://2s.io/openapi.json, a remote MCP server at https://2s.io/mcp (plus the
+  npx @2sio/mcp local server), an A2A 0.3.0 agent card whose one skill is endpoint discovery, an RFC 9727 API
+  catalog, an APIs.json index, an llms.txt, an MCP server card, an x402 manifest and an ERC-8004 on-chain agent
+  registration. Maintained by an individual operator (alley@2s.io); the SDK monorepo is github.com/2s-io/sdk.
 url: https://raw.githubusercontent.com/api-evangelist/2s-io/refs/heads/main/apis.yml
+image: https://2s.io/icon-512.png
 x-type: company
 x-source: harvest:a2a-registry
-x-tier: stub
-x-tier-reason: harvest
+x-tier: profiled
+x-tier-reason: enrichment pass 2026-09-19 (local-v3; was a2a-registry harvest stub)
 specificationVersion: '0.20'
 created: '2026-09-19'
 modified: '2026-09-19'
 tags:
-- Company
-apis: []
+- Agents
+- Agent Commerce
+- x402
+- MCP
+- A2A
+- Public Records
+- Government Data
+- Finance
+- Crypto
+- Security
+- Legal
+- Weather
+- Geocoding
+- EDI
+- AI Gateway
+- Agent Infrastructure
+- Webhooks
+- agent-native
+tags_raw:
+- Agents
+- Agent commerce
+- x402
+- MCP
+- A2A
+- Public records
+- Government data
+- Finance
+- Crypto
+- Security
+- Legal
+- Weather
+- Geocoding
+- EDI
+- AI gateway
+- Agent infrastructure
+- Webhooks
+- Agent-native
+apis:
+- aid: 2s-io:2s-api
+  name: 2s API
+  description: >-
+    The full 2s REST catalog: 575 operations (470 GET, 105 POST) in one OpenAPI 3.1.0 document with servers[]
+    https://2s.io, one tag per operation across 112 groups, a unique operationId (group_name) and an x-2s-id
+    (group.name) on every operation, a per-call price in x-2s-price / x-payment-info, and a single x402Payment
+    security scheme (PAYMENT-SIGNATURE header) applied everywhere. Responses use a normalized {data {ok, items,
+    total, source, meta}, meta} envelope with per-response provenance, or raw bytes on ten media endpoints.
+    Stateful groups (store, lock, queue, pubsub, schedule, watchers) are scoped to the paying wallet. Every
+    endpoint accepts ?trial=1 for one free real call per hour; batch_run runs up to 50 calls behind one payment.
+  humanURL: https://2s.io/discover
+  baseURL: https://2s.io
+  tags:
+  - Agents
+  - x402
+  - Public Records
+  - Finance
+  - Crypto
+  - Security
+  - EDI
+  - AI Gateway
+  - Agent Infrastructure
+  properties:
+  - type: OpenAPI
+    url: openapi/2s-io-openapi.json
+  - type: OpenAPI
+    name: 2s OpenAPI 3.1 (provider-hosted)
+    url: https://2s.io/openapi.json
+  - type: Overlay
+    url: overlays/2s-io-openapi-overlay.yaml
+  - type: Documentation
+    url: https://2s.io/llms.txt
+  - type: APIReference
+    url: https://2s.io/discover
+  - type: Webhooks
+    url: asyncapi/2s-io-watchers-webhooks.yml
+- aid: 2s-io:2s-mcp-server
+  name: 2s MCP Server
+  description: >-
+    Remote Model Context Protocol server at https://2s.io/mcp (Streamable HTTP, POST only, protocol version
+    2025-06-18, serverInfo 2s.io 1.0.0). initialize and tools/list answer anonymously with 575 tools — one per
+    REST operation, named by the spec's x-2s-id, each carrying a real inputSchema; resources/list and
+    prompts/list are not implemented. Paid tool calls are settled through x402 by a hosted signer that takes
+    the caller's EVM private key in an X-EVM-Private-Key header, which the provider's own docs recommend
+    against in favour of the local stdio server, npx -y @2sio/mcp (npm @2sio/mcp 1.82.0), that keeps the key
+    on the caller's machine. Both accept a trial mode. A SEP-1649 server card is published at
+    /.well-known/mcp/server-card.json.
+  humanURL: https://2s.io/learn/x402/mcp
+  baseURL: https://2s.io/mcp
+  tags:
+  - MCP
+  - agent-native
+  - x402
+  properties:
+  - type: MCPServer
+    url: mcp/2s-io-mcp.yml
+  - type: MCPServer
+    name: 2s hosted MCP endpoint (Streamable HTTP)
+    url: https://2s.io/mcp
+  - type: ToolCrosswalk
+    url: mcp/2s-io-tool-crosswalk.yml
+  - type: Documentation
+    url: https://2s.io/learn/x402/mcp
+- aid: 2s-io:2s-a2a-agent
+  name: 2s A2A Agent
+  description: >-
+    Agent2Agent (A2A) protocol surface: an agent card served from https://2s.io/.well-known/agent-card.json
+    (protocolVersion 0.3.0, JSONRPC transport, version 1.0.0, provider 2s) advertising a single skill,
+    discover-endpoints — send a natural-language task as text/plain to the JSON-RPC endpoint at
+    https://2s.io/a2a and receive the best-matching 2s endpoints (id, path, method, group, description,
+    per-call price) as application/json, ranked deterministically over the live catalog. Discovery is free; the
+    endpoints it returns are x402-paid. The endpoint implements only message/send (tasks/get and the extended
+    card return -32601); streaming, push notifications and state history are declared unsupported.
+  humanURL: https://2s.io/llms.txt
+  baseURL: https://2s.io/a2a
+  tags:
+  - A2A
+  - agent-native
+  - x402
+  properties:
+  - type: AgentCard
+    url: a2a/2s-io-a2a.yml
+  - type: AgentCard
+    name: A2A Agent Card (provider-hosted)
+    url: https://2s.io/.well-known/agent-card.json
 maintainers:
 - FN: Kin Lane
   email: kin@apievangelist.com
@@ -21,3 +154,73 @@ maintainers:
 common:
 - type: Website
   url: https://2s.io/
+- type: Documentation
+  url: https://2s.io/learn/x402
+- type: APIReference
+  url: https://2s.io/discover
+- type: GettingStarted
+  url: https://2s.io/learn/x402/quickstart
+- type: Pricing
+  url: https://2s.io/discover
+- type: StatusPage
+  url: https://2s.io/status
+- type: ChangeLog
+  url: changelog/2s-io-changelog.yml
+- type: ChangeLog
+  name: changelog.json (provider-hosted)
+  url: https://2s.io/changelog.json
+- type: GitHubOrganization
+  url: https://github.com/2s-io
+- type: Support
+  url: https://github.com/2s-io/sdk/issues
+- type: AgentCard
+  url: a2a/2s-io-a2a.yml
+- type: MCPServer
+  url: mcp/2s-io-mcp.yml
+- type: LLMsTxt
+  url: llms/2s-io-llms.txt
+- type: WellKnown
+  url: well-known/2s-io-well-known.yml
+- type: APICatalog
+  url: well-known/2s-io-api-catalog.json
+- type: APIsJson
+  url: https://2s.io/apis.json
+- type: AIPlugin
+  url: well-known/2s-io-ai-plugin.json
+- type: Packages
+  url: packages/2s-io-packages.yml
+- type: SDKs
+  url: packages/2s-io-packages.yml
+- type: Authentication
+  url: authentication/2s-io-authentication.yml
+- type: Conventions
+  url: conventions/2s-io-conventions.yml
+- type: Idempotency
+  url: conventions/2s-io-conventions.yml
+- type: ErrorCatalog
+  url: errors/2s-io-problem-types.yml
+- type: RateLimits
+  url: rate-limits/2s-io-rate-limits.yml
+- type: Plans
+  url: plans/2s-io-plans-pricing.yml
+- type: Sandbox
+  url: sandbox/2s-io-sandbox.yml
+- type: Conformance
+  url: conformance/2s-io-conformance.yml
+- type: Lifecycle
+  url: lifecycle/2s-io-lifecycle.yml
+- type: Webhooks
+  url: asyncapi/2s-io-watchers-webhooks.yml
+- type: AgentSkill
+  url: skills/_index.yml
+- type: AgenticAccess
+  url: agentic-access/2s-io-agentic-access.yml
+- type: DataModel
+  url: data-model/2s-io-data-model.yml
+- type: DomainSecurity
+  url: security/2s-io-domain-security.yml
+x-enrichment:
+  date: '2026-09-19'
+  status: enriched
+  artifacts_added: 27
+  pass: local-v3

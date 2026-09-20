@@ -1,0 +1,119 @@
+generated: '2026-09-19'
+method: searched
+source: https://github.com/2s-io/sdk
+docs:
+- https://2s.io/llms.txt
+- https://2s.io/learn/x402/typescript
+- https://2s.io/learn/x402/python
+- https://2s.io/learn/x402/mcp
+package_count: 7
+official_count: 5
+summary: >-
+  2s publishes its client libraries from one monorepo, github.com/2s-io/sdk (MIT, created 2026-05-28, last push
+  2026-08-21, releases tagged v1.79.23 … v1.82.0). Five packages are live on registries — the TypeScript SDK and
+  MCP server on npm, the Python client and two Python agent-framework adapters on PyPI — and every registry
+  answered with metadata (version + publish date recorded below, read from registry.npmjs.org, pypi.org/pypi and
+  proxy.golang.org on 2026-09-19). Two more the README lists are not published: the Rust crate `twosio` does not
+  exist on crates.io (404) and the README itself marks Go and Rust "x402 wire-up pending". The three core
+  packages share version 1.82.0 published 2026-08-21, the same day as the newest GitHub release, and one month
+  after the API's own latest changelog entry (1.80.5, 2026-07-22) — the SDKs are current with the API.
+packages:
+- language: typescript
+  registry: npm
+  name: '@2sio/sdk'
+  url: https://www.npmjs.com/package/@2sio/sdk
+  source: https://github.com/2s-io/sdk/tree/main/packages/2s-sdk
+  install: npm i @2sio/sdk
+  official: true
+  version: 1.82.0
+  published: '2026-08-21'
+  license: MIT
+  registry_metadata: https://registry.npmjs.org/@2sio/sdk
+  versions_published: 146
+  note: 'Typed client with fetch-style calls (client.weather.zip({zip})); handles the x402 probe → sign → retry loop; trial mode via new TwoS({ trial: true }).'
+- language: typescript
+  registry: npm
+  name: '@2sio/mcp'
+  url: https://www.npmjs.com/package/@2sio/mcp
+  source: https://github.com/2s-io/sdk/tree/main/packages/2s-mcp
+  install: npx -y @2sio/mcp
+  official: true
+  version: 1.82.0
+  published: '2026-08-21'
+  license: MIT
+  registry_metadata: https://registry.npmjs.org/@2sio/mcp
+  versions_published: 145
+  note: Local (stdio) MCP server exposing every endpoint as a tool; complements the hosted https://2s.io/mcp. See mcp/2s-io-mcp.yml.
+- language: python
+  registry: pypi
+  name: 2sio
+  import_name: twosio
+  url: https://pypi.org/project/2sio/
+  source: https://github.com/2s-io/sdk/tree/main/packages/python
+  install: pip install 2sio
+  official: true
+  version: 1.82.0
+  published: '2026-08-21'
+  license: MIT
+  registry_metadata: https://pypi.org/pypi/2sio/json
+  note: 'Sync client, one method per endpoint (TwoS(private_key=…).weather.zip(zip="94103")); trial mode via TwoS(trial=True).'
+- language: python
+  registry: pypi
+  name: langchain-twosio
+  url: https://pypi.org/project/langchain-twosio/
+  source: https://github.com/2s-io/sdk/tree/main/packages/python-langchain
+  install: pip install langchain-twosio
+  official: true
+  version: 0.1.3
+  published: '2026-05-30'
+  license: MIT
+  registry_metadata: https://pypi.org/pypi/langchain-twosio/json
+  note: LangChain tool adapters over the Python client. Last released 2026-05-30, three months behind the core packages.
+- language: python
+  registry: pypi
+  name: llama-index-tools-twosio
+  url: https://pypi.org/project/llama-index-tools-twosio/
+  source: https://github.com/2s-io/sdk/tree/main/packages/python-llamaindex
+  install: pip install llama-index-tools-twosio
+  official: true
+  version: 0.1.4
+  published: '2026-05-30'
+  license: MIT
+  registry_metadata: https://pypi.org/pypi/llama-index-tools-twosio/json
+  note: LlamaIndex tool adapters. Last released 2026-05-30.
+- language: go
+  registry: pkg.go.dev
+  name: github.com/2s-io/sdk/packages/go
+  url: https://pkg.go.dev/github.com/2s-io/sdk/packages/go
+  source: https://github.com/2s-io/sdk/tree/main/packages/go
+  install: go get github.com/2s-io/sdk/packages/go
+  official: true
+  version: v0.0.0-20260821133325-9ae596dbf575
+  published: '2026-08-21'
+  registry_metadata: https://proxy.golang.org/github.com/2s-io/sdk/packages/go/@latest
+  status: incomplete
+  note: 'No tagged module version — the Go proxy resolves only a pseudo-version at the latest commit. The README marks it "x402 wire-up pending", so it cannot yet pay for a call. Counted as a package, not as a working SDK.'
+- language: rust
+  registry: crates.io
+  name: twosio
+  url: https://crates.io/crates/twosio
+  source: https://github.com/2s-io/sdk/tree/main/packages/rust
+  install: cargo add twosio
+  official: true
+  version: null
+  published: null
+  registry_metadata: https://crates.io/api/v1/crates/twosio
+  status: unpublished
+  note: 'crates.io answered 404 ("crate `twosio` does not exist") on 2026-09-19. The README lists the install command and marks it "x402 wire-up pending"; the source directory exists in the monorepo but nothing is published. Recorded as an honest gap, not a guess.'
+searched:
+- {registry: npm, query: 'https://registry.npmjs.org/@2sio/sdk', status: 200}
+- {registry: npm, query: 'https://registry.npmjs.org/@2sio/mcp', status: 200}
+- {registry: pypi, query: 'https://pypi.org/pypi/2sio/json', status: 200}
+- {registry: pypi, query: 'https://pypi.org/pypi/langchain-twosio/json', status: 200}
+- {registry: pypi, query: 'https://pypi.org/pypi/llama-index-tools-twosio/json', status: 200}
+- {registry: crates.io, query: 'https://crates.io/api/v1/crates/twosio', status: 404}
+- {registry: proxy.golang.org, query: 'https://proxy.golang.org/github.com/2s-io/sdk/packages/go/@latest', status: 200}
+- {registry: github, query: 'https://api.github.com/orgs/2s-io/repos', status: 200, result: '1 repository (sdk), 8 stars, MIT'}
+- {registry: smithery, query: 'https://registry.smithery.ai/servers/twosio/mcp', status: 200, result: 'MCP server listed as twosio/mcp'}
+github_org: https://github.com/2s-io
+cli: none — the provider ships no command-line tool; npx -y @2sio/mcp is an MCP server, not a CLI.

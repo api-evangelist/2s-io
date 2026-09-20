@@ -1,0 +1,514 @@
+generated: '2026-09-19'
+method: derived
+source: openapi/2s-io-openapi.json (live https://2s.io/openapi.json, 2026-09-19) and https://2s.io/llms.txt
+spec_type: webhook-catalog
+asyncapi_published: false
+docs:
+- https://2s.io/watchers
+- https://2s.io/llms.txt#watchers--get-a-callback-dont-poll
+- https://2s.io/.well-known/2s-attestation.json
+summary: '2s publishes no AsyncAPI document (no /asyncapi.yaml or .json, nothing in the GitHub org), so none is
+  saved and none is fabricated. It does publish a real outbound-callback surface in its OpenAPI and llms.txt: 26
+  watcher kinds (arm once, get an EIP-191-signed HTTP POST when the world changes), a time-driven schedule primitive,
+  and a consent-gated pub/sub with fan-out to subscriber URLs. This file captures that catalog verbatim from the
+  contract so the event surface is scored; it is a webhook catalog, not an AsyncAPI.'
+delivery:
+  transport: HTTPS POST to a caller-supplied callbackUrl (any http(s) URL)
+  signing: EIP-191 personal_sign by the provider's published key — "verify offline"; header X-2s-Signature (named
+    in pubsub_subscribe)
+  retries: exponential backoff; a pub/sub subscriber that repeatedly fails delivery is auto-disabled
+  pull_backstop: watchers_status returns recent deliveries (HTTP result, attempt count) and any UNDELIVERED events
+    with full bodies; schedule_status likewise
+  payload: caller-supplied payload JSON echoed verbatim in every callback (+ scheduleId, fireNumber, firedAt on
+    schedules)
+  confirmation: 'pub/sub only — a one-time challenge POST carrying X-2s-Confirmation-Token and {type: "2s_subscription_confirmation",
+    token}; the endpoint must reply 2xx with that token before it receives messages'
+  schema_published: false
+  note: The callback BODY schema is not declared anywhere in the contract — only that it carries the echoed payload
+    and is signed. An AsyncAPI would be the natural place for it and does not exist.
+pricing:
+  watcher: $0.125 flat per arm; default 30-day / 25-fire window, max 90 days / 1,000 fires; cancel refunds nothing
+  schedule: $0.125 per create; default+max 90 days; maxFires default 25, max 1000
+  pubsub: $0.005 per subscribe/publish/create-topic call
+  management: watchers_cancel $0.0025; watchers_status read-priced
+channels:
+  watchers:
+    count: 25
+    manage:
+    - watchers_status (GET, pull backstop)
+    - watchers_cancel (POST, idempotent)
+    events:
+    - id: watchers.business-earnings
+      operationId: watchers_business-earnings
+      path: /api/watchers/business-earnings
+      price_usd: 0.125
+      summary: 'WATCHER: get a signed callback around a US company''s earnings.'
+      trigger: 'WATCHER: get a signed callback around a US company''s earnings'
+      arm_fields:
+      - ticker
+      - trigger
+      - daysBefore
+      - callbackUrl
+      - payload
+      - expiresInSeconds
+      - maxFires
+      - label
+      required:
+      - ticker
+      - callbackUrl
+    - id: watchers.company-news
+      operationId: watchers_company-news
+      path: /api/watchers/company-news
+      price_usd: 0.125
+      summary: 'WATCHER: get a signed callback when a new news article is...'
+      trigger: 'WATCHER: get a signed callback when a new news article is published about a US company'
+      arm_fields:
+      - ticker
+      - keyword
+      - callbackUrl
+      - payload
+      - expiresInSeconds
+      - maxFires
+      - label
+      required:
+      - ticker
+      - callbackUrl
+    - id: watchers.crypto-address-activity
+      operationId: watchers_crypto-address-activity
+      path: /api/watchers/crypto-address-activity
+      price_usd: 0.125
+      summary: 'WATCHER: get a signed callback the moment a crypto address...'
+      trigger: 'WATCHER: get a signed callback the moment a crypto address transacts'
+      arm_fields:
+      - chain
+      - address
+      - callbackUrl
+      - direction
+      - assetTypes
+      - minValueUsd
+      - payload
+      - expiresInSeconds
+      - maxFires
+      - label
+      required:
+      - chain
+      - address
+      - callbackUrl
+    - id: watchers.dns
+      operationId: watchers_dns
+      path: /api/watchers/dns
+      price_usd: 0.125
+      summary: 'WATCHER: get a signed callback when a host''s DNS records...'
+      trigger: 'WATCHER: get a signed callback when a host''s DNS records change'
+      arm_fields:
+      - host
+      - callbackUrl
+      - payload
+      - expiresInSeconds
+      - maxFires
+      - label
+      required:
+      - host
+      - callbackUrl
+    - id: watchers.earthquake
+      operationId: watchers_earthquake
+      path: /api/watchers/earthquake
+      price_usd: 0.125
+      summary: 'WATCHER: get a signed callback when USGS reports a new...'
+      trigger: 'WATCHER: get a signed callback when USGS reports a new earthquake near a location above a magnitude'
+      arm_fields:
+      - lat
+      - lon
+      - radiusKm
+      - minMagnitude
+      - callbackUrl
+      - payload
+      - expiresInSeconds
+      - maxFires
+      - label
+      required:
+      - lat
+      - lon
+      - callbackUrl
+    - id: watchers.fear-greed
+      operationId: watchers_fear-greed
+      path: /api/watchers/fear-greed
+      price_usd: 0.125
+      summary: 'WATCHER: get a signed callback when the Crypto Fear & Greed...'
+      trigger: 'WATCHER: get a signed callback when the Crypto Fear & Greed index crosses a level (e.g'
+      arm_fields:
+      - conditionType
+      - threshold
+      - callbackUrl
+      - payload
+      - expiresInSeconds
+      - maxFires
+      - label
+      required:
+      - conditionType
+      - threshold
+      - callbackUrl
+    - id: watchers.federal-register
+      operationId: watchers_federal-register
+      path: /api/watchers/federal-register
+      price_usd: 0.125
+      summary: 'WATCHER: get a signed callback when a new US Federal...'
+      trigger: 'WATCHER: get a signed callback when a new US Federal Register document is published'
+      arm_fields:
+      - type
+      - agency
+      - keyword
+      - callbackUrl
+      - payload
+      - expiresInSeconds
+      - maxFires
+      - label
+      required:
+      - callbackUrl
+    - id: watchers.flight-status
+      operationId: watchers_flight-status
+      path: /api/watchers/flight-status
+      price_usd: 0.125
+      summary: 'WATCHER: get a signed callback when a flight''s status...'
+      trigger: 'WATCHER: get a signed callback when a flight''s status changes (e.g'
+      arm_fields:
+      - ident
+      - callbackUrl
+      - payload
+      - expiresInSeconds
+      - maxFires
+      - label
+      required:
+      - ident
+      - callbackUrl
+    - id: watchers.fred-series
+      operationId: watchers_fred-series
+      path: /api/watchers/fred-series
+      price_usd: 0.125
+      summary: 'WATCHER: get a signed callback when a FRED economic series''...'
+      trigger: 'WATCHER: get a signed callback when a FRED economic series'' latest value crosses a level'
+      arm_fields:
+      - seriesId
+      - conditionType
+      - threshold
+      - callbackUrl
+      - payload
+      - expiresInSeconds
+      - maxFires
+      - label
+      required:
+      - seriesId
+      - conditionType
+      - threshold
+      - callbackUrl
+    - id: watchers.funding-rate
+      operationId: watchers_funding-rate
+      path: /api/watchers/funding-rate
+      price_usd: 0.125
+      summary: 'WATCHER: get a signed callback when a Hyperliquid...'
+      trigger: 'WATCHER: get a signed callback when a Hyperliquid perpetual''s hourly funding rate crosses a level
+        (e.g'
+      arm_fields:
+      - coin
+      - conditionType
+      - threshold
+      - callbackUrl
+      - payload
+      - expiresInSeconds
+      - maxFires
+      - label
+      required:
+      - coin
+      - conditionType
+      - threshold
+      - callbackUrl
+    - id: watchers.fx-rate
+      operationId: watchers_fx-rate
+      path: /api/watchers/fx-rate
+      price_usd: 0.125
+      summary: 'WATCHER: get a signed callback when an FX pair crosses a...'
+      trigger: 'WATCHER: get a signed callback when an FX pair crosses a rate you set'
+      arm_fields:
+      - base
+      - quote
+      - conditionType
+      - threshold
+      - callbackUrl
+      - payload
+      - expiresInSeconds
+      - maxFires
+      - label
+      required:
+      - base
+      - quote
+      - conditionType
+      - threshold
+      - callbackUrl
+    - id: watchers.gas-price
+      operationId: watchers_gas-price
+      path: /api/watchers/gas-price
+      price_usd: 0.125
+      summary: 'WATCHER: get a signed callback when EVM gas crosses a level...'
+      trigger: 'WATCHER: get a signed callback when EVM gas crosses a level you set — e.g'
+      arm_fields:
+      - chain
+      - conditionType
+      - threshold
+      - tier
+      - callbackUrl
+      - payload
+      - expiresInSeconds
+      - maxFires
+      - label
+      required:
+      - chain
+      - conditionType
+      - threshold
+      - callbackUrl
+    - id: watchers.http-headers
+      operationId: watchers_http-headers
+      path: /api/watchers/http-headers
+      price_usd: 0.125
+      summary: 'WATCHER: get a signed callback when a website''s HTTP...'
+      trigger: 'WATCHER: get a signed callback when a website''s HTTP security-headers grade changes (e.g'
+      arm_fields:
+      - url
+      - callbackUrl
+      - payload
+      - expiresInSeconds
+      - maxFires
+      - label
+      required:
+      - url
+      - callbackUrl
+    - id: watchers.ioc-reputation
+      operationId: watchers_ioc-reputation
+      path: /api/watchers/ioc-reputation
+      price_usd: 0.125
+      summary: 'WATCHER: get a signed callback when an indicator of...'
+      trigger: 'WATCHER: get a signed callback when an indicator of compromise (IP or domain) changes malicious
+        status across threat feeds'
+      arm_fields:
+      - ioc
+      - callbackUrl
+      - payload
+      - expiresInSeconds
+      - maxFires
+      - label
+      required:
+      - ioc
+      - callbackUrl
+    - id: watchers.ipo
+      operationId: watchers_ipo
+      path: /api/watchers/ipo
+      price_usd: 0.125
+      summary: 'WATCHER: get a signed callback when a new US IPO appears on...'
+      trigger: 'WATCHER: get a signed callback when a new US IPO appears on the calendar'
+      arm_fields:
+      - keyword
+      - callbackUrl
+      - payload
+      - expiresInSeconds
+      - maxFires
+      - label
+      required:
+      - callbackUrl
+    - id: watchers.package-release
+      operationId: watchers_package-release
+      path: /api/watchers/package-release
+      price_usd: 0.125
+      summary: 'WATCHER: get a signed callback when a package publishes a...'
+      trigger: 'WATCHER: get a signed callback when a package publishes a new version — track your dependencies'
+      arm_fields:
+      - registry
+      - name
+      - callbackUrl
+      - payload
+      - expiresInSeconds
+      - maxFires
+      - label
+      required:
+      - registry
+      - name
+      - callbackUrl
+    - id: watchers.paper
+      operationId: watchers_paper
+      path: /api/watchers/paper
+      price_usd: 0.125
+      summary: 'WATCHER: get a signed callback when a new academic paper...'
+      trigger: 'WATCHER: get a signed callback when a new academic paper matching your query is published (arXiv
+        / PubMed / Semantic Scholar)'
+      arm_fields:
+      - query
+      - callbackUrl
+      - payload
+      - expiresInSeconds
+      - maxFires
+      - label
+      required:
+      - query
+      - callbackUrl
+    - id: watchers.patent
+      operationId: watchers_patent
+      path: /api/watchers/patent
+      price_usd: 0.125
+      summary: 'WATCHER: get a signed callback when a new USPTO patent...'
+      trigger: 'WATCHER: get a signed callback when a new USPTO patent matching your query appears'
+      arm_fields:
+      - query
+      - callbackUrl
+      - payload
+      - expiresInSeconds
+      - maxFires
+      - label
+      required:
+      - query
+      - callbackUrl
+    - id: watchers.prediction-market
+      operationId: watchers_prediction-market
+      path: /api/watchers/prediction-market
+      price_usd: 0.125
+      summary: 'WATCHER: get a signed callback when a Polymarket outcome''s...'
+      trigger: 'WATCHER: get a signed callback when a Polymarket outcome''s implied probability crosses a level'
+      arm_fields:
+      - conditionId
+      - outcomeIndex
+      - conditionType
+      - threshold
+      - callbackUrl
+      - payload
+      - expiresInSeconds
+      - maxFires
+      - label
+      required:
+      - conditionId
+      - conditionType
+      - threshold
+      - callbackUrl
+    - id: watchers.product-recall
+      operationId: watchers_product-recall
+      path: /api/watchers/product-recall
+      price_usd: 0.125
+      summary: 'WATCHER: get a signed callback when a new US product recall...'
+      trigger: 'WATCHER: get a signed callback when a new US product recall is published (CPSC)'
+      arm_fields:
+      - keyword
+      - callbackUrl
+      - payload
+      - expiresInSeconds
+      - maxFires
+      - label
+      required:
+      - callbackUrl
+    - id: watchers.sec-filing
+      operationId: watchers_sec-filing
+      path: /api/watchers/sec-filing
+      price_usd: 0.125
+      summary: 'WATCHER: get a signed callback when a US company files with...'
+      trigger: 'WATCHER: get a signed callback when a US company files with the SEC (EDGAR)'
+      arm_fields:
+      - ticker
+      - form
+      - callbackUrl
+      - payload
+      - expiresInSeconds
+      - maxFires
+      - label
+      required:
+      - ticker
+      - callbackUrl
+    - id: watchers.stock-price
+      operationId: watchers_stock-price
+      path: /api/watchers/stock-price
+      price_usd: 0.125
+      summary: 'WATCHER: get a signed callback when a US stock crosses a...'
+      trigger: 'WATCHER: get a signed callback when a US stock crosses a price you set'
+      arm_fields:
+      - ticker
+      - conditionType
+      - threshold
+      - callbackUrl
+      - payload
+      - expiresInSeconds
+      - maxFires
+      - label
+      required:
+      - ticker
+      - conditionType
+      - threshold
+      - callbackUrl
+    - id: watchers.token-price
+      operationId: watchers_token-price
+      path: /api/watchers/token-price
+      price_usd: 0.125
+      summary: 'WATCHER: get a signed callback when a crypto asset crosses...'
+      trigger: 'WATCHER: get a signed callback when a crypto asset crosses a price you set'
+      arm_fields:
+      - tokenId
+      - conditionType
+      - threshold
+      - callbackUrl
+      - payload
+      - expiresInSeconds
+      - maxFires
+      - label
+      required:
+      - tokenId
+      - conditionType
+      - threshold
+      - callbackUrl
+    - id: watchers.weather-alert
+      operationId: watchers_weather-alert
+      path: /api/watchers/weather-alert
+      price_usd: 0.125
+      summary: 'WATCHER: get a signed callback when the US National Weather...'
+      trigger: 'WATCHER: get a signed callback when the US National Weather Service issues a new alert for an area'
+      arm_fields:
+      - area
+      - severity
+      - callbackUrl
+      - payload
+      - expiresInSeconds
+      - maxFires
+      - label
+      required:
+      - area
+      - callbackUrl
+    - id: watchers.whois
+      operationId: watchers_whois
+      path: /api/watchers/whois
+      price_usd: 0.125
+      summary: 'WATCHER: get a signed callback when a domain''s WHOIS...'
+      trigger: 'WATCHER: get a signed callback when a domain''s WHOIS registration changes — registrar, expiry,
+        or status'
+      arm_fields:
+      - domain
+      - callbackUrl
+      - payload
+      - expiresInSeconds
+      - maxFires
+      - label
+      required:
+      - domain
+      - callbackUrl
+  schedules:
+    operations:
+    - schedule_create
+    - schedule_status
+    - schedule_cancel
+    trigger: at (ISO-8601 one-shot) or everySeconds (≥ 60, recurring)
+    callback_fields:
+    - payload (echoed)
+    - scheduleId
+    - fireNumber
+    - firedAt
+  pubsub:
+    operations:
+    - pubsub_create-topic
+    - pubsub_publish
+    - pubsub_subscribe
+    - pubsub_unsubscribe
+    fanout: owner publishes → every CONFIRMED subscriber callbackUrl receives the message, signed
+    limits: 100 subscribers per topic, one per URL
+inbound_events: null
+note: 'Wire type: Webhooks. No AsyncAPI pointer is emitted because no AsyncAPI exists.'

@@ -1,0 +1,30 @@
+{
+  "service": "2s.io response attestation",
+  "enabled": true,
+  "version": "1",
+  "signer": "0xC20d180f1d8aaf2117d13252C5E803895F0D7717",
+  "alg": "secp256k1-eip191-sha256",
+  "trigger": "Add ?sign=1 (or ?sign=true) to any endpoint request.",
+  "headers": {
+    "X-2s-Attestation-Signer": "Stable signer address — pin this.",
+    "X-2s-Attestation-Alg": "secp256k1-eip191-sha256",
+    "X-2s-Attestation-Version": "Attestation scheme version.",
+    "X-2s-Attestation-Signed-At": "ISO-8601 timestamp the signature was produced.",
+    "X-2s-Attestation-Hash": "sha256(response body bytes), hex.",
+    "X-2s-Attestation-Signature": "EIP-191 personal_sign over the canonical message."
+  },
+  "message": {
+    "description": "The signature commits to this exact UTF-8 string. Recompute it, then ecrecover the signer.",
+    "template": "2s.io-attestation\\nv:<version>\\nendpoint:<X-2s-Endpoint>\\nsignedAt:<X-2s-Attestation-Signed-At>\\nsha256:<X-2s-Attestation-Hash>"
+  },
+  "verify": {
+    "steps": [
+      "hash = sha256(rawResponseBodyBytes) as hex; assert it equals X-2s-Attestation-Hash.",
+      "message = the template above filled with the response headers.",
+      "recovered = ecrecover/verifyMessage(message, X-2s-Attestation-Signature).",
+      "assert recovered (checksummed) === signer above."
+    ],
+    "viem": "import { verifyMessage } from 'viem'; await verifyMessage({ address: signer, message, signature })",
+    "note": "The body is never mutated by signing — the attestation lives entirely in headers, so signed and unsigned bodies are byte-identical."
+  }
+}
