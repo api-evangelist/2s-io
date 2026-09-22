@@ -24,7 +24,7 @@ created: '2026-09-19'
 modified: '2026-09-19'
 tags:
 - Agents
-- Agent Commerce
+- Agentic Commerce
 - x402
 - MCP
 - A2A
@@ -39,7 +39,7 @@ tags:
 - EDI
 - AI Gateway
 - Agent Infrastructure
-- Webhooks
+- Webhook
 - agent-native
 tags_raw:
 - Agents
@@ -60,6 +60,7 @@ tags_raw:
 - Agent infrastructure
 - Webhooks
 - Agent-native
+- Agent Commerce
 apis:
 - aid: 2s-io:2s-api
   name: 2s API
