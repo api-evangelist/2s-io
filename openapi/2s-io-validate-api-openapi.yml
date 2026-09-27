@@ -1,0 +1,1232 @@
+openapi: 3.2.0
+info:
+  title: 2s — the (most) everything Validate API
+  version: '1'
+  summary: The (most) everything API.
+  description: 'The (most) everything API for AI agents: 575+ pay-per-call endpoints on one origin.'
+  contact:
+    name: 2s
+    url: https://2s.io
+    email: alley@2s.io
+  x-logo:
+    url: https://2s.io/icon-512.png
+    altText: 2s
+  x-guidance: 'Pay-per-call REST API for AI agents — hundreds of endpoints returning ground-truth data (US public records, company & legal identifiers, finance/SEC, crypto/web3, security & CVEs, medical codes, weather & geocoding, agriculture, energy, maritime, music, and more). Every endpoint is paid per call in USDC via x402 (Base or Solana) — no API key, no signup. Call any endpoint with no auth to get a 402 PaymentRequirements envelope, sign it (EIP-3009 on Base, partial SPL transfer on Solana), and retry with the PAYMENT-SIGNATURE header. Add ?trial=1 for one free real call per endpoint per hour to test before paying. To discover the right endpoint: GET https://2s.io/api/directory for the full catalog, or GET https://2s.io/api/search/endpoints?q=<natural-language task> for a ranked match. Per-call price is on each operation as x-payment-info (from $0.001). Batch up to 50 calls behind one payment via POST https://2s.io/api/batch/run.'
+servers:
+- url: https://2s.io
+tags:
+- name: Validate
+paths:
+  /api/validate/aba:
+    get:
+      tags:
+      - Validate
+      summary: Validate a US bank ABA routing number with the Federal
+      description: Validate a US bank ABA routing number with the Federal Reserve weighted mod-10 checksum (3-7-1) — not just a 9-digit regex. Returns {valid, routingNumber, district (routing-symbol class), reason}. Catches transposed digits in ACH/wire setup that a length check misses. Structure + checksum only; not a bank-directory existence lookup.
+      operationId: validate_aba
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized envelope: items = [validation result]; total = 1.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            input:
+                              type: string
+                            valid:
+                              type: boolean
+                            routingNumber:
+                              type: string
+                              nullable: true
+                            district:
+                              type: string
+                              nullable: true
+                              description: Routing-symbol class (Federal Reserve, thrift, electronic, traveler check).
+                            reason:
+                              type: string
+                              nullable: true
+                          required:
+                          - input
+                          - valid
+                          - routingNumber
+                          - district
+                          - reason
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: validate.aba
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.0025
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.002500'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: routingNumber
+        in: query
+        required: true
+        description: Routing number.
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 20
+      - $ref: '#/components/parameters/TrialMode'
+  /api/validate/batch:
+    post:
+      tags:
+      - Validate
+      summary: Validate up to 100 identifiers of mixed kinds in a single
+      description: 'Validate up to 100 identifiers of mixed kinds in a single deterministic call. Pass items=[{type,value}] where type is one of: iban, gtin, aba, lei, bic, gln, sscc, isin, cusip. Each result (returned in input order, with its index and type) carries {valid, reason} plus the same type-specific fields the single-identifier endpoints return (e.g. gtin14, countryCode, district). One unsupported type or one bad value degrades to that item''s valid:false — it never fails the batch. meta carries validCount/invalidCount. This collapses a record''s worth of per-field checksum checks (IBAN + BIC + GTIN + LEI + …) into one round-trip instead of one LLM/HTTP hop per field.'
+      operationId: validate_batch
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized envelope: items = per-identifier results in input order (index, type, valid, reason + type-specific fields); total = items.length; meta carries validCount/invalidCount.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            index:
+                              type: integer
+                              description: Position in the input array (results are in input order).
+                            type:
+                              type: string
+                              description: The requested identifier kind, echoed back.
+                            input:
+                              type: string
+                              description: The raw value as submitted.
+                            valid:
+                              type: boolean
+                            reason:
+                              type: string
+                              nullable: true
+                              description: Why validation failed; null when valid.
+                            format:
+                              type: string
+                              nullable: true
+                              description: Validator-provided sub-type when it has one (e.g. gtin → GTIN-13 | ISBN-10).
+                          required:
+                          - index
+                          - type
+                          - input
+                          - valid
+                          - reason
+                          additionalProperties: true
+                          description: Additional type-specific fields are spread in per identifier kind (e.g. gtin14/checkDigit for gtin, iban/countryCode for iban, lei for lei) — the same fields the single-identifier validate.* endpoints return.
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                      meta:
+                        type: object
+                        properties:
+                          validCount:
+                            type: integer
+                          invalidCount:
+                            type: integer
+                        required:
+                        - validCount
+                        - invalidCount
+                        additionalProperties: false
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: validate.batch
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.003
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.003000'
+        protocols:
+        - x402: {}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                items:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      type:
+                        type: string
+                        minLength: 1
+                        maxLength: 32
+                        description: Filter results by type.
+                      value:
+                        type: string
+                        minLength: 1
+                        maxLength: 64
+                        description: Value.
+                    required:
+                    - type
+                    - value
+                    additionalProperties: false
+                  minItems: 1
+                  maxItems: 100
+                  description: Items.
+              required:
+              - items
+              additionalProperties: false
+      parameters:
+      - $ref: '#/components/parameters/TrialMode'
+  /api/validate/bic:
+    get:
+      tags:
+      - Validate
+      summary: 'Validate a SWIFT/BIC code (ISO 9362): 8 or 11 characters ='
+      description: 'Validate a SWIFT/BIC code (ISO 9362): 8 or 11 characters = 4-letter institution + 2-letter ISO country + 2-char location + optional 3-char branch, with the country position checked against ISO 3166. Returns {valid, bic, institution, country, location, branch, reason}. Structure validation only — not a SWIFT-directory existence lookup.'
+      operationId: validate_bic
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized envelope: items = [validation result]; total = 1.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            input:
+                              type: string
+                            valid:
+                              type: boolean
+                            bic:
+                              type: string
+                              nullable: true
+                            institution:
+                              type: string
+                              nullable: true
+                            country:
+                              type: string
+                              nullable: true
+                            location:
+                              type: string
+                              nullable: true
+                            branch:
+                              type: string
+                              nullable: true
+                            reason:
+                              type: string
+                              nullable: true
+                          required:
+                          - input
+                          - valid
+                          - bic
+                          - institution
+                          - country
+                          - location
+                          - branch
+                          - reason
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: validate.bic
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.0025
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.002500'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: bic
+        in: query
+        required: true
+        description: BIC.
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 20
+      - $ref: '#/components/parameters/TrialMode'
+  /api/validate/cusip:
+    get:
+      tags:
+      - Validate
+      summary: Validate a CUSIP (9-character US/Canada securities
+      description: Validate a CUSIP (9-character US/Canada securities identifier) with its mod-10 weighted check digit. Returns {valid, cusip, checkDigit, reason}. Catches transposed characters in security master / holdings data that a length check misses. Structure + checksum only.
+      operationId: validate_cusip
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized envelope: items = [validation result]; total = 1.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            input:
+                              type: string
+                            valid:
+                              type: boolean
+                            cusip:
+                              type: string
+                              nullable: true
+                            checkDigit:
+                              type: string
+                              nullable: true
+                            reason:
+                              type: string
+                              nullable: true
+                          required:
+                          - input
+                          - valid
+                          - cusip
+                          - checkDigit
+                          - reason
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: validate.cusip
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.0025
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.002500'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: cusip
+        in: query
+        required: true
+        description: CUSIP.
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 12
+      - $ref: '#/components/parameters/TrialMode'
+  /api/validate/gln:
+    get:
+      tags:
+      - Validate
+      summary: Validate a GS1 GLN (Global Location Number) - 13 digits
+      description: Validate a GS1 GLN (Global Location Number) — 13 digits with the GS1 mod-10 check digit. GLNs identify trading parties and physical locations (ship-to, bill-to, warehouse) across CPG supply chains and EDI. Returns {valid, gln, checkDigit, reason}. Catches transposed digits a length check misses.
+      operationId: validate_gln
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized envelope: items = [validation result]; total = 1.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            input:
+                              type: string
+                            valid:
+                              type: boolean
+                            gln:
+                              type: string
+                              nullable: true
+                            checkDigit:
+                              type: string
+                              nullable: true
+                            reason:
+                              type: string
+                              nullable: true
+                          required:
+                          - input
+                          - valid
+                          - gln
+                          - checkDigit
+                          - reason
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: validate.gln
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.0025
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.002500'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: gln
+        in: query
+        required: true
+        description: GLN.
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 20
+      - $ref: '#/components/parameters/TrialMode'
+  /api/validate/gtin:
+    get:
+      tags:
+      - Validate
+      summary: Validate a product barcode - GTIN-8/12/13/14, UPC-A
+      description: Validate a product barcode — GTIN-8/12/13/14, UPC-A, EAN-13, or ISBN-10/13 — with the GS1 mod-10 check digit (ISBN-10 uses mod-11). Returns {valid, type, gtin14 (canonical 14-digit form, left-padded), checkDigit, reason}. Normalizes every product identifier to one GTIN-14 key so a product-master/ETL pipeline can dedupe and validate SKUs in one deterministic call instead of doing checksum math in an LLM.
+      operationId: validate_gtin
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized envelope: items = [validation result]; total = 1.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            input:
+                              type: string
+                            valid:
+                              type: boolean
+                            type:
+                              type: string
+                              nullable: true
+                              description: GTIN-8 | GTIN-12 | GTIN-13 | GTIN-14 | ISBN-10
+                            gtin14:
+                              type: string
+                              nullable: true
+                              description: Canonical 14-digit GTIN (left-padded) when valid.
+                            checkDigit:
+                              type: string
+                              nullable: true
+                            reason:
+                              type: string
+                              nullable: true
+                          required:
+                          - input
+                          - valid
+                          - type
+                          - gtin14
+                          - checkDigit
+                          - reason
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: validate.gtin
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.0025
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.002500'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: gtin
+        in: query
+        required: true
+        description: GTIN.
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 32
+      - $ref: '#/components/parameters/TrialMode'
+  /api/validate/iban:
+    get:
+      tags:
+      - Validate
+      summary: Validate an International Bank Account Number (IBAN) with
+      description: 'Validate an International Bank Account Number (IBAN) with full ISO 13616 checks: country-specific length and the ISO 7064 mod-97 checksum (not just a regex). Returns {valid, iban (normalized), formatted (4-char groups), countryCode, checkDigits, bban, reason}. Catches transposed digits and wrong-length accounts that a format check misses, and returns the canonical form so a glue/ETL pipeline can validate AND normalize bank details in one deterministic call. ~85 countries. No bank directory lookup — structure + checksum only.'
+      operationId: validate_iban
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized envelope: items = [validation result]; total = 1.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            input:
+                              type: string
+                            valid:
+                              type: boolean
+                            iban:
+                              type: string
+                              nullable: true
+                              description: Normalized (spaces removed, uppercased) when valid.
+                            formatted:
+                              type: string
+                              nullable: true
+                              description: IBAN grouped in 4-character blocks.
+                            countryCode:
+                              type: string
+                              nullable: true
+                            checkDigits:
+                              type: string
+                              nullable: true
+                            bban:
+                              type: string
+                              nullable: true
+                              description: Basic Bank Account Number (everything after the check digits).
+                            reason:
+                              type: string
+                              nullable: true
+                              description: Why it failed, when valid is false.
+                          required:
+                          - input
+                          - valid
+                          - iban
+                          - formatted
+                          - countryCode
+                          - checkDigits
+                          - bban
+                          - reason
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: validate.iban
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.0025
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.002500'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: iban
+        in: query
+        required: true
+        description: IBAN.
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 64
+      - $ref: '#/components/parameters/TrialMode'
+  /api/validate/isin:
+    get:
+      tags:
+      - Validate
+      summary: Validate an ISIN (International Securities Identification
+      description: 'Validate an ISIN (International Securities Identification Number, ISO 6166): 2-letter country prefix + 9-char NSIN + Luhn check digit. Returns {valid, isin, country, nsin, embeddedCusip (for US/CA), checkDigit, reason}. Catches transposed characters in security master data that a regex misses. Structure + checksum only.'
+      operationId: validate_isin
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized envelope: items = [validation result]; total = 1.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            input:
+                              type: string
+                            valid:
+                              type: boolean
+                            isin:
+                              type: string
+                              nullable: true
+                            country:
+                              type: string
+                              nullable: true
+                            nsin:
+                              type: string
+                              nullable: true
+                            embeddedCusip:
+                              type: string
+                              nullable: true
+                              description: The CUSIP for US/CA ISINs.
+                            checkDigit:
+                              type: string
+                              nullable: true
+                            reason:
+                              type: string
+                              nullable: true
+                          required:
+                          - input
+                          - valid
+                          - isin
+                          - country
+                          - nsin
+                          - embeddedCusip
+                          - checkDigit
+                          - reason
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: validate.isin
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.0025
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.002500'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: isin
+        in: query
+        required: true
+        description: ISIN.
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 20
+      - $ref: '#/components/parameters/TrialMode'
+  /api/validate/lei:
+    get:
+      tags:
+      - Validate
+      summary: Validate a Legal Entity Identifier (LEI, ISO 17442) with
+      description: Validate a Legal Entity Identifier (LEI, ISO 17442) with the ISO 7064 mod-97-10 check digits — not just a 20-character regex. Returns {valid, lei (normalized), louPrefix (issuing LOU), checkDigits, reason}. Confirms a counterparty/vendor LEI is well-formed before lookup; pairs with GLEIF data for name + ownership resolution. Structure + checksum only.
+      operationId: validate_lei
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized envelope: items = [validation result]; total = 1.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            input:
+                              type: string
+                            valid:
+                              type: boolean
+                            lei:
+                              type: string
+                              nullable: true
+                            louPrefix:
+                              type: string
+                              nullable: true
+                              description: First 4 chars — the issuing Local Operating Unit.
+                            checkDigits:
+                              type: string
+                              nullable: true
+                            reason:
+                              type: string
+                              nullable: true
+                          required:
+                          - input
+                          - valid
+                          - lei
+                          - louPrefix
+                          - checkDigits
+                          - reason
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: validate.lei
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.0025
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.002500'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: lei
+        in: query
+        required: true
+        description: LEI.
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 32
+      - $ref: '#/components/parameters/TrialMode'
+  /api/validate/sscc:
+    get:
+      tags:
+      - Validate
+      summary: Validate a GS1 SSCC (Serial Shipping Container Code) - 18
+      description: Validate a GS1 SSCC (Serial Shipping Container Code) — 18 digits with the GS1 mod-10 check digit. SSCCs identify individual logistic units (pallets, cases) and are the key field in shipping/ASN (EDI 856) flows. Returns {valid, sscc, extensionDigit, checkDigit, reason}.
+      operationId: validate_sscc
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized envelope: items = [validation result]; total = 1.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            input:
+                              type: string
+                            valid:
+                              type: boolean
+                            sscc:
+                              type: string
+                              nullable: true
+                            extensionDigit:
+                              type: string
+                              nullable: true
+                            checkDigit:
+                              type: string
+                              nullable: true
+                            reason:
+                              type: string
+                              nullable: true
+                          required:
+                          - input
+                          - valid
+                          - sscc
+                          - extensionDigit
+                          - checkDigit
+                          - reason
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: validate.sscc
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.0025
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.002500'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: sscc
+        in: query
+        required: true
+        description: SSCC.
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 24
+      - $ref: '#/components/parameters/TrialMode'
+components:
+  responses:
+    MethodNotAllowed:
+      description: Method not allowed — see `Allow` header for the supported method.
+    UpstreamError:
+      description: Upstream provider error.
+    ServerError:
+      description: Internal server error.
+    PaymentRequired:
+      description: Payment required. Body contains the x402 PaymentRequirements envelope with a multi-network accepts array; the per-call price is in accepts[].amount (and on the operation as x-2s-price). Sign for whichever rail you hold USDC on (EIP-3009 for Base, partial SPL transfer for Solana) and retry with the PAYMENT-SIGNATURE header (X-PAYMENT also accepted for v1 clients).
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/X402PaymentRequiredV2'
+    BadRequest:
+      description: Bad request — invalid parameters.
+  parameters:
+    TrialMode:
+      name: trial
+      in: query
+      required: false
+      description: 'Try before you buy. Set to 1 for one free real call per endpoint per hour — no wallet or payment needed — to verify the endpoint before paying. Equivalent to sending the "X-2s-Trial: 1" request header. Works on every endpoint.'
+      schema:
+        type: integer
+        enum:
+        - 1
+  schemas:
+    CallMeta:
+      type: object
+      description: Per-call meta envelope — endpoint id, cost, caller kind, settlement details.
+    Source:
+      type: object
+      description: 'Provenance of the data: upstream provider, source URL, and license.'
+      properties:
+        provider:
+          type: string
+          description: Upstream data provider.
+        url:
+          type: string
+          description: Source URL or documentation link.
+        license:
+          type: string
+          description: License / usage terms for the data.
+    X402PaymentRequiredV2:
+      type: object
+      description: x402 v2 PaymentRequired envelope. Pick any entry from accepts[], sign for that rail, retry with the PAYMENT-SIGNATURE header.
+      required:
+      - x402Version
+      - accepts
+      properties:
+        x402Version:
+          type: integer
+          const: 2
+        error:
+          type: string
+          description: Human-readable reason payment is required.
+        resource:
+          type: string
+          description: The resource URL being purchased.
+        accepts:
+          type: array
+          description: Payment requirement options, one per supported network (Base USDC, Solana USDC).
+          items:
+            type: object
+            required:
+            - scheme
+            - network
+            - amount
+            - asset
+            - payTo
+            - maxTimeoutSeconds
+            properties:
+              scheme:
+                type: string
+                enum:
+                - exact
+              network:
+                type: string
+                description: CAIP-2 network id, e.g. "eip155:8453" (Base) or "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp".
+              amount:
+                type: string
+                description: Price in atomic asset units (USDC has 6 decimals).
+              asset:
+                type: string
+                description: Asset contract address / mint.
+              payTo:
+                type: string
+                description: Treasury address to pay.
+              maxTimeoutSeconds:
+                type: integer
+              extra:
+                type: object
+                description: 'Rail-specific extras (EVM: EIP-712 domain name/version; Solana: feePayer).'
+                additionalProperties: true
+        extensions:
+          type: object
+          description: Optional discovery metadata (e.g. bazaar input/output schemas).
+          additionalProperties: true
+  securitySchemes:
+    x402Payment:
+      type: apiKey
+      in: header
+      name: PAYMENT-SIGNATURE
+      description: 'x402 protocol v2: base64-encoded PaymentPayload. Call any paid endpoint without auth to receive a 402 with a multi-network PaymentRequirements envelope. Sign for either rail: EIP-3009 transferWithAuthorization (Base USDC) OR a partial SPL token transfer (Solana USDC). Retry with PAYMENT-SIGNATURE header. X-PAYMENT is also accepted for v1 buyer clients. See https://x402.org.'

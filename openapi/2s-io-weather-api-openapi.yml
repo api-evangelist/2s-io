@@ -1,0 +1,1497 @@
+openapi: 3.2.0
+info:
+  title: 2s — the (most) everything Weather API
+  version: '1'
+  summary: The (most) everything API.
+  description: 'The (most) everything API for AI agents: 575+ pay-per-call endpoints on one origin.'
+  contact:
+    name: 2s
+    url: https://2s.io
+    email: alley@2s.io
+  x-logo:
+    url: https://2s.io/icon-512.png
+    altText: 2s
+  x-guidance: 'Pay-per-call REST API for AI agents — hundreds of endpoints returning ground-truth data (US public records, company & legal identifiers, finance/SEC, crypto/web3, security & CVEs, medical codes, weather & geocoding, agriculture, energy, maritime, music, and more). Every endpoint is paid per call in USDC via x402 (Base or Solana) — no API key, no signup. Call any endpoint with no auth to get a 402 PaymentRequirements envelope, sign it (EIP-3009 on Base, partial SPL transfer on Solana), and retry with the PAYMENT-SIGNATURE header. Add ?trial=1 for one free real call per endpoint per hour to test before paying. To discover the right endpoint: GET https://2s.io/api/directory for the full catalog, or GET https://2s.io/api/search/endpoints?q=<natural-language task> for a ranked match. Per-call price is on each operation as x-payment-info (from $0.001). Batch up to 50 calls behind one payment via POST https://2s.io/api/batch/run.'
+servers:
+- url: https://2s.io
+tags:
+- name: Weather
+paths:
+  /api/weather/air-quality:
+    get:
+      tags:
+      - Weather
+      summary: Current air quality for any coordinate worldwide
+      description: 'Current air quality for any coordinate worldwide. Pass lat + lon. Returns the US AQI (+ category Good/Moderate/Unhealthy…), the European AQI, and pollutant concentrations: PM2.5, PM10, ozone, nitrogen dioxide, sulphur dioxide, carbon monoxide. Source: Open-Meteo / CAMS (keyless).'
+      operationId: weather_air-quality
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized envelope: items = [current air quality]; total = 1.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            lat:
+                              type: number
+                            lon:
+                              type: number
+                            time:
+                              type: string
+                              nullable: true
+                            usAqi:
+                              type: number
+                              nullable: true
+                            usAqiCategory:
+                              type: string
+                              nullable: true
+                            europeanAqi:
+                              type: number
+                              nullable: true
+                            pm2_5:
+                              type: number
+                              nullable: true
+                            pm10:
+                              type: number
+                              nullable: true
+                            ozone:
+                              type: number
+                              nullable: true
+                            nitrogenDioxide:
+                              type: number
+                              nullable: true
+                            sulphurDioxide:
+                              type: number
+                              nullable: true
+                            carbonMonoxide:
+                              type: number
+                              nullable: true
+                          required:
+                          - lat
+                          - lon
+                          - time
+                          - usAqi
+                          - usAqiCategory
+                          - europeanAqi
+                          - pm2_5
+                          - pm10
+                          - ozone
+                          - nitrogenDioxide
+                          - sulphurDioxide
+                          - carbonMonoxide
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: weather.air-quality
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.003
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.003000'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: lat
+        in: query
+        required: true
+        description: Latitude in decimal degrees (WGS84).
+        schema:
+          type: number
+          minimum: -90
+          maximum: 90
+      - name: lon
+        in: query
+        required: true
+        description: Longitude in decimal degrees (WGS84).
+        schema:
+          type: number
+          minimum: -180
+          maximum: 180
+      - $ref: '#/components/parameters/TrialMode'
+  /api/weather/alerts:
+    get:
+      tags:
+      - Weather
+      summary: Live US severe-weather alerts from the National Weather
+      description: Live US severe-weather alerts from the National Weather Service. Pass a point ("lat,lon") to get every active watch, warning, and advisory for that exact location, or an area (2-letter US state or marine zone code) for area-wide alerts. Optionally filter by severity or urgency. Each alert returns the event type, severity, urgency, certainty, headline, affected-area description, issuing office, recommended public response, onset / expiry / end times, and the full hazard description plus protective-action instructions. Results are sorted most-severe first and capped by limit, with the true total reported. Public-domain NOAA / National Weather Service data, refreshed in real time.
+      operationId: weather_alerts
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized envelope: items = active alerts (most-severe first), total = full active-alert count before the limit cap, meta.scope echoes the resolved point/area. An empty items array means no active alerts for the scope.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            id:
+                              type: string
+                              nullable: true
+                            event:
+                              type: string
+                              nullable: true
+                            severity:
+                              type: string
+                              nullable: true
+                            urgency:
+                              type: string
+                              nullable: true
+                            certainty:
+                              type: string
+                              nullable: true
+                            category:
+                              type: string
+                              nullable: true
+                            headline:
+                              type: string
+                              nullable: true
+                            areaDescription:
+                              type: string
+                              nullable: true
+                            senderName:
+                              type: string
+                              nullable: true
+                            response:
+                              type: string
+                              nullable: true
+                            status:
+                              type: string
+                              nullable: true
+                            messageType:
+                              type: string
+                              nullable: true
+                            effective:
+                              type: string
+                              nullable: true
+                            onset:
+                              type: string
+                              nullable: true
+                            expires:
+                              type: string
+                              nullable: true
+                            ends:
+                              type: string
+                              nullable: true
+                            description:
+                              type: string
+                              nullable: true
+                            instruction:
+                              type: string
+                              nullable: true
+                          required:
+                          - id
+                          - event
+                          - severity
+                          - urgency
+                          - certainty
+                          - category
+                          - headline
+                          - areaDescription
+                          - senderName
+                          - response
+                          - status
+                          - messageType
+                          - effective
+                          - onset
+                          - expires
+                          - ends
+                          - description
+                          - instruction
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                      meta:
+                        type: object
+                        properties:
+                          scope:
+                            type: object
+                            properties:
+                              point:
+                                type: object
+                                properties:
+                                  lat:
+                                    type: number
+                                  lon:
+                                    type: number
+                                required:
+                                - lat
+                                - lon
+                                additionalProperties: false
+                                nullable: true
+                              area:
+                                type: string
+                                nullable: true
+                            required:
+                            - point
+                            - area
+                            additionalProperties: false
+                        required:
+                        - scope
+                        additionalProperties: false
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: weather.alerts
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.003
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.003000'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: point
+        in: query
+        required: false
+        description: Exact location as "lat,lon" in decimal degrees, e.g. "25.7617,-80.1918". Returns alerts covering that point. Provide point OR area, not both.
+        schema:
+          type: string
+      - name: area
+        in: query
+        required: false
+        description: 2-letter US state / territory or NWS marine area code, e.g. "FL", "TX", "PK". Returns all active alerts for that area. Provide point OR area, not both.
+        schema:
+          type: string
+      - name: severity
+        in: query
+        required: false
+        description: Filter to a single severity level.
+        schema:
+          type: string
+          enum:
+          - Extreme
+          - Severe
+          - Moderate
+          - Minor
+          - Unknown
+      - name: urgency
+        in: query
+        required: false
+        description: Filter to a single urgency level.
+        schema:
+          type: string
+          enum:
+          - Immediate
+          - Expected
+          - Future
+          - Past
+          - Unknown
+      - name: limit
+        in: query
+        required: false
+        description: Max alerts to return (1-100, default 20). Most-severe first.
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 20
+      - $ref: '#/components/parameters/TrialMode'
+  /api/weather/current:
+    get:
+      tags:
+      - Weather
+      summary: Current weather conditions for any coordinate worldwide
+      description: 'Current weather conditions for any coordinate worldwide. Pass lat + lon (and optional units=metric|imperial, default metric). Returns temperature, feels-like, humidity, precipitation (rain/snow), cloud cover, sea-level pressure, wind speed/direction/gusts, day/night flag, and a human-readable conditions label from the WMO weather code — with local time + timezone. Global coverage (not just US — for US-only NWS data see weather.zip / weather.forecast). Source: Open-Meteo (CC BY 4.0).'
+      operationId: weather_current
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized envelope: items = [current conditions]; meta = timezone + elevation + the units in effect.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            lat:
+                              type: number
+                            lon:
+                              type: number
+                            time:
+                              type: string
+                              nullable: true
+                              description: Local time at the location (ISO 8601, no offset).
+                            isDay:
+                              type: boolean
+                              nullable: true
+                            weatherCode:
+                              type: number
+                              nullable: true
+                              description: WMO weather interpretation code.
+                            conditions:
+                              type: string
+                              nullable: true
+                              description: Human-readable conditions (from the WMO code).
+                            temperature:
+                              type: number
+                              nullable: true
+                            apparentTemperature:
+                              type: number
+                              nullable: true
+                            humidityPct:
+                              type: number
+                              nullable: true
+                            precipitation:
+                              type: number
+                              nullable: true
+                            rain:
+                              type: number
+                              nullable: true
+                            snowfallCm:
+                              type: number
+                              nullable: true
+                            cloudCoverPct:
+                              type: number
+                              nullable: true
+                            pressureMslHpa:
+                              type: number
+                              nullable: true
+                            windSpeed:
+                              type: number
+                              nullable: true
+                            windDirectionDeg:
+                              type: number
+                              nullable: true
+                            windGusts:
+                              type: number
+                              nullable: true
+                          required:
+                          - lat
+                          - lon
+                          - time
+                          - isDay
+                          - weatherCode
+                          - conditions
+                          - temperature
+                          - apparentTemperature
+                          - humidityPct
+                          - precipitation
+                          - rain
+                          - snowfallCm
+                          - cloudCoverPct
+                          - pressureMslHpa
+                          - windSpeed
+                          - windDirectionDeg
+                          - windGusts
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                      meta:
+                        type: object
+                        properties:
+                          timezone:
+                            type: string
+                            nullable: true
+                          elevationM:
+                            type: number
+                            nullable: true
+                          units:
+                            type: object
+                            properties:
+                              temperature:
+                                type: string
+                              windSpeed:
+                                type: string
+                              precipitation:
+                                type: string
+                            required:
+                            - temperature
+                            - windSpeed
+                            - precipitation
+                            additionalProperties: false
+                        required:
+                        - timezone
+                        - elevationM
+                        - units
+                        additionalProperties: false
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: weather.current
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.003
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.003000'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: lat
+        in: query
+        required: true
+        description: Latitude in decimal degrees (WGS84).
+        schema:
+          type: number
+          minimum: -90
+          maximum: 90
+      - name: lon
+        in: query
+        required: true
+        description: Longitude in decimal degrees (WGS84).
+        schema:
+          type: number
+          minimum: -180
+          maximum: 180
+      - name: units
+        in: query
+        required: false
+        description: Units.
+        schema:
+          type: string
+          enum:
+          - metric
+          - imperial
+          default: metric
+      - $ref: '#/components/parameters/TrialMode'
+  /api/weather/forecast:
+    get:
+      tags:
+      - Weather
+      summary: Official US weather forecast for a coordinate (US land +
+      description: 'Official US weather forecast for a coordinate (US land + territories). Pass lat + lon. Returns the National Weather Service forecast as a list of periods — by default ~7 days of day/night periods; pass hourly=true for an hour-by-hour forecast. Each period gives the temperature + unit, wind speed/direction, chance of precipitation, and a short + detailed forecast, plus the resolved city/state and issuing office. Source: US National Weather Service (api.weather.gov), public domain. For active warnings use weather.alerts.'
+      operationId: weather_forecast
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized envelope: items = forecast periods (chronological); meta = location + office + count.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            name:
+                              type: string
+                              nullable: true
+                            startTime:
+                              type: string
+                            endTime:
+                              type: string
+                            isDaytime:
+                              type: boolean
+                            temperature:
+                              type: number
+                              nullable: true
+                            temperatureUnit:
+                              type: string
+                              nullable: true
+                            windSpeed:
+                              type: string
+                              nullable: true
+                            windDirection:
+                              type: string
+                              nullable: true
+                            precipProbabilityPct:
+                              type: number
+                              nullable: true
+                            shortForecast:
+                              type: string
+                              nullable: true
+                            detailedForecast:
+                              type: string
+                              nullable: true
+                          required:
+                          - name
+                          - startTime
+                          - endTime
+                          - isDaytime
+                          - temperature
+                          - temperatureUnit
+                          - windSpeed
+                          - windDirection
+                          - precipProbabilityPct
+                          - shortForecast
+                          - detailedForecast
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                      meta:
+                        type: object
+                        properties:
+                          location:
+                            type: string
+                            nullable: true
+                          forecastOffice:
+                            type: string
+                            nullable: true
+                          updated:
+                            type: string
+                            nullable: true
+                          periods:
+                            type: integer
+                        required:
+                        - location
+                        - forecastOffice
+                        - updated
+                        - periods
+                        additionalProperties: false
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: weather.forecast
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.0036
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.003600'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: lat
+        in: query
+        required: true
+        description: Latitude in decimal degrees (WGS84).
+        schema:
+          type: number
+          minimum: -90
+          maximum: 90
+      - name: lon
+        in: query
+        required: true
+        description: Longitude in decimal degrees (WGS84).
+        schema:
+          type: number
+          minimum: -180
+          maximum: 180
+      - name: hourly
+        in: query
+        required: false
+        description: Hourly.
+        schema:
+          type: boolean
+      - name: limit
+        in: query
+        required: false
+        description: Maximum number of results to return.
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 156
+      - $ref: '#/components/parameters/TrialMode'
+  /api/weather/forecast-global:
+    get:
+      tags:
+      - Weather
+      summary: Weather forecast for any coordinate worldwide, up to 16
+      description: 'Weather forecast for any coordinate worldwide, up to 16 days out. Pass lat + lon; optional days (1–16, default 7), hourly=true for hour-by-hour instead of daily, and units=metric|imperial (default metric). Daily items give max/min temperature, feels-like max, precipitation total + max probability, max wind + gusts, sunrise/sunset, and human-readable conditions from the WMO weather code; hourly items give temperature, feels-like, humidity, precipitation amount + probability, wind, and conditions — all in local time. Global coverage (for the official US-only NWS forecast see weather.forecast). Source: Open-Meteo (CC BY 4.0).'
+      operationId: weather_forecast-global
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized envelope: items = forecast periods in local time (daily: date, conditions, tempMax/Min, precipSum + probability, wind max/gusts, sunrise/sunset; hourly: time, conditions, temperature, humidity, precipitation + probability, wind); meta = timezone + mode + units in effect.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          anyOf:
+                          - type: object
+                            properties:
+                              date:
+                                type: string
+                              weatherCode:
+                                type: number
+                                nullable: true
+                                description: WMO weather interpretation code.
+                              conditions:
+                                type: string
+                                nullable: true
+                                description: Human-readable conditions (from the WMO code).
+                              tempMax:
+                                type: number
+                                nullable: true
+                              tempMin:
+                                type: number
+                                nullable: true
+                              apparentTempMax:
+                                type: number
+                                nullable: true
+                              precipSum:
+                                type: number
+                                nullable: true
+                              precipProbabilityMaxPct:
+                                type: number
+                                nullable: true
+                              windSpeedMax:
+                                type: number
+                                nullable: true
+                              windGustsMax:
+                                type: number
+                                nullable: true
+                              sunrise:
+                                type: string
+                                nullable: true
+                              sunset:
+                                type: string
+                                nullable: true
+                            required:
+                            - date
+                            - weatherCode
+                            - conditions
+                            - tempMax
+                            - tempMin
+                            - apparentTempMax
+                            - precipSum
+                            - precipProbabilityMaxPct
+                            - windSpeedMax
+                            - windGustsMax
+                            - sunrise
+                            - sunset
+                            additionalProperties: false
+                            description: Daily forecast period (meta.mode = "daily").
+                          - type: object
+                            properties:
+                              time:
+                                type: string
+                                description: Local time of the hour (ISO 8601, no offset).
+                              weatherCode:
+                                type: number
+                                nullable: true
+                                description: WMO weather interpretation code.
+                              conditions:
+                                type: string
+                                nullable: true
+                                description: Human-readable conditions (from the WMO code).
+                              temperature:
+                                type: number
+                                nullable: true
+                              apparentTemperature:
+                                type: number
+                                nullable: true
+                              humidityPct:
+                                type: number
+                                nullable: true
+                              precipProbabilityPct:
+                                type: number
+                                nullable: true
+                              precipitation:
+                                type: number
+                                nullable: true
+                              windSpeed:
+                                type: number
+                                nullable: true
+                            required:
+                            - time
+                            - weatherCode
+                            - conditions
+                            - temperature
+                            - apparentTemperature
+                            - humidityPct
+                            - precipProbabilityPct
+                            - precipitation
+                            - windSpeed
+                            additionalProperties: false
+                            description: Hourly forecast period (meta.mode = "hourly", hourly=true).
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                      meta:
+                        type: object
+                        properties:
+                          timezone:
+                            type: string
+                            nullable: true
+                          mode:
+                            type: string
+                            description: '''daily'' or ''hourly''.'
+                          units:
+                            type: object
+                            properties:
+                              temperature:
+                                type: string
+                              windSpeed:
+                                type: string
+                              precipitation:
+                                type: string
+                            required:
+                            - temperature
+                            - windSpeed
+                            - precipitation
+                            additionalProperties: false
+                        required:
+                        - timezone
+                        - mode
+                        - units
+                        additionalProperties: false
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: weather.forecast-global
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.0036
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.003600'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: lat
+        in: query
+        required: true
+        description: Latitude in decimal degrees (WGS84).
+        schema:
+          type: number
+          minimum: -90
+          maximum: 90
+      - name: lon
+        in: query
+        required: true
+        description: Longitude in decimal degrees (WGS84).
+        schema:
+          type: number
+          minimum: -180
+          maximum: 180
+      - name: days
+        in: query
+        required: false
+        description: Look-back window, in days.
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 16
+          default: 7
+      - name: hourly
+        in: query
+        required: false
+        description: Hourly.
+        schema:
+          type: boolean
+      - name: units
+        in: query
+        required: false
+        description: Units.
+        schema:
+          type: string
+          enum:
+          - metric
+          - imperial
+          default: metric
+      - $ref: '#/components/parameters/TrialMode'
+  /api/weather/history:
+    get:
+      tags:
+      - Weather
+      summary: Historical daily weather for any coordinate (ERA5
+      description: 'Historical daily weather for any coordinate (ERA5 reanalysis, 1940→~5 days ago). Pass lat + lon + start + end (YYYY-MM-DD, range ≤366 days). Returns per-day max/min/mean temperature (°C), precipitation total (mm) + hours, and max wind (km/h). Source: Open-Meteo archive / ECMWF ERA5 (keyless).'
+      operationId: weather_history
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized envelope: items = daily history (chronological); total = days.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            date:
+                              type: string
+                            tempMaxC:
+                              type: number
+                              nullable: true
+                            tempMinC:
+                              type: number
+                              nullable: true
+                            tempMeanC:
+                              type: number
+                              nullable: true
+                            precipMm:
+                              type: number
+                              nullable: true
+                            windMaxKmh:
+                              type: number
+                              nullable: true
+                            precipHours:
+                              type: number
+                              nullable: true
+                          required:
+                          - date
+                          - tempMaxC
+                          - tempMinC
+                          - tempMeanC
+                          - precipMm
+                          - windMaxKmh
+                          - precipHours
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: weather.history
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.0036
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.003600'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: lat
+        in: query
+        required: true
+        description: Latitude in decimal degrees (WGS84).
+        schema:
+          type: number
+          minimum: -90
+          maximum: 90
+      - name: lon
+        in: query
+        required: true
+        description: Longitude in decimal degrees (WGS84).
+        schema:
+          type: number
+          minimum: -180
+          maximum: 180
+      - name: start
+        in: query
+        required: true
+        description: Start.
+        schema:
+          type: string
+          pattern: ^\d{4}-\d{2}-\d{2}$
+      - name: end
+        in: query
+        required: true
+        description: End.
+        schema:
+          type: string
+          pattern: ^\d{4}-\d{2}-\d{2}$
+      - $ref: '#/components/parameters/TrialMode'
+  /api/weather/marine:
+    get:
+      tags:
+      - Weather
+      summary: Current marine/sea-state conditions for an ocean or coastal
+      description: 'Current marine/sea-state conditions for an ocean or coastal coordinate. Pass lat + lon. Returns significant wave height (m), wave direction + period, and the wind-wave and swell-wave components. Useful for surf, sailing, and coastal ops. Source: Open-Meteo marine (keyless). Returns 404 for inland points.'
+      operationId: weather_marine
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized envelope: items = [current sea state]; total = 1.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            lat:
+                              type: number
+                            lon:
+                              type: number
+                            time:
+                              type: string
+                              nullable: true
+                            waveHeightM:
+                              type: number
+                              nullable: true
+                            waveDirectionDeg:
+                              type: number
+                              nullable: true
+                            wavePeriodS:
+                              type: number
+                              nullable: true
+                            windWaveHeightM:
+                              type: number
+                              nullable: true
+                            swellWaveHeightM:
+                              type: number
+                              nullable: true
+                            swellWavePeriodS:
+                              type: number
+                              nullable: true
+                          required:
+                          - lat
+                          - lon
+                          - time
+                          - waveHeightM
+                          - waveDirectionDeg
+                          - wavePeriodS
+                          - windWaveHeightM
+                          - swellWaveHeightM
+                          - swellWavePeriodS
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: weather.marine
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.003
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.003000'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: lat
+        in: query
+        required: true
+        description: Latitude in decimal degrees (WGS84).
+        schema:
+          type: number
+          minimum: -90
+          maximum: 90
+      - name: lon
+        in: query
+        required: true
+        description: Longitude in decimal degrees (WGS84).
+        schema:
+          type: number
+          minimum: -180
+          maximum: 180
+      - $ref: '#/components/parameters/TrialMode'
+  /api/weather/zip:
+    get:
+      tags:
+      - Weather
+      summary: Current weather conditions for a US ZIP code (temperature
+      description: Current weather conditions for a US ZIP code (temperature, wind, humidity, conditions). Backed by the US National Weather Service (api.weather.gov) — public domain, no rate-limit pressure on commercial use.
+      operationId: weather_zip
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized envelope: items = [{ location, current }] (one ZIP-keyed current-conditions snapshot); total = 1. 404 if the ZIP is unknown.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            location:
+                              type: object
+                              properties:
+                                zip:
+                                  type: string
+                                city:
+                                  type: string
+                                state:
+                                  type: string
+                                coords:
+                                  type: object
+                                  properties:
+                                    lat:
+                                      type: number
+                                    lon:
+                                      type: number
+                                  required:
+                                  - lat
+                                  - lon
+                                  additionalProperties: false
+                                timezone:
+                                  type: string
+                                  nullable: true
+                              required:
+                              - zip
+                              - city
+                              - state
+                              - coords
+                              - timezone
+                              additionalProperties: false
+                            current:
+                              type: object
+                              properties:
+                                temperatureF:
+                                  type: number
+                                  nullable: true
+                                apparentTemperatureF:
+                                  type: number
+                                  nullable: true
+                                humidityPct:
+                                  type: number
+                                  nullable: true
+                                windMph:
+                                  type: number
+                                  nullable: true
+                                windDirection:
+                                  type: string
+                                  nullable: true
+                                windDirectionDeg:
+                                  type: number
+                                  nullable: true
+                                precipProbabilityPct:
+                                  type: number
+                                  nullable: true
+                                conditions:
+                                  type: string
+                                isDay:
+                                  type: boolean
+                                  nullable: true
+                                observedAt:
+                                  type: string
+                                  nullable: true
+                              required:
+                              - temperatureF
+                              - apparentTemperatureF
+                              - humidityPct
+                              - windMph
+                              - windDirection
+                              - windDirectionDeg
+                              - precipProbabilityPct
+                              - conditions
+                              - isDay
+                              - observedAt
+                              additionalProperties: false
+                          required:
+                          - location
+                          - current
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: weather.zip
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.003
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.003000'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: zip
+        in: query
+        required: true
+        description: US ZIP code.
+        schema:
+          type: string
+          pattern: ^\d{5}$
+      - $ref: '#/components/parameters/TrialMode'
+components:
+  responses:
+    MethodNotAllowed:
+      description: Method not allowed — see `Allow` header for the supported method.
+    UpstreamError:
+      description: Upstream provider error.
+    ServerError:
+      description: Internal server error.
+    PaymentRequired:
+      description: Payment required. Body contains the x402 PaymentRequirements envelope with a multi-network accepts array; the per-call price is in accepts[].amount (and on the operation as x-2s-price). Sign for whichever rail you hold USDC on (EIP-3009 for Base, partial SPL transfer for Solana) and retry with the PAYMENT-SIGNATURE header (X-PAYMENT also accepted for v1 clients).
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/X402PaymentRequiredV2'
+    BadRequest:
+      description: Bad request — invalid parameters.
+  parameters:
+    TrialMode:
+      name: trial
+      in: query
+      required: false
+      description: 'Try before you buy. Set to 1 for one free real call per endpoint per hour — no wallet or payment needed — to verify the endpoint before paying. Equivalent to sending the "X-2s-Trial: 1" request header. Works on every endpoint.'
+      schema:
+        type: integer
+        enum:
+        - 1
+  schemas:
+    CallMeta:
+      type: object
+      description: Per-call meta envelope — endpoint id, cost, caller kind, settlement details.
+    Source:
+      type: object
+      description: 'Provenance of the data: upstream provider, source URL, and license.'
+      properties:
+        provider:
+          type: string
+          description: Upstream data provider.
+        url:
+          type: string
+          description: Source URL or documentation link.
+        license:
+          type: string
+          description: License / usage terms for the data.
+    X402PaymentRequiredV2:
+      type: object
+      description: x402 v2 PaymentRequired envelope. Pick any entry from accepts[], sign for that rail, retry with the PAYMENT-SIGNATURE header.
+      required:
+      - x402Version
+      - accepts
+      properties:
+        x402Version:
+          type: integer
+          const: 2
+        error:
+          type: string
+          description: Human-readable reason payment is required.
+        resource:
+          type: string
+          description: The resource URL being purchased.
+        accepts:
+          type: array
+          description: Payment requirement options, one per supported network (Base USDC, Solana USDC).
+          items:
+            type: object
+            required:
+            - scheme
+            - network
+            - amount
+            - asset
+            - payTo
+            - maxTimeoutSeconds
+            properties:
+              scheme:
+                type: string
+                enum:
+                - exact
+              network:
+                type: string
+                description: CAIP-2 network id, e.g. "eip155:8453" (Base) or "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp".
+              amount:
+                type: string
+                description: Price in atomic asset units (USDC has 6 decimals).
+              asset:
+                type: string
+                description: Asset contract address / mint.
+              payTo:
+                type: string
+                description: Treasury address to pay.
+              maxTimeoutSeconds:
+                type: integer
+              extra:
+                type: object
+                description: 'Rail-specific extras (EVM: EIP-712 domain name/version; Solana: feePayer).'
+                additionalProperties: true
+        extensions:
+          type: object
+          description: Optional discovery metadata (e.g. bazaar input/output schemas).
+          additionalProperties: true
+  securitySchemes:
+    x402Payment:
+      type: apiKey
+      in: header
+      name: PAYMENT-SIGNATURE
+      description: 'x402 protocol v2: base64-encoded PaymentPayload. Call any paid endpoint without auth to receive a 402 with a multi-network PaymentRequirements envelope. Sign for either rail: EIP-3009 transferWithAuthorization (Base USDC) OR a partial SPL token transfer (Solana USDC). Retry with PAYMENT-SIGNATURE header. X-PAYMENT is also accepted for v1 buyer clients. See https://x402.org.'

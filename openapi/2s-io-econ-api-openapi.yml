@@ -1,0 +1,1510 @@
+openapi: 3.2.0
+info:
+  title: 2s — the (most) everything Econ API
+  version: '1'
+  summary: The (most) everything API.
+  description: 'The (most) everything API for AI agents: 575+ pay-per-call endpoints on one origin.'
+  contact:
+    name: 2s
+    url: https://2s.io
+    email: alley@2s.io
+  x-logo:
+    url: https://2s.io/icon-512.png
+    altText: 2s
+  x-guidance: 'Pay-per-call REST API for AI agents — hundreds of endpoints returning ground-truth data (US public records, company & legal identifiers, finance/SEC, crypto/web3, security & CVEs, medical codes, weather & geocoding, agriculture, energy, maritime, music, and more). Every endpoint is paid per call in USDC via x402 (Base or Solana) — no API key, no signup. Call any endpoint with no auth to get a 402 PaymentRequirements envelope, sign it (EIP-3009 on Base, partial SPL transfer on Solana), and retry with the PAYMENT-SIGNATURE header. Add ?trial=1 for one free real call per endpoint per hour to test before paying. To discover the right endpoint: GET https://2s.io/api/directory for the full catalog, or GET https://2s.io/api/search/endpoints?q=<natural-language task> for a ranked match. Per-call price is on each operation as x-payment-info (from $0.001). Batch up to 50 calls behind one payment via POST https://2s.io/api/batch/run.'
+servers:
+- url: https://2s.io
+tags:
+- name: econ
+paths:
+  /api/econ/commodity:
+    get:
+      tags:
+      - econ
+      summary: Latest benchmark commodity price with the prior value + %
+      description: 'Latest benchmark commodity price with the prior value + % change. Pass commodity for one, or omit for all. Commodities: wti, brent, natural-gas, gasoline, diesel, heating-oil, propane, copper, aluminum, corn, wheat, sugar — i.e. crude oil (WTI + Brent), natural gas, gasoline, diesel, heating oil, propane, gold, copper, aluminum, corn, wheat, sugar. Each result names the FRED series ID + unit ($/barrel, $/gallon, $/troy oz, $/metric ton...). Daily benchmarks report a daily date; global-price series are monthly. Source: EIA / LBMA / IMF via FRED (St. Louis Fed).'
+      operationId: econ_commodity
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized envelope: items = commodity prices; total = commodities returned.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            commodity:
+                              type: string
+                            seriesId:
+                              type: string
+                            label:
+                              type: string
+                            unit:
+                              type: string
+                            price:
+                              type: number
+                              nullable: true
+                            asOf:
+                              type: string
+                              nullable: true
+                            previous:
+                              type: number
+                              nullable: true
+                            changePct:
+                              type: number
+                              nullable: true
+                              description: '% change vs the prior observation.'
+                          required:
+                          - commodity
+                          - seriesId
+                          - label
+                          - unit
+                          - price
+                          - asOf
+                          - previous
+                          - changePct
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: econ.commodity
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.0036
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.003600'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: commodity
+        in: query
+        required: false
+        description: Commodity.
+        schema:
+          type: string
+          enum:
+          - wti
+          - brent
+          - natural-gas
+          - gasoline
+          - diesel
+          - heating-oil
+          - propane
+          - copper
+          - aluminum
+          - corn
+          - wheat
+          - sugar
+      - $ref: '#/components/parameters/TrialMode'
+  /api/econ/cot:
+    get:
+      tags:
+      - econ
+      summary: CFTC Commitments of Traders (COT) - weekly futures
+      description: 'CFTC Commitments of Traders (COT) — weekly futures positioning for a market (free/keyless). Match a market by name (e.g. ''E-MINI S&P'', ''GOLD'', ''CRUDE OIL'', ''BITCOIN''). Each weekly report: open interest, large speculators (non-commercial) long/short/spread, commercials (hedgers) long/short, small (non-reportable) traders, and week-over-week changes. For positioning/sentiment analysis.'
+      operationId: econ_cot
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized: items = weekly COT reports (newest first).'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            market:
+                              nullable: true
+                            reportDate:
+                              type: string
+                              nullable: true
+                            openInterest:
+                              type: number
+                              nullable: true
+                            nonCommLong:
+                              type: number
+                              nullable: true
+                            nonCommShort:
+                              type: number
+                              nullable: true
+                            nonCommSpread:
+                              type: number
+                              nullable: true
+                            commLong:
+                              type: number
+                              nullable: true
+                            commShort:
+                              type: number
+                              nullable: true
+                            nonReptLong:
+                              type: number
+                              nullable: true
+                            nonReptShort:
+                              type: number
+                              nullable: true
+                            changeOpenInterest:
+                              type: number
+                              nullable: true
+                            changeNonCommLong:
+                              type: number
+                              nullable: true
+                            changeNonCommShort:
+                              type: number
+                              nullable: true
+                            tradersTotal:
+                              type: number
+                              nullable: true
+                          required:
+                          - reportDate
+                          - openInterest
+                          - nonCommLong
+                          - nonCommShort
+                          - nonCommSpread
+                          - commLong
+                          - commShort
+                          - nonReptLong
+                          - nonReptShort
+                          - changeOpenInterest
+                          - changeNonCommLong
+                          - changeNonCommShort
+                          - tradersTotal
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: econ.cot
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.0045
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.004500'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: market
+        in: query
+        required: true
+        description: Market name contains, e.g. GOLD, E-MINI S&P, CRUDE OIL.
+        schema:
+          type: string
+          minLength: 2
+          maxLength: 60
+      - name: limit
+        in: query
+        required: false
+        description: Maximum number of results to return.
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 50
+      - $ref: '#/components/parameters/TrialMode'
+  /api/econ/fred:
+    get:
+      tags:
+      - econ
+      summary: Any series in the Federal Reserve's FRED database (800k+ US
+      description: 'Any series in the Federal Reserve''s FRED database (800k+ US & international economic time series). HOW TO USE: if you know the series id, pass seriesId to get the series metadata (title, units, frequency, seasonal adjustment, observation range, last updated) + its most-recent observations (date + value, newest first; optionally bound the range with start/end YYYY-MM-DD and cap with limit). If you DON''T know the id, pass query to full-text search the catalog (returns ids + titles + units + frequency, most-popular first) — then call again with the seriesId you found. Popular ids: UNRATE (unemployment rate), CPIAUCSL (CPI), PCEPI (PCE price index), GDP / GDPC1 (nominal / real GDP), PAYEMS (nonfarm payrolls), FEDFUNDS (fed funds rate), DGS10 / DGS2 (10yr / 2yr Treasury), T10Y2Y (10y-2y spread), MORTGAGE30US (30yr mortgage), SP500, VIXCLS (VIX), DEXUSEU (USD/EUR), DCOILWTICO (WTI oil), HOUST (housing starts), UMCSENT (consumer sentiment), M2SL (M2 money supply). Each series'' units and frequency come back in the metadata so you know how to read the values. Free, public-domain for most series (FRED attribution). Distinct from econ.indicator (a small curated headline set) — this is the FULL catalog. Companion endpoints: econ.fred-releases (when reports are published — the data calendar) and econ.fred-vintage (point-in-time / revised values for honest backtesting).'
+      operationId: econ_fred
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized envelope: seriesId → items = [one series + observations]; query → items = matching series.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            id:
+                              type: string
+                            title:
+                              type: string
+                            units:
+                              type: string
+                            unitsShort:
+                              type: string
+                            frequency:
+                              type: string
+                            frequencyShort:
+                              type: string
+                            seasonalAdjustment:
+                              type: string
+                            lastUpdated:
+                              type: string
+                              nullable: true
+                            observationStart:
+                              type: string
+                              nullable: true
+                            observationEnd:
+                              type: string
+                              nullable: true
+                            popularity:
+                              type: number
+                              nullable: true
+                            notes:
+                              type: string
+                              nullable: true
+                            observations:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  date:
+                                    type: string
+                                  value:
+                                    type: number
+                                required:
+                                - date
+                                - value
+                                additionalProperties: false
+                          required:
+                          - id
+                          - title
+                          - units
+                          - frequency
+                          - seasonalAdjustment
+                          - lastUpdated
+                          - observationStart
+                          - observationEnd
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: econ.fred
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.0036
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.003600'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: seriesId
+        in: query
+        required: false
+        description: Series ID.
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 60
+      - name: query
+        in: query
+        required: false
+        description: Free-text search query.
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 120
+      - name: limit
+        in: query
+        required: false
+        description: Maximum number of results to return.
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+      - name: start
+        in: query
+        required: false
+        description: Start.
+        schema:
+          type: string
+          pattern: ^\d{4}-\d{2}-\d{2}$
+      - name: end
+        in: query
+        required: false
+        description: End.
+        schema:
+          type: string
+          pattern: ^\d{4}-\d{2}-\d{2}$
+      - $ref: '#/components/parameters/TrialMode'
+  /api/econ/fred-categories:
+    get:
+      tags:
+      - econ
+      summary: Browse the Federal Reserve FRED category tree to DISCOVER
+      description: 'Browse the Federal Reserve FRED category tree to DISCOVER economic series. Pass a categoryId to get that category (name + parent), its child categories, and the most-popular series filed under it (id, title, units, frequency) — then pull the data with econ.fred. Omit categoryId (or pass 0) for the eight top-level categories: Money/Banking/Finance, Population/Employment/Labor, National Accounts, Production & Business Activity, Prices, International Data, U.S. Regional Data, Academic Data. Walk down via each child''s id. Free, public-domain (FRED). The structured map of what FRED actually contains — far more reliable than guessing series ids. Companion to econ.fred (fetch/search) and econ.fred-releases (calendar).'
+      operationId: econ_fred-categories
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized envelope: items = [{category, children, series}]; total = 1.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            category:
+                              type: object
+                              properties:
+                                id:
+                                  type: number
+                                name:
+                                  type: string
+                                parentId:
+                                  type: number
+                                  nullable: true
+                              required:
+                              - id
+                              - name
+                              - parentId
+                              additionalProperties: false
+                              nullable: true
+                            children:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  id:
+                                    type: number
+                                  name:
+                                    type: string
+                                  parentId:
+                                    type: number
+                                    nullable: true
+                                required:
+                                - id
+                                - name
+                                - parentId
+                                additionalProperties: false
+                            series:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  id:
+                                    type: string
+                                  title:
+                                    type: string
+                                  units:
+                                    type: string
+                                    nullable: true
+                                  frequency:
+                                    type: string
+                                    nullable: true
+                                  seasonalAdjustment:
+                                    type: string
+                                    nullable: true
+                                  popularity:
+                                    type: number
+                                    nullable: true
+                                  observationStart:
+                                    type: string
+                                    nullable: true
+                                  observationEnd:
+                                    type: string
+                                    nullable: true
+                                required:
+                                - id
+                                - title
+                                - units
+                                - frequency
+                                - seasonalAdjustment
+                                - popularity
+                                - observationStart
+                                - observationEnd
+                                additionalProperties: false
+                          required:
+                          - category
+                          - children
+                          - series
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: econ.fred-categories
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.003
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.003000'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: categoryId
+        in: query
+        required: false
+        description: Category ID.
+        schema:
+          type: integer
+          minimum: 0
+          maximum: 10000000
+      - name: seriesLimit
+        in: query
+        required: false
+        description: Series limit.
+        schema:
+          type: integer
+          minimum: 0
+          maximum: 50
+      - $ref: '#/components/parameters/TrialMode'
+  /api/econ/fred-regional:
+    get:
+      tags:
+      - econ
+      summary: 'Federal Reserve regional economic data: one snapshot of a'
+      description: 'Federal Reserve regional economic data: one snapshot of a FRED regional series across ALL its geographies (every U.S. state, county, or metro area) for a single period. Pass a regional series id (e.g. WIPCPI = per-capita personal income by state, or a state/county unemployment series) and get each region''s name, FIPS region code, value, and per-region FRED series id, plus the group''s units, frequency, and available date range. Add a date (YYYY-MM-DD) for a point-in-time cross-section; omit it for the latest. Authoritative St. Louis Fed (GeoFRED) data agents can''t recite — per-state income, county unemployment, regional GDP — keyed by exact region codes. Free, public-domain. Companion to econ.fred (national series), econ.fred-categories (discover series ids), and census.demographics (ACS survey).'
+      operationId: econ_fred-regional
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized envelope: items = [{seriesId, title, regionType, units, regions:[...]}]; total = region count.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            seriesId:
+                              type: string
+                            title:
+                              type: string
+                            seriesGroup:
+                              type: string
+                            regionType:
+                              type: string
+                            units:
+                              type: string
+                            frequency:
+                              type: string
+                            seasonality:
+                              type: string
+                            asOf:
+                              type: string
+                            availableDates:
+                              type: object
+                              properties:
+                                min:
+                                  type: string
+                                  nullable: true
+                                max:
+                                  type: string
+                                  nullable: true
+                              required:
+                              - min
+                              - max
+                              additionalProperties: false
+                            regions:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  region:
+                                    type: string
+                                  code:
+                                    type: string
+                                  value:
+                                    type: number
+                                    nullable: true
+                                  seriesId:
+                                    type: string
+                                required:
+                                - region
+                                - code
+                                - value
+                                - seriesId
+                                additionalProperties: false
+                          required:
+                          - seriesId
+                          - title
+                          - seriesGroup
+                          - regionType
+                          - units
+                          - frequency
+                          - seasonality
+                          - asOf
+                          - availableDates
+                          - regions
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: econ.fred-regional
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.0045
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.004500'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: seriesId
+        in: query
+        required: true
+        description: A FRED regional series id (e.g. WIPCPI). Resolves to its regional series group.
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 64
+      - name: date
+        in: query
+        required: false
+        description: 'Optional YYYY-MM-DD period for a point-in-time cross-section (default: latest available).'
+        schema:
+          type: string
+          pattern: ^\d{4}-\d{2}-\d{2}$
+      - $ref: '#/components/parameters/TrialMode'
+  /api/econ/fred-releases:
+    get:
+      tags:
+      - econ
+      summary: The US economic-data release CALENDAR - when official
+      description: The US economic-data release CALENDAR — when official economic reports are published, from the Federal Reserve's FRED. Returns upcoming release dates (date, release name, FRED release id), starting from `from` (default today), ascending. Filter by name to find a specific report's schedule (e.g. name="Consumer Price Index" → the next CPI dates; "Employment Situation" → jobs report; "Gross Domestic Product"; "FOMC"), or by releaseId. Free, public-domain (FRED). Future release dates an LLM cannot possibly know — essential for trading, scheduling, and macro-monitoring agents that need to act around data drops. Pair with econ.fred to pull the actual numbers once a release is out.
+      operationId: econ_fred-releases
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized envelope: items = upcoming releases (date asc, filtered, sliced to limit); total = match count.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            date:
+                              type: string
+                            releaseName:
+                              type: string
+                              nullable: true
+                            releaseId:
+                              type: number
+                          required:
+                          - date
+                          - releaseName
+                          - releaseId
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: econ.fred-releases
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.003
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.003000'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: from
+        in: query
+        required: false
+        description: Start of the range.
+        schema:
+          type: string
+          pattern: ^\d{4}-\d{2}-\d{2}$
+      - name: name
+        in: query
+        required: false
+        description: Name to search for.
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 80
+      - name: releaseId
+        in: query
+        required: false
+        description: Release ID.
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100000
+      - name: limit
+        in: query
+        required: false
+        description: Maximum number of results to return.
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+      - $ref: '#/components/parameters/TrialMode'
+  /api/econ/fred-vintage:
+    get:
+      tags:
+      - econ
+      summary: Point-in-time (vintage) economic data from FRED's ALFRED
+      description: 'Point-in-time (vintage) economic data from FRED''s ALFRED archive — what an economic figure was AS FIRST REPORTED / as known on a past date, before later revisions. Give a seriesId (e.g. GDP, GDPC1, PAYEMS, INDPRO) and an asOf date to get the observations exactly as they stood on that date; omit asOf to get the current (latest-revised) values. Also returns the series'' vintage (revision) dates — every date the series was revised. Free, public-domain (FRED). Critical for honest backtesting and macro research: it eliminates look-ahead bias (e.g. GDP for 2020Q1 was first reported far lower than today''s revised figure). No LLM and no real-time API gives this — it''s the archived state of the data through time. Pair with econ.fred (current series) and econ.fred-releases (release calendar).'
+      operationId: econ_fred-vintage
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized envelope: items = [one series at the requested vintage]; total = 1.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            seriesId:
+                              type: string
+                            title:
+                              type: string
+                            units:
+                              type: string
+                            asOf:
+                              type: string
+                              nullable: true
+                            vintageDates:
+                              type: array
+                              items:
+                                type: string
+                            observations:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  date:
+                                    type: string
+                                  value:
+                                    type: number
+                                required:
+                                - date
+                                - value
+                                additionalProperties: false
+                          required:
+                          - seriesId
+                          - title
+                          - units
+                          - asOf
+                          - vintageDates
+                          - observations
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: econ.fred-vintage
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.0042
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.004200'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: seriesId
+        in: query
+        required: true
+        description: Series ID.
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 60
+      - name: asOf
+        in: query
+        required: false
+        description: As of.
+        schema:
+          type: string
+          pattern: ^\d{4}-\d{2}-\d{2}$
+      - name: start
+        in: query
+        required: false
+        description: Start.
+        schema:
+          type: string
+          pattern: ^\d{4}-\d{2}-\d{2}$
+      - name: end
+        in: query
+        required: false
+        description: End.
+        schema:
+          type: string
+          pattern: ^\d{4}-\d{2}-\d{2}$
+      - name: limit
+        in: query
+        required: false
+        description: Maximum number of results to return.
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+      - $ref: '#/components/parameters/TrialMode'
+  /api/econ/indicator:
+    get:
+      tags:
+      - econ
+      summary: Latest reading of a curated US macroeconomic indicator
+      description: 'Latest reading of a curated US macroeconomic indicator, with the prior + year-ago values and YoY % change. Pass indicator for one, or omit for all. Indicators: unemployment-rate, fed-funds-rate, nonfarm-payrolls, jobless-claims, labor-force-participation, real-gdp, gdp-growth, 10y-treasury, 2y-treasury, 3m-treasury, 30y-mortgage, consumer-sentiment, housing-starts, retail-sales, industrial-production, m2, personal-saving-rate — i.e. unemployment rate, fed funds rate, nonfarm payrolls, jobless claims, labor-force participation, real GDP + GDP growth, 2y/3m/10y Treasury yields, 30y mortgage rate, consumer sentiment, housing starts, retail sales, industrial production, M2, personal saving rate. Each result names the FRED series ID + units. Source: BLS/BEA/Fed/Treasury via FRED (St. Louis Fed). For inflation specifically use inflation.rates; for any raw series use bls.series.'
+      operationId: econ_indicator
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized envelope: items = indicator readings; total = indicators returned.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            indicator:
+                              type: string
+                            seriesId:
+                              type: string
+                            label:
+                              type: string
+                            units:
+                              type: string
+                            value:
+                              type: number
+                              nullable: true
+                            asOf:
+                              type: string
+                              nullable: true
+                            previous:
+                              type: number
+                              nullable: true
+                            yearAgo:
+                              type: number
+                              nullable: true
+                            changeYoYPct:
+                              type: number
+                              nullable: true
+                              description: '% change vs year ago (most meaningful for level series; for rate series compare value vs yearAgo directly).'
+                          required:
+                          - indicator
+                          - seriesId
+                          - label
+                          - units
+                          - value
+                          - asOf
+                          - previous
+                          - yearAgo
+                          - changeYoYPct
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: econ.indicator
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.0036
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.003600'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: indicator
+        in: query
+        required: false
+        description: Indicator.
+        schema:
+          type: string
+          enum:
+          - unemployment-rate
+          - fed-funds-rate
+          - nonfarm-payrolls
+          - jobless-claims
+          - labor-force-participation
+          - real-gdp
+          - gdp-growth
+          - 10y-treasury
+          - 2y-treasury
+          - 3m-treasury
+          - 30y-mortgage
+          - consumer-sentiment
+          - housing-starts
+          - retail-sales
+          - industrial-production
+          - m2
+          - personal-saving-rate
+      - $ref: '#/components/parameters/TrialMode'
+  /api/econ/recession:
+    get:
+      tags:
+      - econ
+      summary: 'Composite US recession-signal dashboard: the NY Fed model''s'
+      description: 'Composite US recession-signal dashboard: the NY Fed model''s recession probability (12 months ahead, %), the Sahm-rule real-time indicator (≥0.50 signals a recession has begun), and the 10-Year minus 2-Year Treasury spread (negative = inverted, a classic precursor). Returns each gauge with its latest value, date, a triggered/inverted flag, and a plain-language note, plus a count of signals currently flashing. A read of the standard gauges — not a forecast. Source: NY Fed / BLS / US Treasury via FRED.'
+      operationId: econ_recession
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized envelope: items = [the recession-signal dashboard]; total = 1.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            recessionProbability:
+                              type: object
+                              properties:
+                                value:
+                                  type: number
+                                  nullable: true
+                                asOf:
+                                  type: string
+                                  nullable: true
+                                note:
+                                  type: string
+                              required:
+                              - value
+                              - asOf
+                              - note
+                              additionalProperties: false
+                            sahmRule:
+                              type: object
+                              properties:
+                                value:
+                                  type: number
+                                  nullable: true
+                                asOf:
+                                  type: string
+                                  nullable: true
+                                triggered:
+                                  type: boolean
+                                note:
+                                  type: string
+                              required:
+                              - value
+                              - asOf
+                              - triggered
+                              - note
+                              additionalProperties: false
+                            yieldCurve:
+                              type: object
+                              properties:
+                                spread10y2yPct:
+                                  type: number
+                                  nullable: true
+                                asOf:
+                                  type: string
+                                  nullable: true
+                                inverted:
+                                  type: boolean
+                                note:
+                                  type: string
+                              required:
+                              - spread10y2yPct
+                              - asOf
+                              - inverted
+                              - note
+                              additionalProperties: false
+                            signalsTriggered:
+                              type: integer
+                          required:
+                          - recessionProbability
+                          - sahmRule
+                          - yieldCurve
+                          - signalsTriggered
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: econ.recession
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.0036
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.003600'
+        protocols:
+        - x402: {}
+      parameters:
+      - $ref: '#/components/parameters/TrialMode'
+  /api/econ/yield-curve:
+    get:
+      tags:
+      - econ
+      summary: Current US Treasury yield curve - the market yield at every
+      description: 'Current US Treasury yield curve — the market yield at every constant-maturity tenor from 1 month to 30 years (1M, 3M, 6M, 1Y, 2Y, 3Y, 5Y, 7Y, 10Y, 20Y, 30Y), each as a percent as of its latest date. Also returns the 2s10s spread (10Y − 2Y), the 3m10y spread (10Y − 3M), and an inverted flag (true when 2s10s is negative — a classic recession signal). Daily data. Source: US Treasury constant-maturity rates via FRED (St. Louis Fed).'
+      operationId: econ_yield-curve
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized envelope: items = yield points by maturity; meta = spreads + inversion flag.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            maturity:
+                              type: string
+                            months:
+                              type: number
+                            seriesId:
+                              type: string
+                            yield:
+                              type: number
+                              nullable: true
+                              description: Constant-maturity yield, percent.
+                            asOf:
+                              type: string
+                              nullable: true
+                          required:
+                          - maturity
+                          - months
+                          - seriesId
+                          - yield
+                          - asOf
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                      meta:
+                        type: object
+                        properties:
+                          spread2s10s:
+                            type: number
+                            nullable: true
+                            description: 10Y − 2Y, percentage points.
+                          spread3m10y:
+                            type: number
+                            nullable: true
+                            description: 10Y − 3M, percentage points.
+                          inverted:
+                            type: boolean
+                            description: True when 2s10s is negative (recession signal).
+                          asOf:
+                            type: string
+                            nullable: true
+                        required:
+                        - spread2s10s
+                        - spread3m10y
+                        - inverted
+                        - asOf
+                        additionalProperties: false
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: econ.yield-curve
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.0036
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.003600'
+        protocols:
+        - x402: {}
+      parameters:
+      - $ref: '#/components/parameters/TrialMode'
+components:
+  responses:
+    MethodNotAllowed:
+      description: Method not allowed — see `Allow` header for the supported method.
+    UpstreamError:
+      description: Upstream provider error.
+    ServerError:
+      description: Internal server error.
+    PaymentRequired:
+      description: Payment required. Body contains the x402 PaymentRequirements envelope with a multi-network accepts array; the per-call price is in accepts[].amount (and on the operation as x-2s-price). Sign for whichever rail you hold USDC on (EIP-3009 for Base, partial SPL transfer for Solana) and retry with the PAYMENT-SIGNATURE header (X-PAYMENT also accepted for v1 clients).
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/X402PaymentRequiredV2'
+    BadRequest:
+      description: Bad request — invalid parameters.
+  parameters:
+    TrialMode:
+      name: trial
+      in: query
+      required: false
+      description: 'Try before you buy. Set to 1 for one free real call per endpoint per hour — no wallet or payment needed — to verify the endpoint before paying. Equivalent to sending the "X-2s-Trial: 1" request header. Works on every endpoint.'
+      schema:
+        type: integer
+        enum:
+        - 1
+  schemas:
+    CallMeta:
+      type: object
+      description: Per-call meta envelope — endpoint id, cost, caller kind, settlement details.
+    Source:
+      type: object
+      description: 'Provenance of the data: upstream provider, source URL, and license.'
+      properties:
+        provider:
+          type: string
+          description: Upstream data provider.
+        url:
+          type: string
+          description: Source URL or documentation link.
+        license:
+          type: string
+          description: License / usage terms for the data.
+    X402PaymentRequiredV2:
+      type: object
+      description: x402 v2 PaymentRequired envelope. Pick any entry from accepts[], sign for that rail, retry with the PAYMENT-SIGNATURE header.
+      required:
+      - x402Version
+      - accepts
+      properties:
+        x402Version:
+          type: integer
+          const: 2
+        error:
+          type: string
+          description: Human-readable reason payment is required.
+        resource:
+          type: string
+          description: The resource URL being purchased.
+        accepts:
+          type: array
+          description: Payment requirement options, one per supported network (Base USDC, Solana USDC).
+          items:
+            type: object
+            required:
+            - scheme
+            - network
+            - amount
+            - asset
+            - payTo
+            - maxTimeoutSeconds
+            properties:
+              scheme:
+                type: string
+                enum:
+                - exact
+              network:
+                type: string
+                description: CAIP-2 network id, e.g. "eip155:8453" (Base) or "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp".
+              amount:
+                type: string
+                description: Price in atomic asset units (USDC has 6 decimals).
+              asset:
+                type: string
+                description: Asset contract address / mint.
+              payTo:
+                type: string
+                description: Treasury address to pay.
+              maxTimeoutSeconds:
+                type: integer
+              extra:
+                type: object
+                description: 'Rail-specific extras (EVM: EIP-712 domain name/version; Solana: feePayer).'
+                additionalProperties: true
+        extensions:
+          type: object
+          description: Optional discovery metadata (e.g. bazaar input/output schemas).
+          additionalProperties: true
+  securitySchemes:
+    x402Payment:
+      type: apiKey
+      in: header
+      name: PAYMENT-SIGNATURE
+      description: 'x402 protocol v2: base64-encoded PaymentPayload. Call any paid endpoint without auth to receive a 402 with a multi-network PaymentRequirements envelope. Sign for either rail: EIP-3009 transferWithAuthorization (Base USDC) OR a partial SPL token transfer (Solana USDC). Retry with PAYMENT-SIGNATURE header. X-PAYMENT is also accepted for v1 buyer clients. See https://x402.org.'

@@ -1,0 +1,442 @@
+openapi: 3.2.0
+info:
+  title: 2s — the (most) everything Registry API
+  version: '1'
+  summary: The (most) everything API.
+  description: 'The (most) everything API for AI agents: 575+ pay-per-call endpoints on one origin.'
+  contact:
+    name: 2s
+    url: https://2s.io
+    email: alley@2s.io
+  x-logo:
+    url: https://2s.io/icon-512.png
+    altText: 2s
+  x-guidance: 'Pay-per-call REST API for AI agents — hundreds of endpoints returning ground-truth data (US public records, company & legal identifiers, finance/SEC, crypto/web3, security & CVEs, medical codes, weather & geocoding, agriculture, energy, maritime, music, and more). Every endpoint is paid per call in USDC via x402 (Base or Solana) — no API key, no signup. Call any endpoint with no auth to get a 402 PaymentRequirements envelope, sign it (EIP-3009 on Base, partial SPL transfer on Solana), and retry with the PAYMENT-SIGNATURE header. Add ?trial=1 for one free real call per endpoint per hour to test before paying. To discover the right endpoint: GET https://2s.io/api/directory for the full catalog, or GET https://2s.io/api/search/endpoints?q=<natural-language task> for a ranked match. Per-call price is on each operation as x-payment-info (from $0.001). Batch up to 50 calls behind one payment via POST https://2s.io/api/batch/run.'
+servers:
+- url: https://2s.io
+tags:
+- name: Registry
+paths:
+  /api/registry/npm-lookup:
+    get:
+      tags:
+      - Registry
+      summary: Look up an npm package by name (supports scoped packages
+      description: Look up an npm package by name (supports scoped packages like @sentry/node). Returns description, homepage, repository, license, author + maintainers list, keywords, distTags (latest/beta/rc/etc.), latest version + publication date, and the 50 most recent versions with their publish dates + deprecation status. ~3M JavaScript/TypeScript packages. npm public registry.
+      operationId: registry_npm-lookup
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized envelope: items = [npm package metadata] (license, maintainers, distTags, recent versions); total = 1.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            name:
+                              type: string
+                            description:
+                              type: string
+                              nullable: true
+                            homepage:
+                              type: string
+                              nullable: true
+                            repository:
+                              type: object
+                              properties:
+                                type:
+                                  type: string
+                                  nullable: true
+                                url:
+                                  type: string
+                                  nullable: true
+                              required:
+                              - type
+                              - url
+                              additionalProperties: false
+                              nullable: true
+                            license:
+                              type: string
+                              nullable: true
+                            author:
+                              type: string
+                              nullable: true
+                            maintainers:
+                              type: array
+                              items:
+                                type: string
+                            keywords:
+                              type: array
+                              items:
+                                type: string
+                            distTags:
+                              type: object
+                              additionalProperties:
+                                type: string
+                            latestVersion:
+                              type: string
+                              nullable: true
+                            latestPublished:
+                              type: string
+                              nullable: true
+                            versions:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  version:
+                                    type: string
+                                  published:
+                                    type: string
+                                    nullable: true
+                                  deprecated:
+                                    type: string
+                                    nullable: true
+                                required:
+                                - version
+                                - published
+                                - deprecated
+                                additionalProperties: false
+                          required:
+                          - name
+                          - description
+                          - homepage
+                          - repository
+                          - license
+                          - author
+                          - maintainers
+                          - keywords
+                          - distTags
+                          - latestVersion
+                          - latestPublished
+                          - versions
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: registry.npm-lookup
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.003
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.003000'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: name
+        in: query
+        required: true
+        description: Name to search for.
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 214
+      - $ref: '#/components/parameters/TrialMode'
+  /api/registry/pypi-lookup:
+    get:
+      tags:
+      - Registry
+      summary: Look up a Python package on PyPI by name
+      description: Look up a Python package on PyPI by name. Returns version, summary + long description, content-type, project URLs (Homepage, Source, Bug Tracker, Docs, etc.), license, author + maintainer (with emails), keywords, classifiers (top 30), requires-python spec, requires-dist (top 100 runtime deps), the 50 most recent releases with publish dates, and any yanked versions in that window. PyPI public registry.
+      operationId: registry_pypi-lookup
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized envelope: items = [PyPI package metadata] (version, project URLs, classifiers, deps, recent releases); total = 1.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            name:
+                              type: string
+                            version:
+                              type: string
+                            summary:
+                              type: string
+                              nullable: true
+                            description:
+                              type: string
+                              nullable: true
+                            descriptionContentType:
+                              type: string
+                              nullable: true
+                            homePage:
+                              type: string
+                              nullable: true
+                            projectUrls:
+                              type: object
+                              additionalProperties:
+                                type: string
+                            license:
+                              type: string
+                              nullable: true
+                            author:
+                              type: string
+                              nullable: true
+                            authorEmail:
+                              type: string
+                              nullable: true
+                            maintainer:
+                              type: string
+                              nullable: true
+                            maintainerEmail:
+                              type: string
+                              nullable: true
+                            keywords:
+                              type: array
+                              items:
+                                type: string
+                            classifiers:
+                              type: array
+                              items:
+                                type: string
+                            requiresPython:
+                              type: string
+                              nullable: true
+                            requiresDist:
+                              type: array
+                              items:
+                                type: string
+                            releaseDates:
+                              type: object
+                              additionalProperties:
+                                type: string
+                                nullable: true
+                            yankedVersions:
+                              type: array
+                              items:
+                                type: string
+                          required:
+                          - name
+                          - version
+                          - summary
+                          - description
+                          - descriptionContentType
+                          - homePage
+                          - projectUrls
+                          - license
+                          - author
+                          - authorEmail
+                          - maintainer
+                          - maintainerEmail
+                          - keywords
+                          - classifiers
+                          - requiresPython
+                          - requiresDist
+                          - releaseDates
+                          - yankedVersions
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: registry.pypi-lookup
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.003
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.003000'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: name
+        in: query
+        required: true
+        description: Name to search for.
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 200
+      - $ref: '#/components/parameters/TrialMode'
+components:
+  responses:
+    MethodNotAllowed:
+      description: Method not allowed — see `Allow` header for the supported method.
+    UpstreamError:
+      description: Upstream provider error.
+    ServerError:
+      description: Internal server error.
+    PaymentRequired:
+      description: Payment required. Body contains the x402 PaymentRequirements envelope with a multi-network accepts array; the per-call price is in accepts[].amount (and on the operation as x-2s-price). Sign for whichever rail you hold USDC on (EIP-3009 for Base, partial SPL transfer for Solana) and retry with the PAYMENT-SIGNATURE header (X-PAYMENT also accepted for v1 clients).
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/X402PaymentRequiredV2'
+    BadRequest:
+      description: Bad request — invalid parameters.
+  parameters:
+    TrialMode:
+      name: trial
+      in: query
+      required: false
+      description: 'Try before you buy. Set to 1 for one free real call per endpoint per hour — no wallet or payment needed — to verify the endpoint before paying. Equivalent to sending the "X-2s-Trial: 1" request header. Works on every endpoint.'
+      schema:
+        type: integer
+        enum:
+        - 1
+  schemas:
+    CallMeta:
+      type: object
+      description: Per-call meta envelope — endpoint id, cost, caller kind, settlement details.
+    Source:
+      type: object
+      description: 'Provenance of the data: upstream provider, source URL, and license.'
+      properties:
+        provider:
+          type: string
+          description: Upstream data provider.
+        url:
+          type: string
+          description: Source URL or documentation link.
+        license:
+          type: string
+          description: License / usage terms for the data.
+    X402PaymentRequiredV2:
+      type: object
+      description: x402 v2 PaymentRequired envelope. Pick any entry from accepts[], sign for that rail, retry with the PAYMENT-SIGNATURE header.
+      required:
+      - x402Version
+      - accepts
+      properties:
+        x402Version:
+          type: integer
+          const: 2
+        error:
+          type: string
+          description: Human-readable reason payment is required.
+        resource:
+          type: string
+          description: The resource URL being purchased.
+        accepts:
+          type: array
+          description: Payment requirement options, one per supported network (Base USDC, Solana USDC).
+          items:
+            type: object
+            required:
+            - scheme
+            - network
+            - amount
+            - asset
+            - payTo
+            - maxTimeoutSeconds
+            properties:
+              scheme:
+                type: string
+                enum:
+                - exact
+              network:
+                type: string
+                description: CAIP-2 network id, e.g. "eip155:8453" (Base) or "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp".
+              amount:
+                type: string
+                description: Price in atomic asset units (USDC has 6 decimals).
+              asset:
+                type: string
+                description: Asset contract address / mint.
+              payTo:
+                type: string
+                description: Treasury address to pay.
+              maxTimeoutSeconds:
+                type: integer
+              extra:
+                type: object
+                description: 'Rail-specific extras (EVM: EIP-712 domain name/version; Solana: feePayer).'
+                additionalProperties: true
+        extensions:
+          type: object
+          description: Optional discovery metadata (e.g. bazaar input/output schemas).
+          additionalProperties: true
+  securitySchemes:
+    x402Payment:
+      type: apiKey
+      in: header
+      name: PAYMENT-SIGNATURE
+      description: 'x402 protocol v2: base64-encoded PaymentPayload. Call any paid endpoint without auth to receive a 402 with a multi-network PaymentRequirements envelope. Sign for either rail: EIP-3009 transferWithAuthorization (Base USDC) OR a partial SPL token transfer (Solana USDC). Retry with PAYMENT-SIGNATURE header. X-PAYMENT is also accepted for v1 buyer clients. See https://x402.org.'

@@ -1,0 +1,721 @@
+openapi: 3.2.0
+info:
+  title: 2s — the (most) everything Treasury API
+  version: '1'
+  summary: The (most) everything API.
+  description: 'The (most) everything API for AI agents: 575+ pay-per-call endpoints on one origin.'
+  contact:
+    name: 2s
+    url: https://2s.io
+    email: alley@2s.io
+  x-logo:
+    url: https://2s.io/icon-512.png
+    altText: 2s
+  x-guidance: 'Pay-per-call REST API for AI agents — hundreds of endpoints returning ground-truth data (US public records, company & legal identifiers, finance/SEC, crypto/web3, security & CVEs, medical codes, weather & geocoding, agriculture, energy, maritime, music, and more). Every endpoint is paid per call in USDC via x402 (Base or Solana) — no API key, no signup. Call any endpoint with no auth to get a 402 PaymentRequirements envelope, sign it (EIP-3009 on Base, partial SPL transfer on Solana), and retry with the PAYMENT-SIGNATURE header. Add ?trial=1 for one free real call per endpoint per hour to test before paying. To discover the right endpoint: GET https://2s.io/api/directory for the full catalog, or GET https://2s.io/api/search/endpoints?q=<natural-language task> for a ranked match. Per-call price is on each operation as x-payment-info (from $0.001). Batch up to 50 calls behind one payment via POST https://2s.io/api/batch/run.'
+servers:
+- url: https://2s.io
+tags:
+- name: treasury
+paths:
+  /api/treasury/cash:
+    get:
+      tags:
+      - treasury
+      summary: Daily Treasury Statement (DTS) operating cash balance via
+      description: Daily Treasury Statement (DTS) operating cash balance via US Treasury Fiscal Data. Returns daily snapshots of the Treasury General Account (TGA) at the Federal Reserve plus tax-and-loan accounts and Federal Reserve deposit accounts. Each row carries record_date, account_type, close_today_bal, open_today_bal, open_month_bal, open_fiscal_year_bal. Useful for liquidity-tracking agents and macro researchers watching the Treasury Cash Balance heading into Treasury auctions, debt-ceiling pinch-points, etc. Fiscal Data filter syntax.
+      operationId: treasury_cash
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized envelope: items = Daily Treasury Statement cash balance.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            record_date:
+                              type: string
+                            account_type:
+                              type: string
+                              description: e.g. "Treasury General Account (TGA) Opening Balance".
+                            close_today_bal:
+                              type: string
+                              description: Closing balance, USD millions, as a string.
+                            open_today_bal:
+                              type: string
+                            open_month_bal:
+                              type: string
+                            open_fiscal_year_bal:
+                              type: string
+                          additionalProperties: true
+                          description: Raw Fiscal Data DTS row — all values are strings; columns depend on the `fields` projection and may include additional dataset columns.
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                      page:
+                        type: object
+                        properties:
+                          number:
+                            type: integer
+                          size:
+                            type: integer
+                          pages:
+                            type: integer
+                            nullable: true
+                        required:
+                        - number
+                        - size
+                        - pages
+                        additionalProperties: false
+                      meta:
+                        type: object
+                        additionalProperties: {}
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: treasury.cash
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.003
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.003000'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: fields
+        in: query
+        required: false
+        description: Fields.
+        schema:
+          type: string
+          pattern: ^[a-z][a-z0-9_]*(,[a-z][a-z0-9_]*)*$
+          maxLength: 400
+      - name: filter
+        in: query
+        required: false
+        description: Filter.
+        schema:
+          type: string
+          pattern: ^[a-z][a-z0-9_]*:(eq|ne|lt|lte|gt|gte|in):[A-Za-z0-9._:\-+/, ]+(,[a-z][a-z0-9_]*:(eq|ne|lt|lte|gt|gte|in):[A-Za-z0-9._:\-+/, ]+)*$
+          maxLength: 800
+      - name: sort
+        in: query
+        required: false
+        description: Field to sort results by.
+        schema:
+          type: string
+          pattern: ^-?[a-z][a-z0-9_]*(,-?[a-z][a-z0-9_]*)*$
+          maxLength: 200
+      - name: pageSize
+        in: query
+        required: false
+        description: Number of results to return per page.
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 10000
+          default: 100
+      - name: pageNumber
+        in: query
+        required: false
+        description: Page number (1-based) for paginated results.
+        schema:
+          type: integer
+          minimum: 1
+      - $ref: '#/components/parameters/TrialMode'
+  /api/treasury/debt:
+    get:
+      tags:
+      - treasury
+      summary: US National Debt - daily "Debt to the Penny" via US
+      description: 'US National Debt — daily "Debt to the Penny" via US Treasury Fiscal Data. Each row carries record_date, debt held by public, intragovernmental holdings, and total public debt outstanding (all USD, signed integers as strings to preserve precision). Optional `filter` uses Fiscal Data syntax: `col:op:val` joined by commas (ops: eq, lt, lte, gt, gte, in). Default sort is `-record_date` (newest first). Authoritative source for "how much does the US owe?" — every weekday since 1993.'
+      operationId: treasury_debt
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized envelope: items = Daily Debt to the Penny.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            record_date:
+                              type: string
+                            debt_held_public_amt:
+                              type: string
+                              description: Debt held by the public, USD, as a string (preserves penny precision).
+                            intragov_hold_amt:
+                              type: string
+                              description: Intragovernmental holdings, USD, as a string.
+                            tot_pub_debt_out_amt:
+                              type: string
+                              description: Total public debt outstanding, USD, as a string.
+                          additionalProperties: true
+                          description: Raw Fiscal Data Debt to the Penny row — all values are strings; columns depend on the `fields` projection and may include additional dataset columns.
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                      page:
+                        type: object
+                        properties:
+                          number:
+                            type: integer
+                          size:
+                            type: integer
+                          pages:
+                            type: integer
+                            nullable: true
+                        required:
+                        - number
+                        - size
+                        - pages
+                        additionalProperties: false
+                      meta:
+                        type: object
+                        additionalProperties: {}
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: treasury.debt
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.003
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.003000'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: fields
+        in: query
+        required: false
+        description: Fields.
+        schema:
+          type: string
+          pattern: ^[a-z][a-z0-9_]*(,[a-z][a-z0-9_]*)*$
+          maxLength: 400
+      - name: filter
+        in: query
+        required: false
+        description: Filter.
+        schema:
+          type: string
+          pattern: ^[a-z][a-z0-9_]*:(eq|ne|lt|lte|gt|gte|in):[A-Za-z0-9._:\-+/, ]+(,[a-z][a-z0-9_]*:(eq|ne|lt|lte|gt|gte|in):[A-Za-z0-9._:\-+/, ]+)*$
+          maxLength: 800
+      - name: sort
+        in: query
+        required: false
+        description: Field to sort results by.
+        schema:
+          type: string
+          pattern: ^-?[a-z][a-z0-9_]*(,-?[a-z][a-z0-9_]*)*$
+          maxLength: 200
+      - name: pageSize
+        in: query
+        required: false
+        description: Number of results to return per page.
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 10000
+          default: 100
+      - name: pageNumber
+        in: query
+        required: false
+        description: Page number (1-based) for paginated results.
+        schema:
+          type: integer
+          minimum: 1
+      - $ref: '#/components/parameters/TrialMode'
+  /api/treasury/exchange-rates:
+    get:
+      tags:
+      - treasury
+      summary: Official US Treasury exchange rates via US Treasury Fiscal
+      description: Official US Treasury exchange rates via US Treasury Fiscal Data. Used by federal agencies to report foreign-currency transactions in USD. Quarterly + ad-hoc updates per country/currency pair. Each row carries record_date, country, currency, country_currency_desc, exchange_rate, effective_date. Pair with `/api/fx/rates` (ECB Frankfurter, daily market rates) for cross-validation. Use Fiscal Data filter syntax — e.g. `filter=country:eq:Brazil` to scope to a single country.
+      operationId: treasury_exchange-rates
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized envelope: items = Official Treasury exchange rates.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            record_date:
+                              type: string
+                            country:
+                              type: string
+                            currency:
+                              type: string
+                            country_currency_desc:
+                              type: string
+                              description: e.g. "Brazil-Real".
+                            exchange_rate:
+                              type: string
+                              description: Units of foreign currency per USD, as a string.
+                            effective_date:
+                              type: string
+                          additionalProperties: true
+                          description: Raw Fiscal Data rates-of-exchange row — all values are strings; columns depend on the `fields` projection and may include additional dataset columns.
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                      page:
+                        type: object
+                        properties:
+                          number:
+                            type: integer
+                          size:
+                            type: integer
+                          pages:
+                            type: integer
+                            nullable: true
+                        required:
+                        - number
+                        - size
+                        - pages
+                        additionalProperties: false
+                      meta:
+                        type: object
+                        additionalProperties: {}
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: treasury.exchange-rates
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.003
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.003000'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: fields
+        in: query
+        required: false
+        description: Fields.
+        schema:
+          type: string
+          pattern: ^[a-z][a-z0-9_]*(,[a-z][a-z0-9_]*)*$
+          maxLength: 400
+      - name: filter
+        in: query
+        required: false
+        description: Filter.
+        schema:
+          type: string
+          pattern: ^[a-z][a-z0-9_]*:(eq|ne|lt|lte|gt|gte|in):[A-Za-z0-9._:\-+/, ]+(,[a-z][a-z0-9_]*:(eq|ne|lt|lte|gt|gte|in):[A-Za-z0-9._:\-+/, ]+)*$
+          maxLength: 800
+      - name: sort
+        in: query
+        required: false
+        description: Field to sort results by.
+        schema:
+          type: string
+          pattern: ^-?[a-z][a-z0-9_]*(,-?[a-z][a-z0-9_]*)*$
+          maxLength: 200
+      - name: pageSize
+        in: query
+        required: false
+        description: Number of results to return per page.
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 10000
+          default: 100
+      - name: pageNumber
+        in: query
+        required: false
+        description: Page number (1-based) for paginated results.
+        schema:
+          type: integer
+          minimum: 1
+      - $ref: '#/components/parameters/TrialMode'
+  /api/treasury/monthly-statement:
+    get:
+      tags:
+      - treasury
+      summary: 'Monthly Treasury Statement (MTS) - Table 4: receipts by'
+      description: 'Monthly Treasury Statement (MTS) — Table 4: receipts by source via US Treasury Fiscal Data. Returns monthly totals of federal government receipts grouped by classification (individual income tax, corporate income tax, social-insurance receipts, excise, customs, estate-and-gift, miscellaneous). Each row carries record_date, classification_id, classification_desc, current_month + current_fytd (fiscal year-to-date) gross_rcpt / refund / net_rcpt amounts, plus prior_fytd comparisons. Backbone of any "how much money is the federal government bringing in" question. Use Fiscal Data filter syntax.'
+      operationId: treasury_monthly-statement
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized envelope: items = Monthly Treasury Statement (Table 4) — federal receipts by source.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            record_date:
+                              type: string
+                            classification_id:
+                              type: string
+                            classification_desc:
+                              type: string
+                              description: Receipt source, e.g. "Individual Income Taxes:".
+                            current_month_gross_rcpt_amt:
+                              type: string
+                            current_month_refund_amt:
+                              type: string
+                            current_month_net_rcpt_amt:
+                              type: string
+                            current_fytd_gross_rcpt_amt:
+                              type: string
+                              description: Fiscal year-to-date.
+                            current_fytd_refund_amt:
+                              type: string
+                            current_fytd_net_rcpt_amt:
+                              type: string
+                            prior_fytd_gross_rcpt_amt:
+                              type: string
+                              description: Prior fiscal year-to-date comparison.
+                            prior_fytd_refund_amt:
+                              type: string
+                            prior_fytd_net_rcpt_amt:
+                              type: string
+                          additionalProperties: true
+                          description: Raw Fiscal Data MTS Table 4 row — all values are strings; columns depend on the `fields` projection and may include additional dataset columns.
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                      page:
+                        type: object
+                        properties:
+                          number:
+                            type: integer
+                          size:
+                            type: integer
+                          pages:
+                            type: integer
+                            nullable: true
+                        required:
+                        - number
+                        - size
+                        - pages
+                        additionalProperties: false
+                      meta:
+                        type: object
+                        additionalProperties: {}
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: treasury.monthly-statement
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.003
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.003000'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: fields
+        in: query
+        required: false
+        description: Fields.
+        schema:
+          type: string
+          pattern: ^[a-z][a-z0-9_]*(,[a-z][a-z0-9_]*)*$
+          maxLength: 400
+      - name: filter
+        in: query
+        required: false
+        description: Filter.
+        schema:
+          type: string
+          pattern: ^[a-z][a-z0-9_]*:(eq|ne|lt|lte|gt|gte|in):[A-Za-z0-9._:\-+/, ]+(,[a-z][a-z0-9_]*:(eq|ne|lt|lte|gt|gte|in):[A-Za-z0-9._:\-+/, ]+)*$
+          maxLength: 800
+      - name: sort
+        in: query
+        required: false
+        description: Field to sort results by.
+        schema:
+          type: string
+          pattern: ^-?[a-z][a-z0-9_]*(,-?[a-z][a-z0-9_]*)*$
+          maxLength: 200
+      - name: pageSize
+        in: query
+        required: false
+        description: Number of results to return per page.
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 10000
+          default: 100
+      - name: pageNumber
+        in: query
+        required: false
+        description: Page number (1-based) for paginated results.
+        schema:
+          type: integer
+          minimum: 1
+      - $ref: '#/components/parameters/TrialMode'
+components:
+  responses:
+    MethodNotAllowed:
+      description: Method not allowed — see `Allow` header for the supported method.
+    UpstreamError:
+      description: Upstream provider error.
+    ServerError:
+      description: Internal server error.
+    PaymentRequired:
+      description: Payment required. Body contains the x402 PaymentRequirements envelope with a multi-network accepts array; the per-call price is in accepts[].amount (and on the operation as x-2s-price). Sign for whichever rail you hold USDC on (EIP-3009 for Base, partial SPL transfer for Solana) and retry with the PAYMENT-SIGNATURE header (X-PAYMENT also accepted for v1 clients).
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/X402PaymentRequiredV2'
+    BadRequest:
+      description: Bad request — invalid parameters.
+  parameters:
+    TrialMode:
+      name: trial
+      in: query
+      required: false
+      description: 'Try before you buy. Set to 1 for one free real call per endpoint per hour — no wallet or payment needed — to verify the endpoint before paying. Equivalent to sending the "X-2s-Trial: 1" request header. Works on every endpoint.'
+      schema:
+        type: integer
+        enum:
+        - 1
+  schemas:
+    CallMeta:
+      type: object
+      description: Per-call meta envelope — endpoint id, cost, caller kind, settlement details.
+    Source:
+      type: object
+      description: 'Provenance of the data: upstream provider, source URL, and license.'
+      properties:
+        provider:
+          type: string
+          description: Upstream data provider.
+        url:
+          type: string
+          description: Source URL or documentation link.
+        license:
+          type: string
+          description: License / usage terms for the data.
+    X402PaymentRequiredV2:
+      type: object
+      description: x402 v2 PaymentRequired envelope. Pick any entry from accepts[], sign for that rail, retry with the PAYMENT-SIGNATURE header.
+      required:
+      - x402Version
+      - accepts
+      properties:
+        x402Version:
+          type: integer
+          const: 2
+        error:
+          type: string
+          description: Human-readable reason payment is required.
+        resource:
+          type: string
+          description: The resource URL being purchased.
+        accepts:
+          type: array
+          description: Payment requirement options, one per supported network (Base USDC, Solana USDC).
+          items:
+            type: object
+            required:
+            - scheme
+            - network
+            - amount
+            - asset
+            - payTo
+            - maxTimeoutSeconds
+            properties:
+              scheme:
+                type: string
+                enum:
+                - exact
+              network:
+                type: string
+                description: CAIP-2 network id, e.g. "eip155:8453" (Base) or "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp".
+              amount:
+                type: string
+                description: Price in atomic asset units (USDC has 6 decimals).
+              asset:
+                type: string
+                description: Asset contract address / mint.
+              payTo:
+                type: string
+                description: Treasury address to pay.
+              maxTimeoutSeconds:
+                type: integer
+              extra:
+                type: object
+                description: 'Rail-specific extras (EVM: EIP-712 domain name/version; Solana: feePayer).'
+                additionalProperties: true
+        extensions:
+          type: object
+          description: Optional discovery metadata (e.g. bazaar input/output schemas).
+          additionalProperties: true
+  securitySchemes:
+    x402Payment:
+      type: apiKey
+      in: header
+      name: PAYMENT-SIGNATURE
+      description: 'x402 protocol v2: base64-encoded PaymentPayload. Call any paid endpoint without auth to receive a 402 with a multi-network PaymentRequirements envelope. Sign for either rail: EIP-3009 transferWithAuthorization (Base USDC) OR a partial SPL token transfer (Solana USDC). Retry with PAYMENT-SIGNATURE header. X-PAYMENT is also accepted for v1 buyer clients. See https://x402.org.'

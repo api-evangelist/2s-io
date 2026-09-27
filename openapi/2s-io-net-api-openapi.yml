@@ -1,0 +1,742 @@
+openapi: 3.2.0
+info:
+  title: 2s — the (most) everything Net API
+  version: '1'
+  summary: The (most) everything API.
+  description: 'The (most) everything API for AI agents: 575+ pay-per-call endpoints on one origin.'
+  contact:
+    name: 2s
+    url: https://2s.io
+    email: alley@2s.io
+  x-logo:
+    url: https://2s.io/icon-512.png
+    altText: 2s
+  x-guidance: 'Pay-per-call REST API for AI agents — hundreds of endpoints returning ground-truth data (US public records, company & legal identifiers, finance/SEC, crypto/web3, security & CVEs, medical codes, weather & geocoding, agriculture, energy, maritime, music, and more). Every endpoint is paid per call in USDC via x402 (Base or Solana) — no API key, no signup. Call any endpoint with no auth to get a 402 PaymentRequirements envelope, sign it (EIP-3009 on Base, partial SPL transfer on Solana), and retry with the PAYMENT-SIGNATURE header. Add ?trial=1 for one free real call per endpoint per hour to test before paying. To discover the right endpoint: GET https://2s.io/api/directory for the full catalog, or GET https://2s.io/api/search/endpoints?q=<natural-language task> for a ranked match. Per-call price is on each operation as x-payment-info (from $0.001). Batch up to 50 calls behind one payment via POST https://2s.io/api/batch/run.'
+servers:
+- url: https://2s.io
+tags:
+- name: net
+paths:
+  /api/net/asn:
+    get:
+      tags:
+      - net
+      summary: Look up an Autonomous System (BGP) by AS number
+      description: 'Look up an Autonomous System (BGP) by AS number. Pass asn as AS3333 or 3333. Returns the AS holder/operator name, the IANA/RIR allocation block it falls in, whether it is currently announced, and a live routing-status block: first/last seen prefixes, announced IPv4/IPv6 prefix + address counts, RIS peer visibility, and observed BGP neighbour count. Data: RIPEstat (RIPE NCC), free and public. Distinct from geo.ip (host geolocation) and dns/whois (name lookups) — this is who-owns-and-routes-this-AS, observed live from the global routing table. For network forensics, abuse/security triage, and infrastructure mapping.'
+      operationId: net_asn
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      asn:
+                        type: number
+                      resource:
+                        type: string
+                      holder:
+                        type: string
+                        nullable: true
+                      announced:
+                        type: boolean
+                        nullable: true
+                      block:
+                        type: object
+                        properties:
+                          resource:
+                            type: string
+                            nullable: true
+                          name:
+                            type: string
+                            nullable: true
+                          description:
+                            type: string
+                            nullable: true
+                        required:
+                        - resource
+                        - name
+                        - description
+                        additionalProperties: false
+                        nullable: true
+                      routing:
+                        type: object
+                        properties:
+                          found:
+                            type: boolean
+                          error:
+                            type: string
+                            nullable: true
+                          firstSeen:
+                            type: object
+                            properties:
+                              prefix:
+                                type: string
+                              time:
+                                type: string
+                            required:
+                            - prefix
+                            - time
+                            additionalProperties: false
+                            nullable: true
+                          lastSeen:
+                            type: object
+                            properties:
+                              prefix:
+                                type: string
+                              time:
+                                type: string
+                            required:
+                            - prefix
+                            - time
+                            additionalProperties: false
+                            nullable: true
+                          announcedV4:
+                            type: object
+                            properties:
+                              prefixes:
+                                type: number
+                              ips:
+                                type: number
+                            required:
+                            - prefixes
+                            - ips
+                            additionalProperties: false
+                            nullable: true
+                          announcedV6:
+                            type: object
+                            properties:
+                              prefixes:
+                                type: number
+                              slash48s:
+                                type: number
+                            required:
+                            - prefixes
+                            - slash48s
+                            additionalProperties: false
+                            nullable: true
+                          visibilityV4:
+                            type: object
+                            properties:
+                              seeing:
+                                type: number
+                              total:
+                                type: number
+                            required:
+                            - seeing
+                            - total
+                            additionalProperties: false
+                            nullable: true
+                          visibilityV6:
+                            type: object
+                            properties:
+                              seeing:
+                                type: number
+                              total:
+                                type: number
+                            required:
+                            - seeing
+                            - total
+                            additionalProperties: false
+                            nullable: true
+                          observedNeighbours:
+                            type: number
+                            nullable: true
+                        required:
+                        - found
+                        - error
+                        - firstSeen
+                        - lastSeen
+                        - announcedV4
+                        - announcedV6
+                        - visibilityV4
+                        - visibilityV6
+                        - observedNeighbours
+                        additionalProperties: false
+                      sources:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Source'
+                    required:
+                    - asn
+                    - resource
+                    - holder
+                    - announced
+                    - block
+                    - routing
+                    - sources
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: net.asn
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.003
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: legacy
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.003000'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: asn
+        in: query
+        required: true
+        description: AS number, e.g. AS3333 or 3333.
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 15
+      - $ref: '#/components/parameters/TrialMode'
+  /api/net/ip-resolve:
+    get:
+      tags:
+      - net
+      summary: Resolve a single IPv4/IPv6 address to its full network
+      description: 'Resolve a single IPv4/IPv6 address to its full network identity in one call: the Autonomous System number, the authoritative AS holder/operator (RIPEstat), the ISP + organization, whether the AS is currently announced, the RIR/IANA allocation block the AS sits in, and country/region/city + coordinates + timezone. One join that turns an IP into "who runs this network and where" -- the lookup network-forensics, abuse triage, and fraud agents otherwise stitch together from a geo API plus a separate BGP source. Composes geo IP data + RIPEstat (RIPE NCC, CC BY 4.0); the routing/holder block degrades independently, with per-source status returned. Distinct from net.asn (AS-number first) and geo.ip (geo only): this is IP-first and joins both.'
+      operationId: net_ip-resolve
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized envelope: items = [one IP resolved to ASN + holder + RIR allocation + geo, with per-source status]; total = 1.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            ip:
+                              type: string
+                            asn:
+                              type: number
+                              nullable: true
+                            asnHolder:
+                              type: string
+                              nullable: true
+                            org:
+                              type: string
+                              nullable: true
+                            isp:
+                              type: string
+                              nullable: true
+                            rir:
+                              type: object
+                              properties:
+                                resource:
+                                  type: string
+                                  nullable: true
+                                name:
+                                  type: string
+                                  nullable: true
+                                description:
+                                  type: string
+                                  nullable: true
+                              required:
+                              - resource
+                              - name
+                              - description
+                              additionalProperties: false
+                              nullable: true
+                            announced:
+                              type: boolean
+                              nullable: true
+                            country:
+                              type: object
+                              properties:
+                                code:
+                                  type: string
+                                  nullable: true
+                                name:
+                                  type: string
+                                  nullable: true
+                              required:
+                              - code
+                              - name
+                              additionalProperties: false
+                            region:
+                              type: object
+                              properties:
+                                code:
+                                  type: string
+                                  nullable: true
+                                name:
+                                  type: string
+                                  nullable: true
+                              required:
+                              - code
+                              - name
+                              additionalProperties: false
+                            city:
+                              type: string
+                              nullable: true
+                            coords:
+                              type: object
+                              properties:
+                                lat:
+                                  type: number
+                                lon:
+                                  type: number
+                              required:
+                              - lat
+                              - lon
+                              additionalProperties: false
+                              nullable: true
+                            timezone:
+                              type: string
+                              nullable: true
+                            sources:
+                              type: object
+                              properties:
+                                geo:
+                                  type: string
+                                ripe:
+                                  type: string
+                              required:
+                              - geo
+                              - ripe
+                              additionalProperties: false
+                          required:
+                          - ip
+                          - asn
+                          - asnHolder
+                          - org
+                          - isp
+                          - rir
+                          - announced
+                          - country
+                          - region
+                          - city
+                          - coords
+                          - timezone
+                          - sources
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: net.ip-resolve
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.009
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.009000'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: ip
+        in: query
+        required: true
+        description: IPv4 or IPv6 address, e.g. 8.8.8.8.
+        schema:
+          type: string
+          pattern: ^(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}|[0-9a-fA-F:]+)$
+          minLength: 2
+          maxLength: 45
+      - $ref: '#/components/parameters/TrialMode'
+  /api/net/mac-vendor:
+    get:
+      tags:
+      - net
+      summary: Resolve a MAC address (or bare OUI prefix) to its
+      description: 'Resolve a MAC address (or bare OUI prefix) to its IEEE-registered hardware vendor. Accepts any common format — FC:FB:FB:01:02:03, fc-fb-fb-01-02-03, fcfb.fb01.0203, fcfbfb, or a 9-hex MA-S prefix. Uses longest-prefix matching across the IEEE MA-L (24-bit), MA-M (28-bit) and MA-S (36-bit) registries so blocks IEEE has subdivided resolve to the actual manufacturer. Returns the vendor name, the matched OUI prefix and which registry it came from, plus decoded address bits: whether the address is multicast/group, locally administered, or a randomized (privacy) MAC — for which no vendor exists by design. Authoritative bundled IEEE data.'
+      operationId: net_mac-vendor
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      query:
+                        type: object
+                        properties:
+                          mac:
+                            type: string
+                        required:
+                        - mac
+                        additionalProperties: false
+                      normalized:
+                        type: string
+                        nullable: true
+                      oui:
+                        type: string
+                        nullable: true
+                      registry:
+                        type: string
+                        enum:
+                        - MA-L
+                        - MA-M
+                        - MA-S
+                        nullable: true
+                      vendor:
+                        type: string
+                        nullable: true
+                      found:
+                        type: boolean
+                      isMulticast:
+                        type: boolean
+                      isLocallyAdministered:
+                        type: boolean
+                      isRandomized:
+                        type: boolean
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - query
+                    - normalized
+                    - oui
+                    - registry
+                    - vendor
+                    - found
+                    - isMulticast
+                    - isLocallyAdministered
+                    - isRandomized
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: net.mac-vendor
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.003
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: legacy
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.003000'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: mac
+        in: query
+        required: true
+        description: MAC address or OUI prefix, e.g. FC:FB:FB:01:02:03 or fcfbfb.
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 64
+      - $ref: '#/components/parameters/TrialMode'
+  /api/net/rpki-validity:
+    get:
+      tags:
+      - net
+      summary: RPKI Route Origin Validation for a (BGP origin AS, prefix)
+      description: RPKI Route Origin Validation for a (BGP origin AS, prefix) pair — answers whether an AS is legitimately authorized to originate a prefix. Pass asn (e.g. AS15169) and prefix (CIDR, e.g. 8.8.8.0/24). Returns status (valid = a ROA authorizes it; invalid = a ROA exists but does NOT authorize this origin — a possible hijack/route-leak that RPKI-enforcing networks will drop; unknown = no covering ROA), a hijackSignal boolean, the validating ROAs (origin, prefix, maxLength), and a plain-English description. Live RIR/RPKI data via RIPEstat (keyless) — un-derivable by an LLM. The core BGP-security check; complements net.asn.
+      operationId: net_rpki-validity
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized envelope: items = [RPKI validation result]; total = 1.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            asn:
+                              type: integer
+                            prefix:
+                              type: string
+                            status:
+                              type: string
+                              description: valid | invalid | unknown
+                            hijackSignal:
+                              type: boolean
+                            validatingRoas:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  origin:
+                                    type: number
+                                    nullable: true
+                                  prefix:
+                                    type: string
+                                    nullable: true
+                                  maxLength:
+                                    type: number
+                                    nullable: true
+                                  validity:
+                                    type: string
+                                    nullable: true
+                                required:
+                                - origin
+                                - prefix
+                                - maxLength
+                                - validity
+                                additionalProperties: false
+                            description:
+                              type: string
+                          required:
+                          - asn
+                          - prefix
+                          - status
+                          - hijackSignal
+                          - validatingRoas
+                          - description
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: net.rpki-validity
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.0036
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.003600'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: asn
+        in: query
+        required: true
+        description: ASN.
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 20
+      - name: prefix
+        in: query
+        required: true
+        description: Prefix.
+        schema:
+          type: string
+          minLength: 4
+          maxLength: 49
+      - $ref: '#/components/parameters/TrialMode'
+components:
+  responses:
+    MethodNotAllowed:
+      description: Method not allowed — see `Allow` header for the supported method.
+    UpstreamError:
+      description: Upstream provider error.
+    ServerError:
+      description: Internal server error.
+    PaymentRequired:
+      description: Payment required. Body contains the x402 PaymentRequirements envelope with a multi-network accepts array; the per-call price is in accepts[].amount (and on the operation as x-2s-price). Sign for whichever rail you hold USDC on (EIP-3009 for Base, partial SPL transfer for Solana) and retry with the PAYMENT-SIGNATURE header (X-PAYMENT also accepted for v1 clients).
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/X402PaymentRequiredV2'
+    BadRequest:
+      description: Bad request — invalid parameters.
+  parameters:
+    TrialMode:
+      name: trial
+      in: query
+      required: false
+      description: 'Try before you buy. Set to 1 for one free real call per endpoint per hour — no wallet or payment needed — to verify the endpoint before paying. Equivalent to sending the "X-2s-Trial: 1" request header. Works on every endpoint.'
+      schema:
+        type: integer
+        enum:
+        - 1
+  schemas:
+    CallMeta:
+      type: object
+      description: Per-call meta envelope — endpoint id, cost, caller kind, settlement details.
+    Source:
+      type: object
+      description: 'Provenance of the data: upstream provider, source URL, and license.'
+      properties:
+        provider:
+          type: string
+          description: Upstream data provider.
+        url:
+          type: string
+          description: Source URL or documentation link.
+        license:
+          type: string
+          description: License / usage terms for the data.
+    X402PaymentRequiredV2:
+      type: object
+      description: x402 v2 PaymentRequired envelope. Pick any entry from accepts[], sign for that rail, retry with the PAYMENT-SIGNATURE header.
+      required:
+      - x402Version
+      - accepts
+      properties:
+        x402Version:
+          type: integer
+          const: 2
+        error:
+          type: string
+          description: Human-readable reason payment is required.
+        resource:
+          type: string
+          description: The resource URL being purchased.
+        accepts:
+          type: array
+          description: Payment requirement options, one per supported network (Base USDC, Solana USDC).
+          items:
+            type: object
+            required:
+            - scheme
+            - network
+            - amount
+            - asset
+            - payTo
+            - maxTimeoutSeconds
+            properties:
+              scheme:
+                type: string
+                enum:
+                - exact
+              network:
+                type: string
+                description: CAIP-2 network id, e.g. "eip155:8453" (Base) or "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp".
+              amount:
+                type: string
+                description: Price in atomic asset units (USDC has 6 decimals).
+              asset:
+                type: string
+                description: Asset contract address / mint.
+              payTo:
+                type: string
+                description: Treasury address to pay.
+              maxTimeoutSeconds:
+                type: integer
+              extra:
+                type: object
+                description: 'Rail-specific extras (EVM: EIP-712 domain name/version; Solana: feePayer).'
+                additionalProperties: true
+        extensions:
+          type: object
+          description: Optional discovery metadata (e.g. bazaar input/output schemas).
+          additionalProperties: true
+  securitySchemes:
+    x402Payment:
+      type: apiKey
+      in: header
+      name: PAYMENT-SIGNATURE
+      description: 'x402 protocol v2: base64-encoded PaymentPayload. Call any paid endpoint without auth to receive a 402 with a multi-network PaymentRequirements envelope. Sign for either rail: EIP-3009 transferWithAuthorization (Base USDC) OR a partial SPL token transfer (Solana USDC). Retry with PAYMENT-SIGNATURE header. X-PAYMENT is also accepted for v1 buyer clients. See https://x402.org.'

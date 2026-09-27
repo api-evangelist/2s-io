@@ -1,0 +1,722 @@
+openapi: 3.2.0
+info:
+  title: 2s — the (most) everything Aviation API
+  version: '1'
+  summary: The (most) everything API.
+  description: 'The (most) everything API for AI agents: 575+ pay-per-call endpoints on one origin.'
+  contact:
+    name: 2s
+    url: https://2s.io
+    email: alley@2s.io
+  x-logo:
+    url: https://2s.io/icon-512.png
+    altText: 2s
+  x-guidance: 'Pay-per-call REST API for AI agents — hundreds of endpoints returning ground-truth data (US public records, company & legal identifiers, finance/SEC, crypto/web3, security & CVEs, medical codes, weather & geocoding, agriculture, energy, maritime, music, and more). Every endpoint is paid per call in USDC via x402 (Base or Solana) — no API key, no signup. Call any endpoint with no auth to get a 402 PaymentRequirements envelope, sign it (EIP-3009 on Base, partial SPL transfer on Solana), and retry with the PAYMENT-SIGNATURE header. Add ?trial=1 for one free real call per endpoint per hour to test before paying. To discover the right endpoint: GET https://2s.io/api/directory for the full catalog, or GET https://2s.io/api/search/endpoints?q=<natural-language task> for a ranked match. Per-call price is on each operation as x-payment-info (from $0.001). Batch up to 50 calls behind one payment via POST https://2s.io/api/batch/run.'
+servers:
+- url: https://2s.io
+tags:
+- name: aviation
+paths:
+  /api/aviation/accidents:
+    get:
+      tags:
+      - aviation
+      summary: Search the NTSB civil aviation accident & incident database
+      description: 'Search the NTSB civil aviation accident & incident database (CAROL) — US events from 1962 to present plus selected foreign investigations. Filter by aircraft registration (N-number, partial match), US state (2-letter code or name), make, model, city, and/or event date range (dateFrom/dateTo as YYYY-MM-DD). At least one filter is required. Returns matching events newest-first: NTSB number, event date/type, city/state/country, aircraft registration(s)/make(s)/model(s), highest injury level, onboard & on-ground injury counts, report type/status, and a link to the official NTSB case page. Data: NTSB (U.S. public domain), live. For aviation safety research, fleet/tail-number history, incident due-diligence, and accident-trend analysis.'
+      operationId: aviation_accidents
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      query:
+                        type: object
+                        additionalProperties:
+                          anyOf:
+                          - not: {}
+                          - anyOf:
+                            - type: string
+                            - type: number
+                      total:
+                        type: number
+                      truncated:
+                        type: boolean
+                      count:
+                        type: number
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            ntsbNumber:
+                              type: string
+                              nullable: true
+                            mkey:
+                              type: string
+                              nullable: true
+                            eventType:
+                              type: string
+                              nullable: true
+                            eventDate:
+                              type: string
+                              nullable: true
+                            city:
+                              type: string
+                              nullable: true
+                            state:
+                              type: string
+                              nullable: true
+                            country:
+                              type: string
+                              nullable: true
+                            registration:
+                              type: array
+                              items:
+                                type: string
+                            make:
+                              type: array
+                              items:
+                                type: string
+                            model:
+                              type: array
+                              items:
+                                type: string
+                            highestInjuryLevel:
+                              type: string
+                              nullable: true
+                            injuriesOnboard:
+                              type: number
+                              nullable: true
+                            injuriesOnGround:
+                              type: number
+                              nullable: true
+                            reportType:
+                              type: string
+                              nullable: true
+                            reportStatus:
+                              type: string
+                              nullable: true
+                            reportUrl:
+                              type: string
+                              nullable: true
+                          required:
+                          - ntsbNumber
+                          - mkey
+                          - eventType
+                          - eventDate
+                          - city
+                          - state
+                          - country
+                          - registration
+                          - make
+                          - model
+                          - highestInjuryLevel
+                          - injuriesOnboard
+                          - injuriesOnGround
+                          - reportType
+                          - reportStatus
+                          - reportUrl
+                          additionalProperties: false
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - query
+                    - total
+                    - truncated
+                    - count
+                    - items
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: aviation.accidents
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.003
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: legacy
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.003000'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: registration
+        in: query
+        required: false
+        description: Aircraft registration / N-number (partial match).
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 20
+      - name: state
+        in: query
+        required: false
+        description: US state, 2-letter code or full name.
+        schema:
+          type: string
+          minLength: 2
+          maxLength: 40
+      - name: make
+        in: query
+        required: false
+        description: Aircraft make (partial match), e.g. Cessna.
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 60
+      - name: model
+        in: query
+        required: false
+        description: Aircraft model (partial match), e.g. 172.
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 60
+      - name: city
+        in: query
+        required: false
+        description: Event city (partial match).
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 80
+      - name: dateFrom
+        in: query
+        required: false
+        description: Earliest event date, YYYY-MM-DD.
+        schema:
+          type: string
+          pattern: ^\d{4}-\d{2}-\d{2}$
+      - name: dateTo
+        in: query
+        required: false
+        description: Latest event date, YYYY-MM-DD.
+        schema:
+          type: string
+          pattern: ^\d{4}-\d{2}-\d{2}$
+      - name: limit
+        in: query
+        required: false
+        description: Max records to return (1-100, default 25).
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 25
+      - $ref: '#/components/parameters/TrialMode'
+  /api/aviation/metar:
+    get:
+      tags:
+      - aviation
+      summary: Current aviation weather observation (METAR) for one or
+      description: 'Current aviation weather observation (METAR) for one or more airports. Pass ids = comma-separated ICAO station ids (e.g. KATL, EGLL, KJFK). Returns the raw METAR plus decoded fields: flight category (VFR/MVFR/IFR/LIFR), temperature + dewpoint (°C), wind direction/speed/gust (kt), visibility, altimeter (inHg), and cloud layers. Source: NOAA Aviation Weather Center (keyless, public domain).'
+      operationId: aviation_metar
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized envelope: items = METAR observations (one per station); total = count.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            station:
+                              type: string
+                            observedAt:
+                              type: string
+                              nullable: true
+                            raw:
+                              type: string
+                              nullable: true
+                            flightCategory:
+                              type: string
+                              nullable: true
+                            tempC:
+                              type: number
+                              nullable: true
+                            dewpointC:
+                              type: number
+                              nullable: true
+                            windDirDeg:
+                              type: number
+                              nullable: true
+                            windSpeedKt:
+                              type: number
+                              nullable: true
+                            windGustKt:
+                              type: number
+                              nullable: true
+                            visibility:
+                              type: string
+                              nullable: true
+                            altimeterInHg:
+                              type: number
+                              nullable: true
+                            clouds:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  cover:
+                                    type: string
+                                  baseFtAgl:
+                                    type: number
+                                    nullable: true
+                                required:
+                                - cover
+                                - baseFtAgl
+                                additionalProperties: false
+                            name:
+                              type: string
+                              nullable: true
+                          required:
+                          - station
+                          - observedAt
+                          - raw
+                          - flightCategory
+                          - tempC
+                          - dewpointC
+                          - windDirDeg
+                          - windSpeedKt
+                          - windGustKt
+                          - visibility
+                          - altimeterInHg
+                          - clouds
+                          - name
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: aviation.metar
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.003
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.003000'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: ids
+        in: query
+        required: true
+        description: Comma-separated list of identifiers.
+        schema:
+          type: string
+          minLength: 3
+          maxLength: 120
+      - $ref: '#/components/parameters/TrialMode'
+  /api/aviation/sigmet:
+    get:
+      tags:
+      - aviation
+      summary: Active in-flight weather hazard advisories (SIGMETs and
+      description: Active in-flight weather hazard advisories (SIGMETs and AIRMETs) from the NOAA Aviation Weather Center. Returns current advisories over a lookback window (1-24h), optionally filtered by hazard (CONVECTIVE, TURB turbulence, ICE icing, IFR, MTN OBSCN mountain obscuration, ASH volcanic ash). Each advisory carries the issuing office, type (SIGMET/AIRMET/OUTLOOK), hazard, severity, valid-from/to times, affected altitude band (feet MSL), movement (direction/speed), and the raw text bulletin. Keyless, public-domain (NOAA). The active-hazard layer aviation agents need — distinct from aviation.metar (station conditions) and aviation.taf (forecasts). Not for navigation.
+      operationId: aviation_sigmet
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized envelope: items = active advisories (sliced to limit); total = match count.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            icaoId:
+                              type: string
+                              nullable: true
+                            type:
+                              type: string
+                              nullable: true
+                            hazard:
+                              type: string
+                              nullable: true
+                            severity:
+                              type: string
+                              nullable: true
+                            validFrom:
+                              type: string
+                              nullable: true
+                            validTo:
+                              type: string
+                              nullable: true
+                            altitudeLowFt:
+                              type: number
+                              nullable: true
+                            altitudeHiFt:
+                              type: number
+                              nullable: true
+                            movementDirDeg:
+                              type: number
+                              nullable: true
+                            movementSpeedKt:
+                              type: number
+                              nullable: true
+                            raw:
+                              type: string
+                              nullable: true
+                          required:
+                          - icaoId
+                          - type
+                          - hazard
+                          - severity
+                          - validFrom
+                          - validTo
+                          - altitudeLowFt
+                          - altitudeHiFt
+                          - movementDirDeg
+                          - movementSpeedKt
+                          - raw
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: aviation.sigmet
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.0027
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.002700'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: hazard
+        in: query
+        required: false
+        description: Hazard.
+        schema:
+          type: string
+          minLength: 2
+          maxLength: 20
+      - name: hours
+        in: query
+        required: false
+        description: Look-back window, in hours.
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 24
+      - name: limit
+        in: query
+        required: false
+        description: Maximum number of results to return.
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 50
+      - $ref: '#/components/parameters/TrialMode'
+  /api/aviation/taf:
+    get:
+      tags:
+      - aviation
+      summary: Terminal Aerodrome Forecast (TAF) for one or more airports
+      description: 'Terminal Aerodrome Forecast (TAF) for one or more airports — the official aviation forecast issued for an airport (~24–30h ahead). Pass ids = comma-separated ICAO station ids (e.g. KATL). Returns the raw TAF text + issue time. Source: NOAA Aviation Weather Center (keyless). For current conditions use aviation.metar.'
+      operationId: aviation_taf
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized envelope: items = TAFs (one per station); total = count.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            station:
+                              type: string
+                            issuedAt:
+                              type: string
+                              nullable: true
+                            raw:
+                              type: string
+                              nullable: true
+                            name:
+                              type: string
+                              nullable: true
+                          required:
+                          - station
+                          - issuedAt
+                          - raw
+                          - name
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: aviation.taf
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.003
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.003000'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: ids
+        in: query
+        required: true
+        description: Comma-separated list of identifiers.
+        schema:
+          type: string
+          minLength: 3
+          maxLength: 120
+      - $ref: '#/components/parameters/TrialMode'
+components:
+  responses:
+    MethodNotAllowed:
+      description: Method not allowed — see `Allow` header for the supported method.
+    UpstreamError:
+      description: Upstream provider error.
+    ServerError:
+      description: Internal server error.
+    PaymentRequired:
+      description: Payment required. Body contains the x402 PaymentRequirements envelope with a multi-network accepts array; the per-call price is in accepts[].amount (and on the operation as x-2s-price). Sign for whichever rail you hold USDC on (EIP-3009 for Base, partial SPL transfer for Solana) and retry with the PAYMENT-SIGNATURE header (X-PAYMENT also accepted for v1 clients).
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/X402PaymentRequiredV2'
+    BadRequest:
+      description: Bad request — invalid parameters.
+  parameters:
+    TrialMode:
+      name: trial
+      in: query
+      required: false
+      description: 'Try before you buy. Set to 1 for one free real call per endpoint per hour — no wallet or payment needed — to verify the endpoint before paying. Equivalent to sending the "X-2s-Trial: 1" request header. Works on every endpoint.'
+      schema:
+        type: integer
+        enum:
+        - 1
+  schemas:
+    CallMeta:
+      type: object
+      description: Per-call meta envelope — endpoint id, cost, caller kind, settlement details.
+    Source:
+      type: object
+      description: 'Provenance of the data: upstream provider, source URL, and license.'
+      properties:
+        provider:
+          type: string
+          description: Upstream data provider.
+        url:
+          type: string
+          description: Source URL or documentation link.
+        license:
+          type: string
+          description: License / usage terms for the data.
+    X402PaymentRequiredV2:
+      type: object
+      description: x402 v2 PaymentRequired envelope. Pick any entry from accepts[], sign for that rail, retry with the PAYMENT-SIGNATURE header.
+      required:
+      - x402Version
+      - accepts
+      properties:
+        x402Version:
+          type: integer
+          const: 2
+        error:
+          type: string
+          description: Human-readable reason payment is required.
+        resource:
+          type: string
+          description: The resource URL being purchased.
+        accepts:
+          type: array
+          description: Payment requirement options, one per supported network (Base USDC, Solana USDC).
+          items:
+            type: object
+            required:
+            - scheme
+            - network
+            - amount
+            - asset
+            - payTo
+            - maxTimeoutSeconds
+            properties:
+              scheme:
+                type: string
+                enum:
+                - exact
+              network:
+                type: string
+                description: CAIP-2 network id, e.g. "eip155:8453" (Base) or "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp".
+              amount:
+                type: string
+                description: Price in atomic asset units (USDC has 6 decimals).
+              asset:
+                type: string
+                description: Asset contract address / mint.
+              payTo:
+                type: string
+                description: Treasury address to pay.
+              maxTimeoutSeconds:
+                type: integer
+              extra:
+                type: object
+                description: 'Rail-specific extras (EVM: EIP-712 domain name/version; Solana: feePayer).'
+                additionalProperties: true
+        extensions:
+          type: object
+          description: Optional discovery metadata (e.g. bazaar input/output schemas).
+          additionalProperties: true
+  securitySchemes:
+    x402Payment:
+      type: apiKey
+      in: header
+      name: PAYMENT-SIGNATURE
+      description: 'x402 protocol v2: base64-encoded PaymentPayload. Call any paid endpoint without auth to receive a 402 with a multi-network PaymentRequirements envelope. Sign for either rail: EIP-3009 transferWithAuthorization (Base USDC) OR a partial SPL token transfer (Solana USDC). Retry with PAYMENT-SIGNATURE header. X-PAYMENT is also accepted for v1 buyer clients. See https://x402.org.'

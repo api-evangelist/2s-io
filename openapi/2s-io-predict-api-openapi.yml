@@ -1,0 +1,3578 @@
+openapi: 3.2.0
+info:
+  title: 2s — the (most) everything Predict API
+  version: '1'
+  summary: The (most) everything API.
+  description: 'The (most) everything API for AI agents: 575+ pay-per-call endpoints on one origin.'
+  contact:
+    name: 2s
+    url: https://2s.io
+    email: alley@2s.io
+  x-logo:
+    url: https://2s.io/icon-512.png
+    altText: 2s
+  x-guidance: 'Pay-per-call REST API for AI agents — hundreds of endpoints returning ground-truth data (US public records, company & legal identifiers, finance/SEC, crypto/web3, security & CVEs, medical codes, weather & geocoding, agriculture, energy, maritime, music, and more). Every endpoint is paid per call in USDC via x402 (Base or Solana) — no API key, no signup. Call any endpoint with no auth to get a 402 PaymentRequirements envelope, sign it (EIP-3009 on Base, partial SPL transfer on Solana), and retry with the PAYMENT-SIGNATURE header. Add ?trial=1 for one free real call per endpoint per hour to test before paying. To discover the right endpoint: GET https://2s.io/api/directory for the full catalog, or GET https://2s.io/api/search/endpoints?q=<natural-language task> for a ranked match. Per-call price is on each operation as x-payment-info (from $0.001). Batch up to 50 calls behind one payment via POST https://2s.io/api/batch/run.'
+servers:
+- url: https://2s.io
+tags:
+- name: Predict
+paths:
+  /api/predict/activity:
+    get:
+      tags:
+      - Predict
+      summary: 'A wallet''s Polymarket on-chain activity feed: trades'
+      description: 'A wallet''s Polymarket on-chain activity feed: trades, merges, splits, redeems, conversions and rewards, newest first. Pass the wallet (proxy) address; optionally filter by type (TRADE/MERGE/SPLIT/REDEEM/REWARD/CONVERSION) and cap with limit. Each entry returns type, side, outcome, share size, price, USD value, timestamp, the market title/slug, conditionId, and tx hash. Read-only from Polymarket''s Data API.'
+      operationId: predict_activity
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized: items = activity events, newest first.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            type:
+                              type: string
+                              nullable: true
+                            side:
+                              type: string
+                              nullable: true
+                            outcome:
+                              type: string
+                              nullable: true
+                            size:
+                              type: number
+                              nullable: true
+                            price:
+                              type: number
+                              nullable: true
+                            usd:
+                              type: number
+                              nullable: true
+                            timestamp:
+                              type: number
+                              nullable: true
+                            title:
+                              type: string
+                              nullable: true
+                            slug:
+                              type: string
+                              nullable: true
+                            eventSlug:
+                              type: string
+                              nullable: true
+                            conditionId:
+                              type: string
+                              nullable: true
+                            txHash:
+                              type: string
+                              nullable: true
+                          required:
+                          - type
+                          - side
+                          - outcome
+                          - size
+                          - price
+                          - usd
+                          - timestamp
+                          - title
+                          - slug
+                          - eventSlug
+                          - conditionId
+                          - txHash
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                      meta:
+                        type: object
+                        properties:
+                          address:
+                            type: string
+                          count:
+                            type: integer
+                        required:
+                        - address
+                        - count
+                        additionalProperties: false
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: predict.activity
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.012
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.012000'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: address
+        in: query
+        required: true
+        description: Wallet (proxy) address.
+        schema:
+          type: string
+          minLength: 8
+          maxLength: 60
+      - name: limit
+        in: query
+        required: false
+        description: Max events (default 50).
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 500
+      - name: type
+        in: query
+        required: false
+        description: Filter by activity type.
+        schema:
+          type: string
+          enum:
+          - TRADE
+          - MERGE
+          - SPLIT
+          - REDEEM
+          - REWARD
+          - CONVERSION
+      - $ref: '#/components/parameters/TrialMode'
+  /api/predict/crypto-updown:
+    get:
+      tags:
+      - Predict
+      summary: Polymarket crypto up-or-down markets - the recurring 'Will
+      description: Polymarket crypto up-or-down markets — the recurring 'Will be up or down by ?' series for BTC, ETH, SOL, SPX and more (hourly/daily). Each event returns its question, dates, USD volume, and the nested Up/Down markets with live outcome prices (implied probability the asset closes higher). Filter count with limit. Read-only mirror of Polymarket's up-or-down tag.
+      operationId: predict_crypto-updown
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized: items = Polymarket crypto up/down events.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            id:
+                              type: string
+                              nullable: true
+                            ticker:
+                              type: string
+                              nullable: true
+                            title:
+                              type: string
+                              nullable: true
+                            slug:
+                              type: string
+                              nullable: true
+                            description:
+                              type: string
+                              nullable: true
+                            volumeUsd:
+                              type: number
+                              nullable: true
+                            volume24hrUsd:
+                              type: number
+                              nullable: true
+                            liquidityUsd:
+                              type: number
+                              nullable: true
+                            active:
+                              type: boolean
+                              nullable: true
+                            closed:
+                              type: boolean
+                              nullable: true
+                            startDate:
+                              type: string
+                              nullable: true
+                            endDate:
+                              type: string
+                              nullable: true
+                            tags:
+                              type: array
+                              items:
+                                type: string
+                            marketCount:
+                              type: number
+                              nullable: true
+                            markets:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  question:
+                                    type: string
+                                    nullable: true
+                                  slug:
+                                    type: string
+                                    nullable: true
+                                  conditionId:
+                                    type: string
+                                    nullable: true
+                                  outcomes:
+                                    type: array
+                                    items:
+                                      type: string
+                                  outcomePrices:
+                                    type: array
+                                    items:
+                                      type: number
+                                  clobTokenIds:
+                                    type: array
+                                    items:
+                                      type: string
+                                  volumeUsd:
+                                    type: number
+                                    nullable: true
+                                  closed:
+                                    type: boolean
+                                    nullable: true
+                                required:
+                                - question
+                                - slug
+                                - conditionId
+                                - outcomes
+                                - outcomePrices
+                                - clobTokenIds
+                                - volumeUsd
+                                - closed
+                                additionalProperties: false
+                            url:
+                              type: string
+                              nullable: true
+                          required:
+                          - id
+                          - ticker
+                          - title
+                          - slug
+                          - description
+                          - volumeUsd
+                          - volume24hrUsd
+                          - liquidityUsd
+                          - active
+                          - closed
+                          - startDate
+                          - endDate
+                          - tags
+                          - marketCount
+                          - markets
+                          - url
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                      meta:
+                        type: object
+                        properties:
+                          count:
+                            type: integer
+                        required:
+                        - count
+                        additionalProperties: false
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: predict.crypto-updown
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.012
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.012000'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: limit
+        in: query
+        required: false
+        description: Max events (default 20).
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+      - $ref: '#/components/parameters/TrialMode'
+  /api/predict/events:
+    get:
+      tags:
+      - Predict
+      summary: Browse Polymarket events (an event groups related markets
+      description: Browse Polymarket events (an event groups related markets — e.g. an election, a tournament, a price ladder). Optional keyword q, closed filter, order (volume/volume24hr/liquidity), and limit/offset. Each event returns its title, tags, USD volume + 24h volume, liquidity, dates, and the nested markets with their outcomes + live outcome prices (implied probabilities) and CLOB token ids. Read-only mirror of Polymarket's Gamma events.
+      operationId: predict_events
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized: items = Polymarket events with nested markets.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            id:
+                              type: string
+                              nullable: true
+                            ticker:
+                              type: string
+                              nullable: true
+                            title:
+                              type: string
+                              nullable: true
+                            slug:
+                              type: string
+                              nullable: true
+                            description:
+                              type: string
+                              nullable: true
+                            volumeUsd:
+                              type: number
+                              nullable: true
+                            volume24hrUsd:
+                              type: number
+                              nullable: true
+                            liquidityUsd:
+                              type: number
+                              nullable: true
+                            active:
+                              type: boolean
+                              nullable: true
+                            closed:
+                              type: boolean
+                              nullable: true
+                            startDate:
+                              type: string
+                              nullable: true
+                            endDate:
+                              type: string
+                              nullable: true
+                            tags:
+                              type: array
+                              items:
+                                type: string
+                            marketCount:
+                              type: number
+                              nullable: true
+                            markets:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  question:
+                                    type: string
+                                    nullable: true
+                                  slug:
+                                    type: string
+                                    nullable: true
+                                  conditionId:
+                                    type: string
+                                    nullable: true
+                                  outcomes:
+                                    type: array
+                                    items:
+                                      type: string
+                                  outcomePrices:
+                                    type: array
+                                    items:
+                                      type: number
+                                  clobTokenIds:
+                                    type: array
+                                    items:
+                                      type: string
+                                  volumeUsd:
+                                    type: number
+                                    nullable: true
+                                  closed:
+                                    type: boolean
+                                    nullable: true
+                                required:
+                                - question
+                                - slug
+                                - conditionId
+                                - outcomes
+                                - outcomePrices
+                                - clobTokenIds
+                                - volumeUsd
+                                - closed
+                                additionalProperties: false
+                            url:
+                              type: string
+                              nullable: true
+                          required:
+                          - id
+                          - ticker
+                          - title
+                          - slug
+                          - description
+                          - volumeUsd
+                          - volume24hrUsd
+                          - liquidityUsd
+                          - active
+                          - closed
+                          - startDate
+                          - endDate
+                          - tags
+                          - marketCount
+                          - markets
+                          - url
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                      meta:
+                        type: object
+                        properties:
+                          count:
+                            type: integer
+                        required:
+                        - count
+                        additionalProperties: false
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: predict.events
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.012
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.012000'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: q
+        in: query
+        required: false
+        description: Keyword filter on event title/description.
+        schema:
+          type: string
+          maxLength: 120
+      - name: limit
+        in: query
+        required: false
+        description: Maximum number of results to return.
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+      - name: offset
+        in: query
+        required: false
+        description: Number of results to skip before returning (pagination offset).
+        schema:
+          type: integer
+          minimum: 0
+      - name: closed
+        in: query
+        required: false
+        description: Closed.
+        schema:
+          type: boolean
+      - name: order
+        in: query
+        required: false
+        description: 'Sort direction: asc or desc.'
+        schema:
+          type: string
+          enum:
+          - volume
+          - volume24hr
+          - liquidity
+          - startDate
+          - endDate
+      - $ref: '#/components/parameters/TrialMode'
+  /api/predict/holders:
+    get:
+      tags:
+      - Predict
+      summary: Top holders of a Polymarket market, grouped by outcome
+      description: 'Top holders of a Polymarket market, grouped by outcome token (conditionId). Each holder: wallet, trader name, position size, outcome index, and verified flag. Reveals concentration and smart-money positioning per outcome — the holder-side complement to predict.trades (flow) and predict.whales (large trades). Read-only from Polymarket''s Data API.'
+      operationId: predict_holders
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized: items = one group per outcome token, each with ranked holders.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            token:
+                              nullable: true
+                            holders:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  wallet:
+                                    nullable: true
+                                  name:
+                                    nullable: true
+                                  amount:
+                                    type: number
+                                    nullable: true
+                                  outcomeIndex:
+                                    type: number
+                                    nullable: true
+                                  verified:
+                                    type: boolean
+                                  bio:
+                                    type: string
+                                    nullable: true
+                                required:
+                                - amount
+                                - outcomeIndex
+                                - verified
+                                - bio
+                                additionalProperties: false
+                          required:
+                          - holders
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: predict.holders
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.003
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.003000'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: market
+        in: query
+        required: true
+        description: Market conditionId (0x…) — from predict.markets / predict.market.
+        schema:
+          type: string
+          minLength: 8
+          maxLength: 80
+      - name: limit
+        in: query
+        required: false
+        description: Top holders per outcome (default 20).
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+      - $ref: '#/components/parameters/TrialMode'
+  /api/predict/kalshi-events:
+    get:
+      tags:
+      - Predict
+      summary: Browse Kalshi events (an event groups related markets, e.g
+      description: Browse Kalshi events (an event groups related markets, e.g. an election or a game). Filter by status / series_ticker; page with limit + cursor. Returns event ticker, series, title, category, and market count. Read-only (no Kalshi key needed).
+      operationId: predict_kalshi-events
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized: items = Kalshi events; meta.cursor = next page.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            eventTicker:
+                              nullable: true
+                            seriesTicker:
+                              nullable: true
+                            title:
+                              nullable: true
+                            subTitle:
+                              nullable: true
+                            category:
+                              nullable: true
+                            marketCount:
+                              type: number
+                              nullable: true
+                          required:
+                          - marketCount
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                      meta:
+                        type: object
+                        properties:
+                          cursor:
+                            type: string
+                            nullable: true
+                        required:
+                        - cursor
+                        additionalProperties: false
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: predict.kalshi-events
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.0025
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.002500'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: limit
+        in: query
+        required: false
+        description: Maximum number of results to return.
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+      - name: cursor
+        in: query
+        required: false
+        description: Opaque pagination cursor returned by a previous response.
+        schema:
+          type: string
+          maxLength: 400
+      - name: status
+        in: query
+        required: false
+        description: Filter results by status.
+        schema:
+          type: string
+          enum:
+          - unopened
+          - open
+          - closed
+          - settled
+      - name: seriesTicker
+        in: query
+        required: false
+        description: Series ticker.
+        schema:
+          type: string
+          maxLength: 120
+      - $ref: '#/components/parameters/TrialMode'
+  /api/predict/kalshi-market:
+    get:
+      tags:
+      - Predict
+      summary: A single Kalshi market by ticker
+      description: A single Kalshi market by ticker. Returns yes/no bid+ask and last price (dollars, implied probability), volume, liquidity, open interest, open/close times, and settled result. Read-only (no Kalshi key needed).
+      operationId: predict_kalshi-market
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized: items = [Kalshi market].'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            ticker:
+                              type: string
+                              nullable: true
+                            eventTicker:
+                              type: string
+                              nullable: true
+                            marketType:
+                              type: string
+                              nullable: true
+                            title:
+                              type: string
+                              nullable: true
+                            yesSubTitle:
+                              type: string
+                              nullable: true
+                            status:
+                              type: string
+                              nullable: true
+                            yesBid:
+                              type: number
+                              nullable: true
+                            yesAsk:
+                              type: number
+                              nullable: true
+                            noBid:
+                              type: number
+                              nullable: true
+                            noAsk:
+                              type: number
+                              nullable: true
+                            lastPrice:
+                              type: number
+                              nullable: true
+                            volume:
+                              type: number
+                              nullable: true
+                            volume24h:
+                              type: number
+                              nullable: true
+                            liquidity:
+                              type: number
+                              nullable: true
+                            openInterest:
+                              type: number
+                              nullable: true
+                            openTime:
+                              type: string
+                              nullable: true
+                            closeTime:
+                              type: string
+                              nullable: true
+                            result:
+                              type: string
+                              nullable: true
+                          required:
+                          - ticker
+                          - eventTicker
+                          - marketType
+                          - title
+                          - yesSubTitle
+                          - status
+                          - yesBid
+                          - yesAsk
+                          - noBid
+                          - noAsk
+                          - lastPrice
+                          - volume
+                          - volume24h
+                          - liquidity
+                          - openInterest
+                          - openTime
+                          - closeTime
+                          - result
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: predict.kalshi-market
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.0025
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.002500'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: ticker
+        in: query
+        required: true
+        description: Ticker.
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 120
+      - $ref: '#/components/parameters/TrialMode'
+  /api/predict/kalshi-markets:
+    get:
+      tags:
+      - Predict
+      summary: Browse Kalshi regulated prediction markets
+      description: Browse Kalshi regulated prediction markets. Filter by status (open/closed/settled), event_ticker, series_ticker, or specific tickers; page with limit + cursor. Each market returns yes/no bid+ask and last price (in dollars, 0-1 = implied probability), 24h + total volume, liquidity, open interest, open/close times, and result if settled. Read-only mirror of Kalshi's market list (no Kalshi key needed).
+      operationId: predict_kalshi-markets
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized: items = Kalshi markets; meta.cursor = next page.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            ticker:
+                              type: string
+                              nullable: true
+                            eventTicker:
+                              type: string
+                              nullable: true
+                            marketType:
+                              type: string
+                              nullable: true
+                            title:
+                              type: string
+                              nullable: true
+                            yesSubTitle:
+                              type: string
+                              nullable: true
+                            status:
+                              type: string
+                              nullable: true
+                            yesBid:
+                              type: number
+                              nullable: true
+                            yesAsk:
+                              type: number
+                              nullable: true
+                            noBid:
+                              type: number
+                              nullable: true
+                            noAsk:
+                              type: number
+                              nullable: true
+                            lastPrice:
+                              type: number
+                              nullable: true
+                            volume:
+                              type: number
+                              nullable: true
+                            volume24h:
+                              type: number
+                              nullable: true
+                            liquidity:
+                              type: number
+                              nullable: true
+                            openInterest:
+                              type: number
+                              nullable: true
+                            openTime:
+                              type: string
+                              nullable: true
+                            closeTime:
+                              type: string
+                              nullable: true
+                            result:
+                              type: string
+                              nullable: true
+                          required:
+                          - ticker
+                          - eventTicker
+                          - marketType
+                          - title
+                          - yesSubTitle
+                          - status
+                          - yesBid
+                          - yesAsk
+                          - noBid
+                          - noAsk
+                          - lastPrice
+                          - volume
+                          - volume24h
+                          - liquidity
+                          - openInterest
+                          - openTime
+                          - closeTime
+                          - result
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                      meta:
+                        type: object
+                        properties:
+                          cursor:
+                            type: string
+                            nullable: true
+                        required:
+                        - cursor
+                        additionalProperties: false
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: predict.kalshi-markets
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.0025
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.002500'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: limit
+        in: query
+        required: false
+        description: Maximum number of results to return.
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+      - name: cursor
+        in: query
+        required: false
+        description: Opaque pagination cursor returned by a previous response.
+        schema:
+          type: string
+          maxLength: 400
+      - name: eventTicker
+        in: query
+        required: false
+        description: Event ticker.
+        schema:
+          type: string
+          maxLength: 120
+      - name: seriesTicker
+        in: query
+        required: false
+        description: Series ticker.
+        schema:
+          type: string
+          maxLength: 120
+      - name: status
+        in: query
+        required: false
+        description: Filter results by status.
+        schema:
+          type: string
+          enum:
+          - unopened
+          - open
+          - closed
+          - settled
+      - name: tickers
+        in: query
+        required: false
+        description: Comma-separated tickers.
+        schema:
+          type: string
+          maxLength: 400
+      - $ref: '#/components/parameters/TrialMode'
+  /api/predict/kalshi-orderbook:
+    get:
+      tags:
+      - Predict
+      summary: 'Order book for a Kalshi market by ticker: resting yes and'
+      description: 'Order book for a Kalshi market by ticker: resting yes and no bids with price (dollars) and size (contracts). Optional depth. Read-only (no Kalshi key needed).'
+      operationId: predict_kalshi-orderbook
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized: items = [Kalshi order book].'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            ticker:
+                              type: string
+                            'yes':
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  price:
+                                    type: number
+                                    nullable: true
+                                  size:
+                                    type: number
+                                    nullable: true
+                                required:
+                                - price
+                                - size
+                                additionalProperties: false
+                            'no':
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  price:
+                                    type: number
+                                    nullable: true
+                                  size:
+                                    type: number
+                                    nullable: true
+                                required:
+                                - price
+                                - size
+                                additionalProperties: false
+                          required:
+                          - ticker
+                          - 'yes'
+                          - 'no'
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: predict.kalshi-orderbook
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.0025
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.002500'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: ticker
+        in: query
+        required: true
+        description: Ticker.
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 120
+      - name: depth
+        in: query
+        required: false
+        description: Depth.
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+      - $ref: '#/components/parameters/TrialMode'
+  /api/predict/kalshi-trades:
+    get:
+      tags:
+      - Predict
+      summary: Recent trades on Kalshi, optionally filtered to one market
+      description: Recent trades on Kalshi, optionally filtered to one market ticker. Returns each trade's ticker, contract count, taker side, yes/no price (dollars), and time. Page with limit + cursor. Read-only (no Kalshi key needed).
+      operationId: predict_kalshi-trades
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized: items = Kalshi trades; meta.cursor = next page.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            ticker:
+                              nullable: true
+                            count:
+                              type: number
+                              nullable: true
+                            takerSide:
+                              nullable: true
+                            yesPrice:
+                              type: number
+                              nullable: true
+                            noPrice:
+                              type: number
+                              nullable: true
+                            createdTime:
+                              nullable: true
+                            tradeId:
+                              nullable: true
+                          required:
+                          - count
+                          - yesPrice
+                          - noPrice
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                      meta:
+                        type: object
+                        properties:
+                          cursor:
+                            type: string
+                            nullable: true
+                        required:
+                        - cursor
+                        additionalProperties: false
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: predict.kalshi-trades
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.0025
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.002500'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: ticker
+        in: query
+        required: false
+        description: Ticker.
+        schema:
+          type: string
+          maxLength: 120
+      - name: limit
+        in: query
+        required: false
+        description: Maximum number of results to return.
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+      - name: cursor
+        in: query
+        required: false
+        description: Opaque pagination cursor returned by a previous response.
+        schema:
+          type: string
+          maxLength: 400
+      - $ref: '#/components/parameters/TrialMode'
+  /api/predict/leaderboard:
+    get:
+      tags:
+      - Predict
+      summary: 'Polymarket smart-wallet leaderboard: top traders ranked by'
+      description: 'Polymarket smart-wallet leaderboard: top traders ranked by realized volume or profit (P&L). Choose the time window (1d/7d/30d/all) and rankBy (vol/pnl); cap with limit. Each entry returns rank, wallet (proxy) address, trader name, X handle, verified badge, total USD volume, and USD P&L — for tracking smart money. Pair the wallet with predict.positions / predict.activity / predict.wallet. Read-only from Polymarket''s Data API.'
+      operationId: predict_leaderboard
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized: items = ranked traders.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            rank:
+                              type: number
+                              nullable: true
+                            wallet:
+                              type: string
+                              nullable: true
+                            name:
+                              type: string
+                              nullable: true
+                            xUsername:
+                              type: string
+                              nullable: true
+                            verified:
+                              type: boolean
+                            volumeUsd:
+                              type: number
+                              nullable: true
+                            pnlUsd:
+                              type: number
+                              nullable: true
+                          required:
+                          - rank
+                          - wallet
+                          - name
+                          - xUsername
+                          - verified
+                          - volumeUsd
+                          - pnlUsd
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                      meta:
+                        type: object
+                        properties:
+                          window:
+                            type: string
+                          rankBy:
+                            type: string
+                        required:
+                        - window
+                        - rankBy
+                        additionalProperties: false
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: predict.leaderboard
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.012
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.012000'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: window
+        in: query
+        required: false
+        description: Time window (default all).
+        schema:
+          type: string
+          enum:
+          - 1d
+          - 7d
+          - 30d
+          - all
+      - name: rankBy
+        in: query
+        required: false
+        description: Rank by volume or P&L (default vol).
+        schema:
+          type: string
+          enum:
+          - vol
+          - pnl
+      - name: limit
+        in: query
+        required: false
+        description: Max traders (default 20).
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+      - $ref: '#/components/parameters/TrialMode'
+  /api/predict/limitless-markets:
+    get:
+      tags:
+      - Predict
+      summary: Active prediction markets on Limitless Exchange (on-chain
+      description: 'Active prediction markets on Limitless Exchange (on-chain, Base; keyless). Each market: conditionId, title, slug, description, status, live YES/NO prices, volume, liquidity, collateral token, expiration, and categories/tags. A second venue alongside the Polymarket (predict.markets) and Kalshi (predict.kalshi-markets) clusters — for cross-venue prediction-market coverage.'
+      operationId: predict_limitless-markets
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized: items = active Limitless markets; meta.total = total active count.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            conditionId:
+                              type: string
+                              nullable: true
+                            slug:
+                              type: string
+                              nullable: true
+                            title:
+                              type: string
+                              nullable: true
+                            description:
+                              type: string
+                              nullable: true
+                            status:
+                              type: string
+                              nullable: true
+                            yesPrice:
+                              type: number
+                              nullable: true
+                            noPrice:
+                              type: number
+                              nullable: true
+                            volume:
+                              type: number
+                              nullable: true
+                            liquidity:
+                              type: number
+                              nullable: true
+                            collateralSymbol:
+                              type: string
+                              nullable: true
+                            expirationDate:
+                              type: string
+                              nullable: true
+                            categories:
+                              type: array
+                              items: {}
+                            tags:
+                              type: array
+                              items: {}
+                          required:
+                          - conditionId
+                          - slug
+                          - title
+                          - description
+                          - status
+                          - yesPrice
+                          - noPrice
+                          - volume
+                          - liquidity
+                          - collateralSymbol
+                          - expirationDate
+                          - categories
+                          - tags
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                      meta:
+                        type: object
+                        properties:
+                          total:
+                            type: number
+                        required:
+                        - total
+                        additionalProperties: false
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: predict.limitless-markets
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.003
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.003000'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: limit
+        in: query
+        required: false
+        description: Max markets (default 20).
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 50
+      - $ref: '#/components/parameters/TrialMode'
+  /api/predict/market:
+    get:
+      tags:
+      - Predict
+      summary: A single Polymarket market by conditionId, slug, or id
+      description: A single Polymarket market by conditionId, slug, or id. Returns the question, outcomes + live prices (implied probabilities), CLOB token ids, USD volume + liquidity, dates, description, and URL. Pass one of conditionId / slug / id.
+      operationId: predict_market
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized: items = [market].'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            id:
+                              type: string
+                              nullable: true
+                            question:
+                              type: string
+                              nullable: true
+                            slug:
+                              type: string
+                              nullable: true
+                            conditionId:
+                              type: string
+                              nullable: true
+                            outcomes:
+                              type: array
+                              items:
+                                type: string
+                            outcomePrices:
+                              type: array
+                              items:
+                                type: number
+                            clobTokenIds:
+                              type: array
+                              items:
+                                type: string
+                            volumeUsd:
+                              type: number
+                              nullable: true
+                            liquidityUsd:
+                              type: number
+                              nullable: true
+                            active:
+                              type: boolean
+                              nullable: true
+                            closed:
+                              type: boolean
+                              nullable: true
+                            startDate:
+                              type: string
+                              nullable: true
+                            endDate:
+                              type: string
+                              nullable: true
+                            description:
+                              type: string
+                              nullable: true
+                            url:
+                              type: string
+                              nullable: true
+                          required:
+                          - id
+                          - question
+                          - slug
+                          - conditionId
+                          - outcomes
+                          - outcomePrices
+                          - clobTokenIds
+                          - volumeUsd
+                          - liquidityUsd
+                          - active
+                          - closed
+                          - startDate
+                          - endDate
+                          - description
+                          - url
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: predict.market
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.0025
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.002500'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: conditionId
+        in: query
+        required: false
+        description: Condition ID.
+        schema:
+          type: string
+          maxLength: 80
+      - name: slug
+        in: query
+        required: false
+        description: Slug.
+        schema:
+          type: string
+          maxLength: 200
+      - name: id
+        in: query
+        required: false
+        description: Unique identifier of the record to fetch.
+        schema:
+          type: string
+          maxLength: 40
+      - $ref: '#/components/parameters/TrialMode'
+  /api/predict/markets:
+    get:
+      tags:
+      - Predict
+      summary: Browse Polymarket prediction markets
+      description: Browse Polymarket prediction markets. Filter by active/closed, order by volume/liquidity/endDate, page with limit/offset. Each market returns its question, outcomes + live outcome prices (implied probabilities), CLOB token ids (use with predict.price / predict.orderbook / predict.price-history), USD volume + liquidity, open/close dates, and the Polymarket URL. Read-only mirror of Polymarket's public market list.
+      operationId: predict_markets
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized: items = markets.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            id:
+                              type: string
+                              nullable: true
+                            question:
+                              type: string
+                              nullable: true
+                            slug:
+                              type: string
+                              nullable: true
+                            conditionId:
+                              type: string
+                              nullable: true
+                            outcomes:
+                              type: array
+                              items:
+                                type: string
+                            outcomePrices:
+                              type: array
+                              items:
+                                type: number
+                            clobTokenIds:
+                              type: array
+                              items:
+                                type: string
+                            volumeUsd:
+                              type: number
+                              nullable: true
+                            liquidityUsd:
+                              type: number
+                              nullable: true
+                            active:
+                              type: boolean
+                              nullable: true
+                            closed:
+                              type: boolean
+                              nullable: true
+                            startDate:
+                              type: string
+                              nullable: true
+                            endDate:
+                              type: string
+                              nullable: true
+                            description:
+                              type: string
+                              nullable: true
+                            url:
+                              type: string
+                              nullable: true
+                          required:
+                          - id
+                          - question
+                          - slug
+                          - conditionId
+                          - outcomes
+                          - outcomePrices
+                          - clobTokenIds
+                          - volumeUsd
+                          - liquidityUsd
+                          - active
+                          - closed
+                          - startDate
+                          - endDate
+                          - description
+                          - url
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                      meta:
+                        type: object
+                        properties:
+                          count:
+                            type: integer
+                        required:
+                        - count
+                        additionalProperties: false
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: predict.markets
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.0025
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.002500'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: limit
+        in: query
+        required: false
+        description: Maximum number of results to return.
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+      - name: offset
+        in: query
+        required: false
+        description: Number of results to skip before returning (pagination offset).
+        schema:
+          type: integer
+          minimum: 0
+      - name: active
+        in: query
+        required: false
+        description: Active.
+        schema:
+          type: boolean
+      - name: closed
+        in: query
+        required: false
+        description: Closed.
+        schema:
+          type: boolean
+      - name: order
+        in: query
+        required: false
+        description: 'Sort direction: asc or desc.'
+        schema:
+          type: string
+          enum:
+          - volume
+          - liquidity
+          - endDate
+          - startDate
+      - name: ascending
+        in: query
+        required: false
+        description: Ascending.
+        schema:
+          type: boolean
+      - name: tagId
+        in: query
+        required: false
+        description: Tag ID.
+        schema:
+          type: integer
+      - $ref: '#/components/parameters/TrialMode'
+  /api/predict/matched-pairs:
+    get:
+      tags:
+      - Predict
+      summary: Cross-venue equivalent-market pairs for arbitrage /
+      description: Cross-venue equivalent-market pairs for arbitrage / relative-value spotting. We fuzzy-match open Polymarket vs Kalshi markets by title-token overlap and return candidate pairs with both venues' YES prices and the implied-probability spread (Polymarket YES minus Kalshi YES). Tune with minScore (0-1 title-similarity floor) and limit. Heuristic — a high score is a strong candidate, not a guaranteed identical contract. Read-only, keyless. No public source maps these directly; the pairing is derived by 2s.io.
+      operationId: predict_matched-pairs
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized: items = candidate cross-venue pairs, score desc.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            score:
+                              type: number
+                            polymarket:
+                              type: object
+                              properties:
+                                title:
+                                  type: string
+                                  nullable: true
+                                yesPrice:
+                                  type: number
+                                  nullable: true
+                                volumeUsd:
+                                  type: number
+                                  nullable: true
+                                ref:
+                                  type: string
+                                  nullable: true
+                                url:
+                                  type: string
+                                  nullable: true
+                              required:
+                              - title
+                              - yesPrice
+                              - volumeUsd
+                              - ref
+                              - url
+                              additionalProperties: false
+                            kalshi:
+                              type: object
+                              properties:
+                                title:
+                                  type: string
+                                  nullable: true
+                                yesPrice:
+                                  type: number
+                                  nullable: true
+                                volumeUsd:
+                                  type: number
+                                  nullable: true
+                                ref:
+                                  type: string
+                                  nullable: true
+                                url:
+                                  type: string
+                                  nullable: true
+                              required:
+                              - title
+                              - yesPrice
+                              - volumeUsd
+                              - ref
+                              - url
+                              additionalProperties: false
+                            yesSpread:
+                              type: number
+                              nullable: true
+                          required:
+                          - score
+                          - polymarket
+                          - kalshi
+                          - yesSpread
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                      meta:
+                        type: object
+                        properties:
+                          count:
+                            type: integer
+                          note:
+                            type: string
+                        required:
+                        - count
+                        - note
+                        additionalProperties: false
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: predict.matched-pairs
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.012
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.012000'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: limit
+        in: query
+        required: false
+        description: Max pairs (default 20).
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 50
+      - name: minScore
+        in: query
+        required: false
+        description: Minimum title-similarity score 0-1 (default 0.3).
+        schema:
+          type: number
+          minimum: 0
+          maximum: 1
+      - $ref: '#/components/parameters/TrialMode'
+  /api/predict/orderbook:
+    get:
+      tags:
+      - Predict
+      summary: Full CLOB order book (bids + asks with price and size) for
+      description: Full CLOB order book (bids + asks with price and size) for a Polymarket outcome token. Use the clobTokenIds from predict.markets. Read-only depth snapshot from Polymarket's CLOB.
+      operationId: predict_orderbook
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized: items = [order book].'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            tokenId:
+                              type: string
+                            bids:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  price:
+                                    type: number
+                                    nullable: true
+                                  size:
+                                    type: number
+                                    nullable: true
+                                required:
+                                - price
+                                - size
+                                additionalProperties: false
+                            asks:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  price:
+                                    type: number
+                                    nullable: true
+                                  size:
+                                    type: number
+                                    nullable: true
+                                required:
+                                - price
+                                - size
+                                additionalProperties: false
+                            timestamp:
+                              nullable: true
+                          required:
+                          - tokenId
+                          - bids
+                          - asks
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: predict.orderbook
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.0025
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.002500'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: tokenId
+        in: query
+        required: true
+        description: CLOB token id (outcome token).
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 120
+      - $ref: '#/components/parameters/TrialMode'
+  /api/predict/positions:
+    get:
+      tags:
+      - Predict
+      summary: A wallet's open Polymarket positions
+      description: A wallet's open Polymarket positions. Pass the wallet (proxy) address; cap with limit. Each position returns the market title + outcome, share size, average vs current price, initial vs current USD value, unrealized USD P&L and percent P&L, whether it's redeemable, and the conditionId/slug. For inspecting any trader's live book (e.g. a wallet from predict.leaderboard or predict.whales). Read-only from Polymarket's Data API.
+      operationId: predict_positions
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized: items = open positions, current value desc.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            title:
+                              type: string
+                              nullable: true
+                            outcome:
+                              type: string
+                              nullable: true
+                            size:
+                              type: number
+                              nullable: true
+                            avgPrice:
+                              type: number
+                              nullable: true
+                            curPrice:
+                              type: number
+                              nullable: true
+                            initialValueUsd:
+                              type: number
+                              nullable: true
+                            valueUsd:
+                              type: number
+                              nullable: true
+                            pnlUsd:
+                              type: number
+                              nullable: true
+                            percentPnl:
+                              type: number
+                              nullable: true
+                            redeemable:
+                              type: boolean
+                            conditionId:
+                              type: string
+                              nullable: true
+                            slug:
+                              type: string
+                              nullable: true
+                          required:
+                          - title
+                          - outcome
+                          - size
+                          - avgPrice
+                          - curPrice
+                          - initialValueUsd
+                          - valueUsd
+                          - pnlUsd
+                          - percentPnl
+                          - redeemable
+                          - conditionId
+                          - slug
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                      meta:
+                        type: object
+                        properties:
+                          address:
+                            type: string
+                          count:
+                            type: integer
+                        required:
+                        - address
+                        - count
+                        additionalProperties: false
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: predict.positions
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.012
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.012000'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: address
+        in: query
+        required: true
+        description: Wallet (proxy) address.
+        schema:
+          type: string
+          minLength: 8
+          maxLength: 60
+      - name: limit
+        in: query
+        required: false
+        description: Max positions (default 50).
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 500
+      - $ref: '#/components/parameters/TrialMode'
+  /api/predict/price:
+    get:
+      tags:
+      - Predict
+      summary: Live best bid, best ask, and midpoint for a Polymarket
+      description: Live best bid, best ask, and midpoint for a Polymarket outcome token (CLOB token id — get it from predict.markets clobTokenIds). The midpoint is the market's implied probability for that outcome. Read-only from Polymarket's CLOB.
+      operationId: predict_price
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized: items = [{tokenId,bid,ask,mid}].'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            tokenId:
+                              type: string
+                            bid:
+                              type: number
+                              nullable: true
+                            ask:
+                              type: number
+                              nullable: true
+                            mid:
+                              type: number
+                              nullable: true
+                          required:
+                          - tokenId
+                          - bid
+                          - ask
+                          - mid
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: predict.price
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.0025
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.002500'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: tokenId
+        in: query
+        required: true
+        description: CLOB token id (outcome token).
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 120
+      - $ref: '#/components/parameters/TrialMode'
+  /api/predict/price-history:
+    get:
+      tags:
+      - Predict
+      summary: Time-series price (implied-probability) history for a
+      description: Time-series price (implied-probability) history for a Polymarket outcome token. Pass the CLOB token id and an interval (1h, 6h, 1d, 1w, 1m, max). Returns timestamped price points — for charting how a market's odds moved. Read-only from Polymarket's CLOB.
+      operationId: predict_price-history
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized: items = [{tokenId, points[]}].'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            tokenId:
+                              type: string
+                            points:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  t: {}
+                                  p:
+                                    type: number
+                                    nullable: true
+                                required:
+                                - p
+                                additionalProperties: false
+                          required:
+                          - tokenId
+                          - points
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: predict.price-history
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.004998
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.004998'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: tokenId
+        in: query
+        required: true
+        description: Token ID.
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 120
+      - name: interval
+        in: query
+        required: false
+        description: Interval.
+        schema:
+          type: string
+          enum:
+          - 1h
+          - 6h
+          - 1d
+          - 1w
+          - 1m
+          - max
+      - name: fidelity
+        in: query
+        required: false
+        description: Fidelity.
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 1440
+      - $ref: '#/components/parameters/TrialMode'
+  /api/predict/search:
+    get:
+      tags:
+      - Predict
+      summary: Cross-venue prediction-market keyword search across
+      description: Cross-venue prediction-market keyword search across Polymarket, Kalshi, and Limitless Exchange in one call. Pass q (required); filter by status (open/closed) and cap per-venue with limit. Each hit is tagged with its venue and returns the question, live YES/NO price (0-1 implied probability), USD volume, close date, and the venue URL — for finding the same real-world question wherever it trades. Read-only, keyless.
+      operationId: predict_search
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized: items = cross-venue market hits, each tagged with venue.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            venue:
+                              type: string
+                              enum:
+                              - polymarket
+                              - kalshi
+                              - limitless
+                            title:
+                              type: string
+                              nullable: true
+                            slug:
+                              type: string
+                              nullable: true
+                            yesPrice:
+                              type: number
+                              nullable: true
+                            noPrice:
+                              type: number
+                              nullable: true
+                            volumeUsd:
+                              type: number
+                              nullable: true
+                            closed:
+                              type: boolean
+                              nullable: true
+                            endDate:
+                              type: string
+                              nullable: true
+                            ticker:
+                              type: string
+                              nullable: true
+                            conditionId:
+                              type: string
+                              nullable: true
+                            url:
+                              type: string
+                              nullable: true
+                          required:
+                          - venue
+                          - title
+                          - slug
+                          - yesPrice
+                          - noPrice
+                          - volumeUsd
+                          - closed
+                          - endDate
+                          - ticker
+                          - conditionId
+                          - url
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                      meta:
+                        type: object
+                        properties:
+                          q:
+                            type: string
+                          byVenue:
+                            type: object
+                            additionalProperties:
+                              type: number
+                        required:
+                        - q
+                        - byVenue
+                        additionalProperties: false
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: predict.search
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.012
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.012000'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: q
+        in: query
+        required: true
+        description: Keyword(s) to search market questions for.
+        schema:
+          type: string
+          minLength: 2
+          maxLength: 120
+      - name: limit
+        in: query
+        required: false
+        description: Max results per venue (default 15).
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 50
+      - name: status
+        in: query
+        required: false
+        description: Filter by market status.
+        schema:
+          type: string
+          enum:
+          - open
+          - closed
+      - $ref: '#/components/parameters/TrialMode'
+  /api/predict/sports:
+    get:
+      tags:
+      - Predict
+      summary: Sports prediction markets across Polymarket and Kalshi in
+      description: Sports prediction markets across Polymarket and Kalshi in one call — game lines, futures, and props (NFL/NBA/MLB/NHL/soccer/tennis/etc). Optionally narrow with league (a tag/category keyword, e.g. nfl, soccer, world-cup) and cap with limit. Each hit is tagged with its venue and returns the question, live YES/NO price (implied probability), USD volume, close date, and the venue URL. Read-only, keyless.
+      operationId: predict_sports
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized: items = sports markets across Polymarket + Kalshi.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            venue:
+                              type: string
+                              enum:
+                              - polymarket
+                              - kalshi
+                            title:
+                              type: string
+                              nullable: true
+                            yesPrice:
+                              type: number
+                              nullable: true
+                            noPrice:
+                              type: number
+                              nullable: true
+                            volumeUsd:
+                              type: number
+                              nullable: true
+                            endDate:
+                              type: string
+                              nullable: true
+                            ticker:
+                              type: string
+                              nullable: true
+                            slug:
+                              type: string
+                              nullable: true
+                            conditionId:
+                              type: string
+                              nullable: true
+                            tags:
+                              type: array
+                              items:
+                                type: string
+                            url:
+                              type: string
+                              nullable: true
+                          required:
+                          - venue
+                          - title
+                          - yesPrice
+                          - noPrice
+                          - volumeUsd
+                          - endDate
+                          - ticker
+                          - slug
+                          - conditionId
+                          - tags
+                          - url
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                      meta:
+                        type: object
+                        properties:
+                          byVenue:
+                            type: object
+                            additionalProperties:
+                              type: number
+                        required:
+                        - byVenue
+                        additionalProperties: false
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: predict.sports
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.012
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.012000'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: league
+        in: query
+        required: false
+        description: League/category keyword (e.g. nfl, nba, soccer, world-cup).
+        schema:
+          type: string
+          maxLength: 60
+      - name: limit
+        in: query
+        required: false
+        description: Max results per venue (default 20).
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+      - $ref: '#/components/parameters/TrialMode'
+  /api/predict/trades:
+    get:
+      tags:
+      - Predict
+      summary: Recent Polymarket trades
+      description: Recent Polymarket trades. Filter by market (conditionId) and/or user (wallet address); page with limit (max 500). Each trade returns wallet, trader name, side (buy/sell), outcome, size, price, USD notional, timestamp, market title, and tx hash. Read-only from Polymarket's Data API.
+      operationId: predict_trades
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized: items = trades.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            wallet:
+                              type: string
+                              nullable: true
+                            name:
+                              type: string
+                              nullable: true
+                            side:
+                              type: string
+                              nullable: true
+                            outcome:
+                              type: string
+                              nullable: true
+                            size:
+                              type: number
+                              nullable: true
+                            price:
+                              type: number
+                              nullable: true
+                            usd:
+                              type: number
+                              nullable: true
+                            timestamp:
+                              type: number
+                              nullable: true
+                            title:
+                              type: string
+                              nullable: true
+                            slug:
+                              type: string
+                              nullable: true
+                            conditionId:
+                              type: string
+                              nullable: true
+                            txHash:
+                              type: string
+                              nullable: true
+                          required:
+                          - wallet
+                          - name
+                          - side
+                          - outcome
+                          - size
+                          - price
+                          - usd
+                          - timestamp
+                          - title
+                          - slug
+                          - conditionId
+                          - txHash
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: predict.trades
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.0025
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.002500'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: market
+        in: query
+        required: false
+        description: Market conditionId.
+        schema:
+          type: string
+          maxLength: 80
+      - name: user
+        in: query
+        required: false
+        description: Wallet address.
+        schema:
+          type: string
+          maxLength: 60
+      - name: limit
+        in: query
+        required: false
+        description: Maximum number of results to return.
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 500
+      - $ref: '#/components/parameters/TrialMode'
+  /api/predict/wallet:
+    get:
+      tags:
+      - Predict
+      summary: 'A Polymarket trader''s portfolio by wallet address: total'
+      description: 'A Polymarket trader''s portfolio by wallet address: total portfolio USD value plus open positions (market title, outcome, size, average vs current price, current value, and unrealized PnL). For tracking a wallet''s prediction-market book. Read-only from Polymarket''s Data API.'
+      operationId: predict_wallet
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized: items = [{address, portfolioValueUsd, positions[]}].'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            address:
+                              type: string
+                            portfolioValueUsd:
+                              type: number
+                              nullable: true
+                            positions:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  title:
+                                    nullable: true
+                                  outcome:
+                                    nullable: true
+                                  size:
+                                    type: number
+                                    nullable: true
+                                  avgPrice:
+                                    type: number
+                                    nullable: true
+                                  curPrice:
+                                    type: number
+                                    nullable: true
+                                  valueUsd:
+                                    type: number
+                                    nullable: true
+                                  pnlUsd:
+                                    type: number
+                                    nullable: true
+                                  conditionId:
+                                    nullable: true
+                                required:
+                                - size
+                                - avgPrice
+                                - curPrice
+                                - valueUsd
+                                - pnlUsd
+                                additionalProperties: false
+                          required:
+                          - address
+                          - portfolioValueUsd
+                          - positions
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: predict.wallet
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.004998
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.004998'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: address
+        in: query
+        required: true
+        description: Wallet (proxy) address.
+        schema:
+          type: string
+          minLength: 8
+          maxLength: 60
+      - $ref: '#/components/parameters/TrialMode'
+  /api/predict/whales:
+    get:
+      tags:
+      - Predict
+      summary: 'Polymarket whale radar: the largest recent trades by USD'
+      description: 'Polymarket whale radar: the largest recent trades by USD notional across all markets, ranked. Optional minUsd floor and limit. Each entry includes wallet, trader name, market, side, outcome, size, price, USD value, and tx hash — for tracking smart-money / large positioning. Read-only from Polymarket''s Data API.'
+      operationId: predict_whales
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized: items = whale trades, USD-desc.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            wallet:
+                              type: string
+                              nullable: true
+                            name:
+                              type: string
+                              nullable: true
+                            side:
+                              type: string
+                              nullable: true
+                            outcome:
+                              type: string
+                              nullable: true
+                            size:
+                              type: number
+                              nullable: true
+                            price:
+                              type: number
+                              nullable: true
+                            usd:
+                              type: number
+                              nullable: true
+                            timestamp:
+                              type: number
+                              nullable: true
+                            title:
+                              type: string
+                              nullable: true
+                            slug:
+                              type: string
+                              nullable: true
+                            conditionId:
+                              type: string
+                              nullable: true
+                            txHash:
+                              type: string
+                              nullable: true
+                          required:
+                          - wallet
+                          - name
+                          - side
+                          - outcome
+                          - size
+                          - price
+                          - usd
+                          - timestamp
+                          - title
+                          - slug
+                          - conditionId
+                          - txHash
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                      meta:
+                        type: object
+                        properties:
+                          count:
+                            type: integer
+                        required:
+                        - count
+                        additionalProperties: false
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: predict.whales
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.004998
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.004998'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: limit
+        in: query
+        required: false
+        description: Maximum number of results to return.
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+      - name: minUsd
+        in: query
+        required: false
+        description: Only trades at/above this USD notional.
+        schema:
+          type: number
+          minimum: 0
+      - $ref: '#/components/parameters/TrialMode'
+components:
+  responses:
+    MethodNotAllowed:
+      description: Method not allowed — see `Allow` header for the supported method.
+    UpstreamError:
+      description: Upstream provider error.
+    ServerError:
+      description: Internal server error.
+    PaymentRequired:
+      description: Payment required. Body contains the x402 PaymentRequirements envelope with a multi-network accepts array; the per-call price is in accepts[].amount (and on the operation as x-2s-price). Sign for whichever rail you hold USDC on (EIP-3009 for Base, partial SPL transfer for Solana) and retry with the PAYMENT-SIGNATURE header (X-PAYMENT also accepted for v1 clients).
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/X402PaymentRequiredV2'
+    BadRequest:
+      description: Bad request — invalid parameters.
+  parameters:
+    TrialMode:
+      name: trial
+      in: query
+      required: false
+      description: 'Try before you buy. Set to 1 for one free real call per endpoint per hour — no wallet or payment needed — to verify the endpoint before paying. Equivalent to sending the "X-2s-Trial: 1" request header. Works on every endpoint.'
+      schema:
+        type: integer
+        enum:
+        - 1
+  schemas:
+    CallMeta:
+      type: object
+      description: Per-call meta envelope — endpoint id, cost, caller kind, settlement details.
+    Source:
+      type: object
+      description: 'Provenance of the data: upstream provider, source URL, and license.'
+      properties:
+        provider:
+          type: string
+          description: Upstream data provider.
+        url:
+          type: string
+          description: Source URL or documentation link.
+        license:
+          type: string
+          description: License / usage terms for the data.
+    X402PaymentRequiredV2:
+      type: object
+      description: x402 v2 PaymentRequired envelope. Pick any entry from accepts[], sign for that rail, retry with the PAYMENT-SIGNATURE header.
+      required:
+      - x402Version
+      - accepts
+      properties:
+        x402Version:
+          type: integer
+          const: 2
+        error:
+          type: string
+          description: Human-readable reason payment is required.
+        resource:
+          type: string
+          description: The resource URL being purchased.
+        accepts:
+          type: array
+          description: Payment requirement options, one per supported network (Base USDC, Solana USDC).
+          items:
+            type: object
+            required:
+            - scheme
+            - network
+            - amount
+            - asset
+            - payTo
+            - maxTimeoutSeconds
+            properties:
+              scheme:
+                type: string
+                enum:
+                - exact
+              network:
+                type: string
+                description: CAIP-2 network id, e.g. "eip155:8453" (Base) or "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp".
+              amount:
+                type: string
+                description: Price in atomic asset units (USDC has 6 decimals).
+              asset:
+                type: string
+                description: Asset contract address / mint.
+              payTo:
+                type: string
+                description: Treasury address to pay.
+              maxTimeoutSeconds:
+                type: integer
+              extra:
+                type: object
+                description: 'Rail-specific extras (EVM: EIP-712 domain name/version; Solana: feePayer).'
+                additionalProperties: true
+        extensions:
+          type: object
+          description: Optional discovery metadata (e.g. bazaar input/output schemas).
+          additionalProperties: true
+  securitySchemes:
+    x402Payment:
+      type: apiKey
+      in: header
+      name: PAYMENT-SIGNATURE
+      description: 'x402 protocol v2: base64-encoded PaymentPayload. Call any paid endpoint without auth to receive a 402 with a multi-network PaymentRequirements envelope. Sign for either rail: EIP-3009 transferWithAuthorization (Base USDC) OR a partial SPL token transfer (Solana USDC). Retry with PAYMENT-SIGNATURE header. X-PAYMENT is also accepted for v1 buyer clients. See https://x402.org.'

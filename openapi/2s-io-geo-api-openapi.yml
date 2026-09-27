@@ -1,0 +1,1306 @@
+openapi: 3.2.0
+info:
+  title: 2s — the (most) everything Geo API
+  version: '1'
+  summary: The (most) everything API.
+  description: 'The (most) everything API for AI agents: 575+ pay-per-call endpoints on one origin.'
+  contact:
+    name: 2s
+    url: https://2s.io
+    email: alley@2s.io
+  x-logo:
+    url: https://2s.io/icon-512.png
+    altText: 2s
+  x-guidance: 'Pay-per-call REST API for AI agents — hundreds of endpoints returning ground-truth data (US public records, company & legal identifiers, finance/SEC, crypto/web3, security & CVEs, medical codes, weather & geocoding, agriculture, energy, maritime, music, and more). Every endpoint is paid per call in USDC via x402 (Base or Solana) — no API key, no signup. Call any endpoint with no auth to get a 402 PaymentRequirements envelope, sign it (EIP-3009 on Base, partial SPL transfer on Solana), and retry with the PAYMENT-SIGNATURE header. Add ?trial=1 for one free real call per endpoint per hour to test before paying. To discover the right endpoint: GET https://2s.io/api/directory for the full catalog, or GET https://2s.io/api/search/endpoints?q=<natural-language task> for a ranked match. Per-call price is on each operation as x-payment-info (from $0.001). Batch up to 50 calls behind one payment via POST https://2s.io/api/batch/run.'
+servers:
+- url: https://2s.io
+tags:
+- name: Geo
+paths:
+  /api/geo/elevation:
+    get:
+      tags:
+      - Geo
+      summary: Ground elevation above sea level for a coordinate, anywhere
+      description: 'Ground elevation above sea level for a coordinate, anywhere on Earth. Pass lat + lon. Returns elevation in meters and feet (from the Copernicus/SRTM digital elevation model, ~90m resolution). Source: Open-Meteo elevation API (keyless, CC BY 4.0).'
+      operationId: geo_elevation
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized envelope: items = [elevation for the point]; total = 1.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            lat:
+                              type: number
+                            lon:
+                              type: number
+                            elevationMeters:
+                              type: number
+                              nullable: true
+                            elevationFeet:
+                              type: number
+                              nullable: true
+                          required:
+                          - lat
+                          - lon
+                          - elevationMeters
+                          - elevationFeet
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: geo.elevation
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.0025
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.002500'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: lat
+        in: query
+        required: true
+        description: Latitude in decimal degrees (WGS84).
+        schema:
+          type: number
+          minimum: -90
+          maximum: 90
+      - name: lon
+        in: query
+        required: true
+        description: Longitude in decimal degrees (WGS84).
+        schema:
+          type: number
+          minimum: -180
+          maximum: 180
+      - $ref: '#/components/parameters/TrialMode'
+  /api/geo/flood-zone:
+    get:
+      tags:
+      - Geo
+      summary: Determine the FEMA flood zone for a coordinate
+      description: 'Determine the FEMA flood zone for a coordinate. Pass lat and lon. Returns the FEMA flood zone code (e.g. AE, VE, X), its subtype, whether the point is in a Special Flood Hazard Area (isSFHA — the 1% annual-chance floodplain where flood insurance is mandatory for federally backed mortgages), a plain-language risk level (high / moderate / minimal / undetermined / unmapped) and description, the static base flood elevation and depth when published, and the source FIRM panel id. Data: FEMA National Flood Hazard Layer (NFHL), free and public-domain. When no flood polygon intersects the point, returns mapped=false (usually Zone X / minimal risk or unmapped — not a guarantee of zero risk). Use for property risk screening, insurance/mortgage context, and siting decisions; geocode an address with /api/geocode/address first to get the coordinate.'
+      operationId: geo_flood-zone
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      query:
+                        type: object
+                        properties:
+                          lat:
+                            type: number
+                          lon:
+                            type: number
+                        required:
+                        - lat
+                        - lon
+                        additionalProperties: false
+                      mapped:
+                        type: boolean
+                      floodZone:
+                        type: string
+                        nullable: true
+                      zoneSubtype:
+                        type: string
+                        nullable: true
+                      isSFHA:
+                        type: boolean
+                        nullable: true
+                      riskLevel:
+                        type: string
+                        enum:
+                        - high
+                        - moderate
+                        - minimal
+                        - undetermined
+                        - unmapped
+                      zoneDescription:
+                        type: string
+                      staticBFE:
+                        type: number
+                        nullable: true
+                      depth:
+                        type: number
+                        nullable: true
+                      firmPanelId:
+                        type: string
+                        nullable: true
+                      sourceCitation:
+                        type: string
+                        nullable: true
+                      note:
+                        type: string
+                        nullable: true
+                      sources:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Source'
+                    required:
+                    - query
+                    - mapped
+                    - floodZone
+                    - zoneSubtype
+                    - isSFHA
+                    - riskLevel
+                    - zoneDescription
+                    - staticBFE
+                    - depth
+                    - firmPanelId
+                    - sourceCitation
+                    - note
+                    - sources
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: geo.flood-zone
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.0036
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: legacy
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.003600'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: lat
+        in: query
+        required: true
+        description: Latitude in decimal degrees (WGS84).
+        schema:
+          type: number
+          minimum: -90
+          maximum: 90
+      - name: lon
+        in: query
+        required: true
+        description: Longitude in decimal degrees (WGS84).
+        schema:
+          type: number
+          minimum: -180
+          maximum: 180
+      - $ref: '#/components/parameters/TrialMode'
+  /api/geo/ip:
+    get:
+      tags:
+      - Geo
+      summary: Geolocate a single IPv4 or IPv6 address
+      description: Geolocate a single IPv4 or IPv6 address. Returns country (name + ISO code), region (name + code), city, ZIP, lat/lon, timezone, ISP, organization, and AS number + name. For bulk lookups (up to 100 IPs in one call) use /api/ipinfo/bulk instead. Lat/lon precision is city-level, not GPS.
+      operationId: geo_ip
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized envelope: items = [geolocation] (ip, country, region, city, postalCode, coords, timezone, network); total = 1.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            ip:
+                              type: string
+                            country:
+                              type: object
+                              properties:
+                                code:
+                                  type: string
+                                  description: ISO country code.
+                                name:
+                                  type: string
+                              required:
+                              - code
+                              - name
+                              additionalProperties: false
+                            region:
+                              type: object
+                              properties:
+                                code:
+                                  type: string
+                                name:
+                                  type: string
+                              required:
+                              - code
+                              - name
+                              additionalProperties: false
+                            city:
+                              type: string
+                            postalCode:
+                              type: string
+                              nullable: true
+                            coords:
+                              type: object
+                              properties:
+                                lat:
+                                  type: number
+                                lon:
+                                  type: number
+                              required:
+                              - lat
+                              - lon
+                              additionalProperties: false
+                              description: City-level precision, not GPS.
+                            timezone:
+                              type: string
+                              nullable: true
+                            network:
+                              type: object
+                              properties:
+                                isp:
+                                  type: string
+                                  nullable: true
+                                org:
+                                  type: string
+                                  nullable: true
+                                asn:
+                                  type: string
+                                  nullable: true
+                                  description: AS number + name.
+                              required:
+                              - isp
+                              - org
+                              - asn
+                              additionalProperties: false
+                          required:
+                          - ip
+                          - country
+                          - region
+                          - city
+                          - postalCode
+                          - coords
+                          - timezone
+                          - network
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: geo.ip
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.0025
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.002500'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: ip
+        in: query
+        required: true
+        description: IP.
+        schema:
+          type: string
+          pattern: ^(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}|[0-9a-fA-F:]+)$
+          minLength: 2
+          maxLength: 45
+      - $ref: '#/components/parameters/TrialMode'
+  /api/geo/location-dossier:
+    get:
+      tags:
+      - Geo
+      summary: Static risk & context dossier for a US location
+      description: 'Static risk & context dossier for a US location. Pass lat+lon or a US address (geocoded for you). Composes five authoritative, keyless federal sources into one answer an agent cannot derive from training: Census place context (county, state, census tract, congressional district), FEMA flood zone + Special-Flood-Hazard-Area status, USGS ASCE 7-16 seismic design parameters (Ss, S1, SDS, SD1, seismic design category, PGA), the nearest NOAA/GHCN climate station, and — when a zip is supplied — US Census ACS 5-year demographics. Each layer is isolated: one source failing does not fail the rest. This is the slow-moving structural-risk picture (siting, insurance, due diligence), distinct from real-time weather/earthquake conditions.'
+      operationId: geo_location-dossier
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      query:
+                        type: object
+                        properties:
+                          lat:
+                            type: number
+                          lon:
+                            type: number
+                          zip:
+                            type: string
+                            nullable: true
+                          address:
+                            type: string
+                            nullable: true
+                        required:
+                        - lat
+                        - lon
+                        - zip
+                        - address
+                        additionalProperties: false
+                      summary:
+                        type: object
+                        properties:
+                          county:
+                            type: string
+                            nullable: true
+                          state:
+                            type: string
+                            nullable: true
+                          floodRisk:
+                            type: string
+                            nullable: true
+                          isSFHA:
+                            type: boolean
+                            nullable: true
+                          seismicDesignCategory:
+                            type: string
+                            nullable: true
+                          nearestStationKm:
+                            type: number
+                            nullable: true
+                          riskIndexRating:
+                            type: string
+                            nullable: true
+                        required:
+                        - county
+                        - state
+                        - floodRisk
+                        - isSFHA
+                        - seismicDesignCategory
+                        - nearestStationKm
+                        - riskIndexRating
+                        additionalProperties: false
+                      place:
+                        type: object
+                        properties:
+                          found:
+                            type: boolean
+                          error:
+                            type: string
+                            nullable: true
+                          data: {}
+                        required:
+                        - found
+                        - error
+                        additionalProperties: false
+                      flood:
+                        type: object
+                        properties:
+                          found:
+                            type: boolean
+                          error:
+                            type: string
+                            nullable: true
+                          data: {}
+                        required:
+                        - found
+                        - error
+                        additionalProperties: false
+                      seismic:
+                        type: object
+                        properties:
+                          found:
+                            type: boolean
+                          error:
+                            type: string
+                            nullable: true
+                          data: {}
+                        required:
+                        - found
+                        - error
+                        additionalProperties: false
+                      climate:
+                        type: object
+                        properties:
+                          found:
+                            type: boolean
+                          error:
+                            type: string
+                            nullable: true
+                          data: {}
+                        required:
+                        - found
+                        - error
+                        additionalProperties: false
+                      demographics:
+                        type: object
+                        properties:
+                          found:
+                            type: boolean
+                          error:
+                            type: string
+                            nullable: true
+                          data: {}
+                        required:
+                        - found
+                        - error
+                        additionalProperties: false
+                      riskIndex:
+                        type: object
+                        properties:
+                          found:
+                            type: boolean
+                          error:
+                            type: string
+                            nullable: true
+                          data: {}
+                        required:
+                        - found
+                        - error
+                        additionalProperties: false
+                      sources:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Source'
+                      note:
+                        type: string
+                    required:
+                    - query
+                    - summary
+                    - place
+                    - flood
+                    - seismic
+                    - climate
+                    - demographics
+                    - riskIndex
+                    - sources
+                    - note
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: geo.location-dossier
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.018
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: legacy
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.018000'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: lat
+        in: query
+        required: false
+        description: Latitude in decimal degrees (WGS84).
+        schema:
+          type: number
+          minimum: -90
+          maximum: 90
+      - name: lon
+        in: query
+        required: false
+        description: Longitude in decimal degrees (WGS84).
+        schema:
+          type: number
+          minimum: -180
+          maximum: 180
+      - name: address
+        in: query
+        required: false
+        description: Street address or full address string.
+        schema:
+          type: string
+          minLength: 3
+          maxLength: 200
+      - name: zip
+        in: query
+        required: false
+        description: US ZIP code.
+        schema:
+          type: string
+          pattern: ^\d{5}$
+      - name: riskCategory
+        in: query
+        required: false
+        description: ASCE risk category (default II).
+        schema:
+          type: string
+          enum:
+          - I
+          - II
+          - III
+          - IV
+      - name: siteClass
+        in: query
+        required: false
+        description: ASCE soil site class (default D).
+        schema:
+          type: string
+          enum:
+          - A
+          - B
+          - C
+          - D
+          - E
+      - $ref: '#/components/parameters/TrialMode'
+  /api/geo/nearby:
+    get:
+      tags:
+      - Geo
+      summary: 'Everything around a coordinate in one call: nearby airports'
+      description: 'Everything around a coordinate in one call: nearby airports (IATA/ICAO, type, distance), public K-12 schools (name, district, enrollment, distance), NOAA climate stations (for chaining into /api/climate/station-history), and earthquakes from the past week (magnitude, depth, time). Pass lat/lon plus optional radiusKm (default 25, max 200) and per-category limit (default 5). Each category returns an independent found/error block, so one slow source never empties the rest. Site assessment, relocation research, travel planning, and risk screening. Each category is also a standalone endpoint (/api/airport/near, /api/edu/school-lookup, /api/climate/station-near, /api/quakes/recent).'
+      operationId: geo_nearby
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: Per-category nearby blocks (airports, schools, climate stations, recent quakes) around a coordinate.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      lat:
+                        type: number
+                      lon:
+                        type: number
+                      radiusKm:
+                        type: number
+                      airports:
+                        type: object
+                        properties:
+                          found:
+                            type: boolean
+                          error:
+                            type: string
+                            nullable: true
+                          count:
+                            type: number
+                          items:
+                            type: array
+                            items:
+                              type: object
+                              additionalProperties: {}
+                        required:
+                        - found
+                        - error
+                        - count
+                        - items
+                        additionalProperties: false
+                      schools:
+                        type: object
+                        properties:
+                          found:
+                            type: boolean
+                          error:
+                            type: string
+                            nullable: true
+                          count:
+                            type: number
+                          items:
+                            type: array
+                            items:
+                              type: object
+                              additionalProperties: {}
+                        required:
+                        - found
+                        - error
+                        - count
+                        - items
+                        additionalProperties: false
+                      climateStations:
+                        type: object
+                        properties:
+                          found:
+                            type: boolean
+                          error:
+                            type: string
+                            nullable: true
+                          count:
+                            type: number
+                          items:
+                            type: array
+                            items:
+                              type: object
+                              additionalProperties: {}
+                        required:
+                        - found
+                        - error
+                        - count
+                        - items
+                        additionalProperties: false
+                      quakes:
+                        type: object
+                        properties:
+                          found:
+                            type: boolean
+                          error:
+                            type: string
+                            nullable: true
+                          count:
+                            type: number
+                          items:
+                            type: array
+                            items:
+                              type: object
+                              additionalProperties: {}
+                        required:
+                        - found
+                        - error
+                        - count
+                        - items
+                        additionalProperties: false
+                        description: Earthquakes within radiusKm (min 50km search radius) from the past 7 days, magnitude ≥ 2.
+                      sources:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Source'
+                    required:
+                    - lat
+                    - lon
+                    - radiusKm
+                    - airports
+                    - schools
+                    - climateStations
+                    - quakes
+                    - sources
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: geo.nearby
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.009
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: legacy
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.009000'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: lat
+        in: query
+        required: true
+        description: Latitude in decimal degrees (WGS84).
+        schema:
+          type: number
+          minimum: -90
+          maximum: 90
+      - name: lon
+        in: query
+        required: true
+        description: Longitude in decimal degrees (WGS84).
+        schema:
+          type: number
+          minimum: -180
+          maximum: 180
+      - name: radiusKm
+        in: query
+        required: false
+        description: Radius km.
+        schema:
+          type: number
+          minimum: 1
+          maximum: 200
+          default: 25
+      - name: limit
+        in: query
+        required: false
+        description: Maximum number of results to return.
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 20
+          default: 5
+      - $ref: '#/components/parameters/TrialMode'
+  /api/geo/postal:
+    get:
+      tags:
+      - Geo
+      summary: Resolve a postal/ZIP code to its place name(s)
+      description: 'Resolve a postal/ZIP code to its place name(s), administrative divisions, and coordinates. Pass `postalCode` and a 2-letter `country` (default US). Returns each matching locality: place, admin1 (state/province name + code), admin2 (county/district), and lat/lon. International — covers major markets (US, GB, CA, DE, FR, AU, NL, ES, IT, CH, SE, MX). Use it to normalize and enrich addresses, derive the state/county for a ZIP, or geolocate a postal code in an ETL pipeline.'
+      operationId: geo_postal
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized envelope: items = matching localities for the postal code; total = items.length. 404-equivalent is an empty items array.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            country:
+                              type: string
+                            postalCode:
+                              type: string
+                            place:
+                              type: string
+                              nullable: true
+                            admin1:
+                              type: object
+                              properties:
+                                name:
+                                  type: string
+                                  nullable: true
+                                code:
+                                  type: string
+                                  nullable: true
+                              required:
+                              - name
+                              - code
+                              additionalProperties: false
+                              description: State/province.
+                            admin2:
+                              type: object
+                              properties:
+                                name:
+                                  type: string
+                                  nullable: true
+                                code:
+                                  type: string
+                                  nullable: true
+                              required:
+                              - name
+                              - code
+                              additionalProperties: false
+                              description: County/district.
+                            coords:
+                              type: object
+                              properties:
+                                lat:
+                                  type: number
+                                lon:
+                                  type: number
+                              required:
+                              - lat
+                              - lon
+                              additionalProperties: false
+                              nullable: true
+                          required:
+                          - country
+                          - postalCode
+                          - place
+                          - admin1
+                          - admin2
+                          - coords
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: geo.postal
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.0025
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.002500'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: postalCode
+        in: query
+        required: true
+        description: Postal code.
+        schema:
+          type: string
+          minLength: 2
+          maxLength: 16
+      - name: country
+        in: query
+        required: false
+        description: Country name or ISO country code.
+        schema:
+          type: string
+          pattern: ^[A-Za-z]{2}$
+      - $ref: '#/components/parameters/TrialMode'
+  /api/geo/zip-resolve:
+    get:
+      tags:
+      - Geo
+      summary: Resolve a US ZIP code to the census tract(s), county, CBSA
+      description: 'Resolve a US ZIP code to the census tract(s), county, CBSA (metro), and congressional district it covers — each with HUD-USPS allocation ratios (by residential, business, other, and total address counts). A ZIP is a mail-delivery route set, not a polygon, so it spans multiple geographies; the ratios tell you how much of the ZIP falls in each — the canonical join when you have a ZIP but a dataset is keyed by county/tract/district. Source: HUD-USPS ZIP Crosswalk (public domain).'
+      operationId: geo_zip-resolve
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized envelope: items = [one ZIP with its tract/county/CBSA/CD lists, each carrying allocation ratios]; total = 1.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            zip:
+                              type: string
+                            city:
+                              type: string
+                              nullable: true
+                            state:
+                              type: string
+                              nullable: true
+                            tract:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  geoid:
+                                    type: string
+                                  resRatio:
+                                    type: number
+                                    description: Share of the ZIP’s residential addresses in this geography.
+                                  busRatio:
+                                    type: number
+                                    description: Share of business addresses.
+                                  othRatio:
+                                    type: number
+                                    description: Share of other addresses.
+                                  totRatio:
+                                    type: number
+                                    description: Share of total addresses.
+                                required:
+                                - geoid
+                                - resRatio
+                                - busRatio
+                                - othRatio
+                                - totRatio
+                                additionalProperties: false
+                            county:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  geoid:
+                                    type: string
+                                  resRatio:
+                                    type: number
+                                    description: Share of the ZIP’s residential addresses in this geography.
+                                  busRatio:
+                                    type: number
+                                    description: Share of business addresses.
+                                  othRatio:
+                                    type: number
+                                    description: Share of other addresses.
+                                  totRatio:
+                                    type: number
+                                    description: Share of total addresses.
+                                required:
+                                - geoid
+                                - resRatio
+                                - busRatio
+                                - othRatio
+                                - totRatio
+                                additionalProperties: false
+                            cbsa:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  geoid:
+                                    type: string
+                                  resRatio:
+                                    type: number
+                                    description: Share of the ZIP’s residential addresses in this geography.
+                                  busRatio:
+                                    type: number
+                                    description: Share of business addresses.
+                                  othRatio:
+                                    type: number
+                                    description: Share of other addresses.
+                                  totRatio:
+                                    type: number
+                                    description: Share of total addresses.
+                                required:
+                                - geoid
+                                - resRatio
+                                - busRatio
+                                - othRatio
+                                - totRatio
+                                additionalProperties: false
+                            congressionalDistrict:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  geoid:
+                                    type: string
+                                  resRatio:
+                                    type: number
+                                    description: Share of the ZIP’s residential addresses in this geography.
+                                  busRatio:
+                                    type: number
+                                    description: Share of business addresses.
+                                  othRatio:
+                                    type: number
+                                    description: Share of other addresses.
+                                  totRatio:
+                                    type: number
+                                    description: Share of total addresses.
+                                required:
+                                - geoid
+                                - resRatio
+                                - busRatio
+                                - othRatio
+                                - totRatio
+                                additionalProperties: false
+                          required:
+                          - zip
+                          - city
+                          - state
+                          - tract
+                          - county
+                          - cbsa
+                          - congressionalDistrict
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: geo.zip-resolve
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.012
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.012000'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: zip
+        in: query
+        required: true
+        description: 5-digit US ZIP code, e.g. 90210.
+        schema:
+          type: string
+          pattern: ^\d{5}$
+      - $ref: '#/components/parameters/TrialMode'
+components:
+  responses:
+    MethodNotAllowed:
+      description: Method not allowed — see `Allow` header for the supported method.
+    UpstreamError:
+      description: Upstream provider error.
+    ServerError:
+      description: Internal server error.
+    PaymentRequired:
+      description: Payment required. Body contains the x402 PaymentRequirements envelope with a multi-network accepts array; the per-call price is in accepts[].amount (and on the operation as x-2s-price). Sign for whichever rail you hold USDC on (EIP-3009 for Base, partial SPL transfer for Solana) and retry with the PAYMENT-SIGNATURE header (X-PAYMENT also accepted for v1 clients).
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/X402PaymentRequiredV2'
+    BadRequest:
+      description: Bad request — invalid parameters.
+  parameters:
+    TrialMode:
+      name: trial
+      in: query
+      required: false
+      description: 'Try before you buy. Set to 1 for one free real call per endpoint per hour — no wallet or payment needed — to verify the endpoint before paying. Equivalent to sending the "X-2s-Trial: 1" request header. Works on every endpoint.'
+      schema:
+        type: integer
+        enum:
+        - 1
+  schemas:
+    CallMeta:
+      type: object
+      description: Per-call meta envelope — endpoint id, cost, caller kind, settlement details.
+    Source:
+      type: object
+      description: 'Provenance of the data: upstream provider, source URL, and license.'
+      properties:
+        provider:
+          type: string
+          description: Upstream data provider.
+        url:
+          type: string
+          description: Source URL or documentation link.
+        license:
+          type: string
+          description: License / usage terms for the data.
+    X402PaymentRequiredV2:
+      type: object
+      description: x402 v2 PaymentRequired envelope. Pick any entry from accepts[], sign for that rail, retry with the PAYMENT-SIGNATURE header.
+      required:
+      - x402Version
+      - accepts
+      properties:
+        x402Version:
+          type: integer
+          const: 2
+        error:
+          type: string
+          description: Human-readable reason payment is required.
+        resource:
+          type: string
+          description: The resource URL being purchased.
+        accepts:
+          type: array
+          description: Payment requirement options, one per supported network (Base USDC, Solana USDC).
+          items:
+            type: object
+            required:
+            - scheme
+            - network
+            - amount
+            - asset
+            - payTo
+            - maxTimeoutSeconds
+            properties:
+              scheme:
+                type: string
+                enum:
+                - exact
+              network:
+                type: string
+                description: CAIP-2 network id, e.g. "eip155:8453" (Base) or "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp".
+              amount:
+                type: string
+                description: Price in atomic asset units (USDC has 6 decimals).
+              asset:
+                type: string
+                description: Asset contract address / mint.
+              payTo:
+                type: string
+                description: Treasury address to pay.
+              maxTimeoutSeconds:
+                type: integer
+              extra:
+                type: object
+                description: 'Rail-specific extras (EVM: EIP-712 domain name/version; Solana: feePayer).'
+                additionalProperties: true
+        extensions:
+          type: object
+          description: Optional discovery metadata (e.g. bazaar input/output schemas).
+          additionalProperties: true
+  securitySchemes:
+    x402Payment:
+      type: apiKey
+      in: header
+      name: PAYMENT-SIGNATURE
+      description: 'x402 protocol v2: base64-encoded PaymentPayload. Call any paid endpoint without auth to receive a 402 with a multi-network PaymentRequirements envelope. Sign for either rail: EIP-3009 transferWithAuthorization (Base USDC) OR a partial SPL token transfer (Solana USDC). Retry with PAYMENT-SIGNATURE header. X-PAYMENT is also accepted for v1 buyer clients. See https://x402.org.'

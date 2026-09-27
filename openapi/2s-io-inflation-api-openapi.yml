@@ -1,0 +1,571 @@
+openapi: 3.2.0
+info:
+  title: 2s — the (most) everything Inflation API
+  version: '1'
+  summary: The (most) everything API.
+  description: 'The (most) everything API for AI agents: 575+ pay-per-call endpoints on one origin.'
+  contact:
+    name: 2s
+    url: https://2s.io
+    email: alley@2s.io
+  x-logo:
+    url: https://2s.io/icon-512.png
+    altText: 2s
+  x-guidance: 'Pay-per-call REST API for AI agents — hundreds of endpoints returning ground-truth data (US public records, company & legal identifiers, finance/SEC, crypto/web3, security & CVEs, medical codes, weather & geocoding, agriculture, energy, maritime, music, and more). Every endpoint is paid per call in USDC via x402 (Base or Solana) — no API key, no signup. Call any endpoint with no auth to get a 402 PaymentRequirements envelope, sign it (EIP-3009 on Base, partial SPL transfer on Solana), and retry with the PAYMENT-SIGNATURE header. Add ?trial=1 for one free real call per endpoint per hour to test before paying. To discover the right endpoint: GET https://2s.io/api/directory for the full catalog, or GET https://2s.io/api/search/endpoints?q=<natural-language task> for a ranked match. Per-call price is on each operation as x-payment-info (from $0.001). Batch up to 50 calls behind one payment via POST https://2s.io/api/batch/run.'
+servers:
+- url: https://2s.io
+tags:
+- name: inflation
+paths:
+  /api/inflation/calculator:
+    get:
+      tags:
+      - inflation
+      summary: Adjust a US dollar amount for inflation between two dates
+      description: 'Adjust a US dollar amount for inflation between two dates (''what is $100 in 1990 worth today?''). Pass amount, from (YYYY-MM-DD or YYYY), and optional to (defaults to the latest CPI month). Uses CPI-U (CPIAUCNS — the same not-seasonally-adjusted all-items index as the official BLS inflation calculator), data back to 1913. Returns the inflation-adjusted amount, cumulative inflation %, annualized rate, and the CPI index values used on each date. Source: BLS CPI via FRED (St. Louis Fed).'
+      operationId: inflation_calculator
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized envelope: items = [the inflation-adjusted result]; total = 1.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            amount:
+                              type: number
+                            from:
+                              type: string
+                            to:
+                              type: string
+                            adjustedAmount:
+                              type: number
+                            cumulativeInflationPct:
+                              type: number
+                            annualizedPct:
+                              type: number
+                              nullable: true
+                            cpiFrom:
+                              type: number
+                            cpiFromDate:
+                              type: string
+                            cpiTo:
+                              type: number
+                            cpiToDate:
+                              type: string
+                            seriesId:
+                              type: string
+                          required:
+                          - amount
+                          - from
+                          - to
+                          - adjustedAmount
+                          - cumulativeInflationPct
+                          - annualizedPct
+                          - cpiFrom
+                          - cpiFromDate
+                          - cpiTo
+                          - cpiToDate
+                          - seriesId
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: inflation.calculator
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.003
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.003000'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: amount
+        in: query
+        required: true
+        description: Amount.
+        schema:
+          type: number
+      - name: from
+        in: query
+        required: true
+        description: Start of the range.
+        schema:
+          type: string
+          pattern: ^\d{4}(-\d{2}(-\d{2})?)?$
+      - name: to
+        in: query
+        required: false
+        description: End of the range.
+        schema:
+          type: string
+          pattern: ^\d{4}(-\d{2}(-\d{2})?)?$
+      - $ref: '#/components/parameters/TrialMode'
+  /api/inflation/expectations:
+    get:
+      tags:
+      - inflation
+      summary: Current US inflation expectations - what markets and
+      description: 'Current US inflation expectations — what markets and consumers expect future inflation to be. Returns the 5-year and 10-year TIPS breakeven rates, the 5-Year/5-Year forward inflation expectation (the Fed-watched long-run gauge), and the University of Michigan 1-year consumer inflation expectation. Each value is a percent as of its latest date. Market-based breakevens update daily. Source: Federal Reserve / Treasury via FRED (St. Louis Fed).'
+      operationId: inflation_expectations
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized envelope: items = expectation gauges (each a percent); total = gauges returned.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            measure:
+                              type: string
+                            seriesId:
+                              type: string
+                            label:
+                              type: string
+                            rate:
+                              type: number
+                              nullable: true
+                              description: Expected inflation, percent.
+                            asOf:
+                              type: string
+                              nullable: true
+                          required:
+                          - measure
+                          - seriesId
+                          - label
+                          - rate
+                          - asOf
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: inflation.expectations
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.003
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.003000'
+        protocols:
+        - x402: {}
+      parameters:
+      - $ref: '#/components/parameters/TrialMode'
+  /api/inflation/hicp:
+    get:
+      tags:
+      - inflation
+      summary: EU harmonized inflation - the latest HICP annual rate of
+      description: 'EU harmonized inflation — the latest HICP annual rate of change (the official, cross-country-comparable inflation rate) for the EU, euro area, and each member state. Pass country as a Eurostat geo code (DE, FR, EL for Greece, EA20 = euro area, EU27_2020 = EU) for one, or omit for all (sorted highest inflation first). All-items index (COICOP CP00). Source: Eurostat (free, no key). For US inflation use inflation.rates.'
+      operationId: inflation_hicp
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized envelope: items = HICP annual rates by geo (all-items); total = rows returned.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            geo:
+                              type: string
+                              description: Eurostat geo code.
+                            area:
+                              type: string
+                              description: Country / aggregate name.
+                            annualRatePct:
+                              type: number
+                              nullable: true
+                              description: HICP annual rate of change (inflation rate), percent.
+                            period:
+                              type: string
+                              nullable: true
+                              description: Reference month (YYYY-MM).
+                          required:
+                          - geo
+                          - area
+                          - annualRatePct
+                          - period
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: inflation.hicp
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.003
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.003000'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: country
+        in: query
+        required: false
+        description: Country name or ISO country code.
+        schema:
+          type: string
+          minLength: 2
+          maxLength: 10
+          pattern: ^[A-Za-z0-9_]+$
+      - $ref: '#/components/parameters/TrialMode'
+  /api/inflation/rates:
+    get:
+      tags:
+      - inflation
+      summary: Current US inflation rates by measure, with the index level
+      description: 'Current US inflation rates by measure, with the index level plus computed year-over-year and month-over-month % change. Pass measure for one, or omit for all. Measures: cpi, cpi-nsa, core-cpi, cpi-w, pce, core-pce, ppi, cpi-food, cpi-energy, cpi-shelter, cpi-medical, import-prices, export-prices — i.e. headline CPI (SA + NSA), core CPI, CPI-W, PCE, core PCE (the Fed''s 2% target gauge), PPI final demand, and CPI by category (food, energy, shelter, medical) + import/export prices. The YoY change is the headline "inflation rate". Each result names the FRED series ID used. Source: BLS/BEA via FRED (St. Louis Fed). For raw access to any other series use bls.series; this is the curated, rate-computed layer.'
+      operationId: inflation_rates
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized envelope: items = inflation measures (index + YoY/MoM); total = measures returned.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            measure:
+                              type: string
+                            seriesId:
+                              type: string
+                            label:
+                              type: string
+                            index:
+                              type: number
+                              nullable: true
+                              description: The price-index level.
+                            asOf:
+                              type: string
+                              nullable: true
+                              description: Date of the latest observation.
+                            changeMoM:
+                              type: number
+                              nullable: true
+                              description: '% change vs the prior period.'
+                            changeYoY:
+                              type: number
+                              nullable: true
+                              description: '% change vs ~1 year earlier — the inflation rate.'
+                          required:
+                          - measure
+                          - seriesId
+                          - label
+                          - index
+                          - asOf
+                          - changeMoM
+                          - changeYoY
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: inflation.rates
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.0036
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.003600'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: measure
+        in: query
+        required: false
+        description: Measure.
+        schema:
+          type: string
+          enum:
+          - cpi
+          - cpi-nsa
+          - core-cpi
+          - cpi-w
+          - pce
+          - core-pce
+          - ppi
+          - cpi-food
+          - cpi-energy
+          - cpi-shelter
+          - cpi-medical
+          - import-prices
+          - export-prices
+      - $ref: '#/components/parameters/TrialMode'
+components:
+  responses:
+    MethodNotAllowed:
+      description: Method not allowed — see `Allow` header for the supported method.
+    UpstreamError:
+      description: Upstream provider error.
+    ServerError:
+      description: Internal server error.
+    PaymentRequired:
+      description: Payment required. Body contains the x402 PaymentRequirements envelope with a multi-network accepts array; the per-call price is in accepts[].amount (and on the operation as x-2s-price). Sign for whichever rail you hold USDC on (EIP-3009 for Base, partial SPL transfer for Solana) and retry with the PAYMENT-SIGNATURE header (X-PAYMENT also accepted for v1 clients).
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/X402PaymentRequiredV2'
+    BadRequest:
+      description: Bad request — invalid parameters.
+  parameters:
+    TrialMode:
+      name: trial
+      in: query
+      required: false
+      description: 'Try before you buy. Set to 1 for one free real call per endpoint per hour — no wallet or payment needed — to verify the endpoint before paying. Equivalent to sending the "X-2s-Trial: 1" request header. Works on every endpoint.'
+      schema:
+        type: integer
+        enum:
+        - 1
+  schemas:
+    CallMeta:
+      type: object
+      description: Per-call meta envelope — endpoint id, cost, caller kind, settlement details.
+    Source:
+      type: object
+      description: 'Provenance of the data: upstream provider, source URL, and license.'
+      properties:
+        provider:
+          type: string
+          description: Upstream data provider.
+        url:
+          type: string
+          description: Source URL or documentation link.
+        license:
+          type: string
+          description: License / usage terms for the data.
+    X402PaymentRequiredV2:
+      type: object
+      description: x402 v2 PaymentRequired envelope. Pick any entry from accepts[], sign for that rail, retry with the PAYMENT-SIGNATURE header.
+      required:
+      - x402Version
+      - accepts
+      properties:
+        x402Version:
+          type: integer
+          const: 2
+        error:
+          type: string
+          description: Human-readable reason payment is required.
+        resource:
+          type: string
+          description: The resource URL being purchased.
+        accepts:
+          type: array
+          description: Payment requirement options, one per supported network (Base USDC, Solana USDC).
+          items:
+            type: object
+            required:
+            - scheme
+            - network
+            - amount
+            - asset
+            - payTo
+            - maxTimeoutSeconds
+            properties:
+              scheme:
+                type: string
+                enum:
+                - exact
+              network:
+                type: string
+                description: CAIP-2 network id, e.g. "eip155:8453" (Base) or "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp".
+              amount:
+                type: string
+                description: Price in atomic asset units (USDC has 6 decimals).
+              asset:
+                type: string
+                description: Asset contract address / mint.
+              payTo:
+                type: string
+                description: Treasury address to pay.
+              maxTimeoutSeconds:
+                type: integer
+              extra:
+                type: object
+                description: 'Rail-specific extras (EVM: EIP-712 domain name/version; Solana: feePayer).'
+                additionalProperties: true
+        extensions:
+          type: object
+          description: Optional discovery metadata (e.g. bazaar input/output schemas).
+          additionalProperties: true
+  securitySchemes:
+    x402Payment:
+      type: apiKey
+      in: header
+      name: PAYMENT-SIGNATURE
+      description: 'x402 protocol v2: base64-encoded PaymentPayload. Call any paid endpoint without auth to receive a 402 with a multi-network PaymentRequirements envelope. Sign for either rail: EIP-3009 transferWithAuthorization (Base USDC) OR a partial SPL token transfer (Solana USDC). Retry with PAYMENT-SIGNATURE header. X-PAYMENT is also accepted for v1 buyer clients. See https://x402.org.'

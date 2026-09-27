@@ -1,0 +1,2853 @@
+openapi: 3.2.0
+info:
+  title: 2s — the (most) everything Finance API
+  version: '1'
+  summary: The (most) everything API.
+  description: 'The (most) everything API for AI agents: 575+ pay-per-call endpoints on one origin.'
+  contact:
+    name: 2s
+    url: https://2s.io
+    email: alley@2s.io
+  x-logo:
+    url: https://2s.io/icon-512.png
+    altText: 2s
+  x-guidance: 'Pay-per-call REST API for AI agents — hundreds of endpoints returning ground-truth data (US public records, company & legal identifiers, finance/SEC, crypto/web3, security & CVEs, medical codes, weather & geocoding, agriculture, energy, maritime, music, and more). Every endpoint is paid per call in USDC via x402 (Base or Solana) — no API key, no signup. Call any endpoint with no auth to get a 402 PaymentRequirements envelope, sign it (EIP-3009 on Base, partial SPL transfer on Solana), and retry with the PAYMENT-SIGNATURE header. Add ?trial=1 for one free real call per endpoint per hour to test before paying. To discover the right endpoint: GET https://2s.io/api/directory for the full catalog, or GET https://2s.io/api/search/endpoints?q=<natural-language task> for a ranked match. Per-call price is on each operation as x-payment-info (from $0.001). Batch up to 50 calls behind one payment via POST https://2s.io/api/batch/run.'
+servers:
+- url: https://2s.io
+tags:
+- name: finance
+paths:
+  /api/finance/amortize:
+    get:
+      tags:
+      - finance
+      summary: Compute a loan or mortgage amortization schedule
+      description: 'Compute a loan or mortgage amortization schedule. Pass principal, annualRatePct (e.g. 6.5), and the term as termMonths or termYears; optional extraMonthly adds extra principal each month (shortening the term). Returns the fixed monthly payment, total interest, total paid, the actual payoff month count, and the full month-by-month schedule (each row: payment, principal, interest, remaining balance). Handles the 0% case and trims the final payment exactly. Deterministic — the ground-truth answer for a loan/mortgage/auto-finance question instead of an LLM approximating compound interest. No external calls.'
+      operationId: finance_amortize
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized envelope: items = [amortization result with full schedule]; total = 1.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            principal:
+                              type: number
+                            annualRatePct:
+                              type: number
+                            termMonths:
+                              type: integer
+                            monthlyRate:
+                              type: number
+                            monthlyPayment:
+                              type: number
+                            extraMonthly:
+                              type: number
+                            payoffMonths:
+                              type: integer
+                            totalInterest:
+                              type: number
+                            totalPaid:
+                              type: number
+                            schedule:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  month:
+                                    type: integer
+                                  payment:
+                                    type: number
+                                  principal:
+                                    type: number
+                                  interest:
+                                    type: number
+                                  balance:
+                                    type: number
+                                required:
+                                - month
+                                - payment
+                                - principal
+                                - interest
+                                - balance
+                                additionalProperties: false
+                          required:
+                          - principal
+                          - annualRatePct
+                          - termMonths
+                          - monthlyRate
+                          - monthlyPayment
+                          - extraMonthly
+                          - payoffMonths
+                          - totalInterest
+                          - totalPaid
+                          - schedule
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: finance.amortize
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.0025
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.002500'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: principal
+        in: query
+        required: true
+        description: Principal.
+        schema:
+          type: number
+      - name: annualRatePct
+        in: query
+        required: true
+        description: Annual rate pct.
+        schema:
+          type: number
+      - name: termMonths
+        in: query
+        required: false
+        description: Term months.
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 1200
+      - name: termYears
+        in: query
+        required: false
+        description: Term years.
+        schema:
+          type: number
+          exclusiveMinimum: true
+          minimum: 0
+          maximum: 100
+      - name: extraMonthly
+        in: query
+        required: false
+        description: Extra monthly.
+        schema:
+          type: number
+          minimum: 0
+      - $ref: '#/components/parameters/TrialMode'
+  /api/finance/bank-id-resolve:
+    get:
+      tags:
+      - finance
+      summary: Resolve a bank / financial institution across identifier
+      description: 'Resolve a bank / financial institution across identifier systems. Give exactly one of bic (SWIFT/BIC), lei, or fdic_cert and get the others back: LEI, every ISO 9362 BIC the institution registers, the FDIC institution record (when matched), jurisdiction, and a canonical name. The BICLEI bridge is authoritative and live from GLEIF (the LEI record carries the institution BIC list, CC0); anchoring on an FDIC certificate returns the FDIC BankFind record and best-effort name-matches it to a GLEIF LEI (flagged via bridge). There is no free FDIC-certBIC table, so the FDICGLEIF link is name-match only -- per-source status + bridge make any partial resolve explicit. Sources: GLEIF (CC0) + FDIC BankFind (US public domain).'
+      operationId: finance_bank-id-resolve
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized envelope: items = [one resolved institution with LEI, BICs, FDIC record + per-source status]; total = 1.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            resolvedFrom:
+                              type: string
+                              enum:
+                              - bic
+                              - lei
+                              - fdic_cert
+                            name:
+                              type: string
+                              nullable: true
+                            lei:
+                              type: string
+                              nullable: true
+                            leiName:
+                              type: string
+                              nullable: true
+                            jurisdiction:
+                              type: string
+                              nullable: true
+                            bics:
+                              type: array
+                              items:
+                                type: string
+                              description: All ISO 9362 BICs GLEIF associates with the LEI.
+                            fdic:
+                              type: object
+                              properties:
+                                cert:
+                                  type: string
+                                name:
+                                  type: string
+                                city:
+                                  type: string
+                                  nullable: true
+                                state:
+                                  type: string
+                                  nullable: true
+                                active:
+                                  type: boolean
+                              required:
+                              - cert
+                              - name
+                              - city
+                              - state
+                              - active
+                              additionalProperties: false
+                              nullable: true
+                            bridge:
+                              type: string
+                              enum:
+                              - bic-to-lei
+                              - direct-lei
+                              - fdic-name-match
+                              - partial
+                              - none
+                            sources:
+                              type: object
+                              properties:
+                                gleif:
+                                  type: string
+                                fdic:
+                                  type: string
+                              required:
+                              - gleif
+                              - fdic
+                              additionalProperties: false
+                          required:
+                          - resolvedFrom
+                          - name
+                          - lei
+                          - leiName
+                          - jurisdiction
+                          - bics
+                          - fdic
+                          - bridge
+                          - sources
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: finance.bank-id-resolve
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.012
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.012000'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: bic
+        in: query
+        required: false
+        description: ISO 9362 SWIFT/BIC, 8 or 11 chars, e.g. BOFAUS3N.
+        schema:
+          type: string
+          pattern: ^[A-Za-z0-9]{8}([A-Za-z0-9]{3})?$
+      - name: lei
+        in: query
+        required: false
+        description: 20-char LEI.
+        schema:
+          type: string
+          pattern: ^[A-Za-z0-9]{20}$
+      - name: fdic_cert
+        in: query
+        required: false
+        description: FDIC certificate number, e.g. 3511.
+        schema:
+          type: string
+          pattern: ^\d{1,7}$
+      - $ref: '#/components/parameters/TrialMode'
+  /api/finance/bin:
+    get:
+      tags:
+      - finance
+      summary: Identify a payment card from its BIN/IIN (Bank
+      description: Identify a payment card from its BIN/IIN (Bank Identification Number — the leading 6-8 digits). Pass the BIN or the first digits of a card number and get the card brand (Visa, Mastercard, …), card type (debit/credit), category, issuing bank, and country (ISO alpha-2 + name). Longest-prefix match against an open community dataset (CC-BY). The BIN identifies the issuer/brand/country only — never the cardholder or account number. For payment routing, fraud checks, and checkout UX.
+      operationId: finance_bin
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized envelope: items = [one BIN result]; total = 1.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            query:
+                              type: object
+                              properties:
+                                input:
+                                  type: string
+                                matchedBin:
+                                  type: string
+                                  nullable: true
+                              required:
+                              - input
+                              - matchedBin
+                              additionalProperties: false
+                            found:
+                              type: boolean
+                            bin:
+                              type: string
+                              nullable: true
+                            brand:
+                              type: string
+                              nullable: true
+                            cardType:
+                              type: string
+                              nullable: true
+                            category:
+                              type: string
+                              nullable: true
+                            issuer:
+                              type: string
+                              nullable: true
+                            countryAlpha2:
+                              type: string
+                              nullable: true
+                            countryName:
+                              type: string
+                              nullable: true
+                            bankUrl:
+                              type: string
+                              nullable: true
+                            source:
+                              $ref: '#/components/schemas/Source'
+                            note:
+                              type: string
+                          required:
+                          - query
+                          - found
+                          - bin
+                          - brand
+                          - cardType
+                          - category
+                          - issuer
+                          - countryAlpha2
+                          - countryName
+                          - bankUrl
+                          - source
+                          - note
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: finance.bin
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.0025
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.002500'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: bin
+        in: query
+        required: true
+        description: BIN/IIN or leading card digits.
+        schema:
+          type: string
+          minLength: 6
+          maxLength: 19
+      - $ref: '#/components/parameters/TrialMode'
+  /api/finance/central-bank-rates:
+    get:
+      tags:
+      - finance
+      summary: Headline central-bank policy/benchmark rates side-by-side
+      description: 'Headline central-bank policy/benchmark rates side-by-side in one call, normalized: US (Fed effective funds rate), Euro area (ECB deposit facility rate), Japan (BoJ call-money benchmark), United Kingdom (SONIA, which tracks the BoE Bank Rate). Each result names the bank, country, the rate, the as-of date, the FRED series id, and a label stating exactly which instrument it is (banks don''t all publish the same policy instrument). Pass bank to filter (one of: fed, ecb, boj, boe), or omit for all. Source: FRED (St. Louis Fed).'
+      operationId: finance_central-bank-rates
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized envelope: items = central-bank rates (bank, country, code, rate, date, seriesId, label); total = banks returned.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            bank:
+                              type: string
+                            country:
+                              type: string
+                            code:
+                              type: string
+                            rate:
+                              type: number
+                              nullable: true
+                            date:
+                              type: string
+                              nullable: true
+                            seriesId:
+                              type: string
+                            label:
+                              type: string
+                          required:
+                          - bank
+                          - country
+                          - code
+                          - rate
+                          - date
+                          - seriesId
+                          - label
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: finance.central-bank-rates
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.012
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.012000'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: bank
+        in: query
+        required: false
+        description: 'Bank code to filter. One of: fed, ecb, boj, boe. Omit for all.'
+        schema:
+          type: string
+          enum:
+          - fed
+          - ecb
+          - boj
+          - boe
+      - $ref: '#/components/parameters/TrialMode'
+  /api/finance/cik-ticker:
+    get:
+      tags:
+      - finance
+      summary: Resolve SEC CIK ticker in both directions
+      description: 'Resolve SEC CIK ticker in both directions. Pass a ticker to get its CIK; pass a CIK to get every ticker the issuer has (each share class, e.g. GOOG + GOOGL), each with its listing exchange (Nasdaq, NYSE, etc.) and the canonical company name. The CIK is the key to everything in EDGAR -- filings, XBRL facts, Form 4 insider trades, 13F holdings -- so this is the join that turns a ticker an agent has into the identifier EDGAR actually indexes by (and back). Data: SEC company_tickers_exchange.json (US public domain), cached and refreshed daily. Distinct from finance.security-resolve, which also crosses into FIGI/LEI/ISIN; this one is the focused, exchange-aware CIKticker map.'
+      operationId: finance_cik-ticker
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized envelope: items = [one issuer with cik, name, and all tickers+exchanges]; total = 1.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            resolvedFrom:
+                              type: string
+                              enum:
+                              - cik
+                              - ticker
+                            cik:
+                              type: string
+                              description: 10-digit zero-padded SEC CIK.
+                            name:
+                              type: string
+                              description: Canonical issuer name (SEC).
+                            tickers:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  ticker:
+                                    type: string
+                                  exchange:
+                                    type: string
+                                    nullable: true
+                                required:
+                                - ticker
+                                - exchange
+                                additionalProperties: false
+                          required:
+                          - resolvedFrom
+                          - cik
+                          - name
+                          - tickers
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: finance.cik-ticker
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.009
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.009000'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: cik
+        in: query
+        required: false
+        description: SEC CIK, leading zeros optional, e.g. 320193 or 0000320193.
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 13
+      - name: ticker
+        in: query
+        required: false
+        description: US stock ticker, e.g. AAPL or GOOGL.
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 12
+      - $ref: '#/components/parameters/TrialMode'
+  /api/finance/company-facts:
+    get:
+      tags:
+      - finance
+      summary: Curated XBRL financial metrics for a US public company by
+      description: 'Curated XBRL financial metrics for a US public company by stock ticker. Pulls SEC EDGAR''s companyfacts JSON (per-CIK XBRL filings) and extracts a top-line set of ~15 financial metrics with their most recent annual + quarterly values. Each metric returns: end date, start date (or null for balance-sheet snapshots), value, fiscal year/period, originating form (10-K/10-Q), and filed date. Available metric keys (pass any comma-separated subset via the metrics param, or omit to get all): revenue, grossProfit, operatingIncome, netIncome, eps, epsDiluted, rdExpense, totalAssets, totalLiabilities, stockholdersEquity, cash, longTermDebt, operatingCashFlow, capex, sharesOutstanding. Backed by SEC.gov; underlying data is public-domain US government records.'
+      operationId: finance_company-facts
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized envelope: items = curated XBRL metric series (~15 top-line financial facts, each with recent annual + quarterly history); meta = company identity + query echo. For fundamentals + filings + insider trades merged by ticker in one call, see /api/finance/company-profile.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            key:
+                              type: string
+                            concept:
+                              type: string
+                            label:
+                              type: string
+                            namespace:
+                              type: string
+                            unit:
+                              type: string
+                            annual:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  end:
+                                    type: string
+                                  start:
+                                    type: string
+                                    nullable: true
+                                  val:
+                                    type: number
+                                  fiscalYear:
+                                    type: integer
+                                  fiscalPeriod:
+                                    type: string
+                                  form:
+                                    type: string
+                                  filed:
+                                    type: string
+                                required:
+                                - end
+                                - start
+                                - val
+                                - fiscalYear
+                                - fiscalPeriod
+                                - form
+                                - filed
+                                additionalProperties: false
+                            quarterly:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  end:
+                                    type: string
+                                  start:
+                                    type: string
+                                    nullable: true
+                                  val:
+                                    type: number
+                                  fiscalYear:
+                                    type: integer
+                                  fiscalPeriod:
+                                    type: string
+                                  form:
+                                    type: string
+                                  filed:
+                                    type: string
+                                required:
+                                - end
+                                - start
+                                - val
+                                - fiscalYear
+                                - fiscalPeriod
+                                - form
+                                - filed
+                                additionalProperties: false
+                          required:
+                          - key
+                          - concept
+                          - label
+                          - namespace
+                          - unit
+                          - annual
+                          - quarterly
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                      meta:
+                        type: object
+                        properties:
+                          query:
+                            type: object
+                            properties:
+                              ticker:
+                                type: string
+                              metrics:
+                                type: string
+                                nullable: true
+                              annualLimit:
+                                type: number
+                              quarterlyLimit:
+                                type: number
+                            required:
+                            - ticker
+                            - metrics
+                            - annualLimit
+                            - quarterlyLimit
+                            additionalProperties: false
+                          cik:
+                            type: string
+                          ticker:
+                            type: string
+                          entityName:
+                            type: string
+                        required:
+                        - query
+                        - cik
+                        - ticker
+                        - entityName
+                        additionalProperties: false
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: finance.company-facts
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.012
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.012000'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: ticker
+        in: query
+        required: true
+        description: 'US stock ticker (case-insensitive). Examples: AAPL, GOOGL, BRK.B.'
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 10
+          pattern: ^[A-Za-z][A-Za-z0-9.-]{0,9}$
+      - name: metrics
+        in: query
+        required: false
+        description: 'Comma-separated subset of metric keys to return. Available: revenue, grossProfit, operatingIncome, netIncome, eps, epsDiluted, rdExpense, totalAssets, totalLiabilities, stockholdersEquity, cash, longTermDebt, operatingCashFlow, capex, sharesOutstanding. Omit to get all ~15.'
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 500
+          pattern: ^[a-zA-Z]+(,[a-zA-Z]+)*$
+      - name: annualLimit
+        in: query
+        required: false
+        description: Max annual (FY) values per metric, most recent first. Default 4, max 20.
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 20
+          default: 4
+      - name: quarterlyLimit
+        in: query
+        required: false
+        description: Max quarterly (Q1-Q4) values per metric, most recent first. Default 4, max 20. Pass 0 to skip quarterly entirely.
+        schema:
+          type: integer
+          minimum: 0
+          maximum: 20
+          default: 4
+      - $ref: '#/components/parameters/TrialMode'
+  /api/finance/company-profile:
+    get:
+      tags:
+      - finance
+      summary: Company 360 - a US public company's SEC picture in one call
+      description: 'Company 360 — a US public company''s SEC picture in one call by ticker. Merges three SEC sources: recent filings (10-K/10-Q/8-K and all form types, with links), curated XBRL fundamentals (revenue, net income, EPS, assets, etc. — annual + quarterly series), and recent insider transactions (Form 4 buys/sells by officers & directors). Each section reports found/error independently. Equity research, due diligence, monitoring. Pass ticker (required); optional formType filters the filings section, limit caps each list. Individual sources: /api/finance/sec-filings, /api/finance/company-facts, /api/finance/insider-trades.'
+      operationId: finance_company-profile
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ticker:
+                        type: string
+                      filings:
+                        type: object
+                        properties:
+                          found:
+                            type: boolean
+                          error:
+                            type: string
+                            nullable: true
+                          count:
+                            type: number
+                            nullable: true
+                          filings:
+                            type: array
+                            items:
+                              type: object
+                              additionalProperties: {}
+                        required:
+                        - found
+                        - error
+                        - count
+                        - filings
+                        additionalProperties: false
+                      fundamentals:
+                        type: object
+                        properties:
+                          found:
+                            type: boolean
+                          error:
+                            type: string
+                            nullable: true
+                          entityName:
+                            type: string
+                            nullable: true
+                          metrics:
+                            type: array
+                            items:
+                              type: object
+                              additionalProperties: {}
+                        required:
+                        - found
+                        - error
+                        - entityName
+                        - metrics
+                        additionalProperties: false
+                      insiderTrades:
+                        type: object
+                        properties:
+                          found:
+                            type: boolean
+                          error:
+                            type: string
+                            nullable: true
+                          cik:
+                            type: string
+                            nullable: true
+                          count:
+                            type: number
+                            nullable: true
+                          filings:
+                            type: array
+                            items:
+                              type: object
+                              additionalProperties: {}
+                        required:
+                        - found
+                        - error
+                        - cik
+                        - count
+                        - filings
+                        additionalProperties: false
+                      sources:
+                        type: array
+                        items:
+                          type: object
+                          additionalProperties: {}
+                    required:
+                    - ticker
+                    - filings
+                    - fundamentals
+                    - insiderTrades
+                    - sources
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: finance.company-profile
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.0144
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: legacy
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.014400'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: ticker
+        in: query
+        required: true
+        description: Ticker.
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 8
+      - name: formType
+        in: query
+        required: false
+        description: Form type.
+        schema:
+          type: string
+          maxLength: 20
+      - name: limit
+        in: query
+        required: false
+        description: Maximum number of results to return.
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 50
+          default: 10
+      - $ref: '#/components/parameters/TrialMode'
+  /api/finance/figi:
+    get:
+      tags:
+      - finance
+      summary: Map a security identifier to its FIGI (Financial Instrument
+      description: Map a security identifier to its FIGI (Financial Instrument Global Identifier) and metadata via OpenFIGI. Give an idType (ISIN, CUSIP, SEDOL, TICKER, FIGI, COMMON, WKN, CINS — or a raw OpenFIGI ID_* type) and idValue, optionally narrowed by exchCode (e.g. US, LN) or currency. Returns each matching listing with its FIGI, composite FIGI (per-country grouping), share-class FIGI (cross-country grouping), name, ticker, exchange code, security type, market sector, and description. Free, open symbology (Bloomberg OpenFIGI; FIGI is an open OMG/ANNA standard). The canonical "what is this security and what are its identifiers across exchanges" lookup — for trading, reference-data, and portfolio agents.
+      operationId: finance_figi
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized envelope: items = matching listings (sliced to limit); total = full match count.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            figi:
+                              type: string
+                              nullable: true
+                            name:
+                              type: string
+                              nullable: true
+                            ticker:
+                              type: string
+                              nullable: true
+                            exchCode:
+                              type: string
+                              nullable: true
+                            compositeFIGI:
+                              type: string
+                              nullable: true
+                            shareClassFIGI:
+                              type: string
+                              nullable: true
+                            securityType:
+                              type: string
+                              nullable: true
+                            securityType2:
+                              type: string
+                              nullable: true
+                            marketSector:
+                              type: string
+                              nullable: true
+                            securityDescription:
+                              type: string
+                              nullable: true
+                          required:
+                          - figi
+                          - name
+                          - ticker
+                          - exchCode
+                          - compositeFIGI
+                          - shareClassFIGI
+                          - securityType
+                          - securityType2
+                          - marketSector
+                          - securityDescription
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: finance.figi
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.0036
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.003600'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: idType
+        in: query
+        required: true
+        description: ID type.
+        schema:
+          type: string
+          minLength: 2
+          maxLength: 40
+      - name: idValue
+        in: query
+        required: true
+        description: ID value.
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 64
+      - name: exchCode
+        in: query
+        required: false
+        description: Exch code.
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 10
+      - name: currency
+        in: query
+        required: false
+        description: Currency.
+        schema:
+          type: string
+          minLength: 3
+          maxLength: 3
+      - name: limit
+        in: query
+        required: false
+        description: Maximum number of results to return.
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+      - $ref: '#/components/parameters/TrialMode'
+  /api/finance/figi-search:
+    get:
+      tags:
+      - finance
+      summary: Free-text search for securities across global exchanges via
+      description: 'Free-text search for securities across global exchanges via OpenFIGI. Give a query (company name, ticker, description) and optionally narrow by exchCode (e.g. US), securityType, or marketSector (Equity, Corp, Govt, Mtge, Muni, Pfd, Comdty, Index, Curncy). Returns relevance-ranked matches with FIGI, composite/share-class FIGI, name, ticker, exchange, security type, market sector, and description, plus a `next` cursor for paging (pass it back as start). Free, open symbology (Bloomberg OpenFIGI). Distinct from finance.figi (exact identifier → FIGI): this is discovery by name/keyword.'
+      operationId: finance_figi-search
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized envelope: items = matching securities; total = returned count; meta.next = pagination cursor.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            figi:
+                              type: string
+                              nullable: true
+                            name:
+                              type: string
+                              nullable: true
+                            ticker:
+                              type: string
+                              nullable: true
+                            exchCode:
+                              type: string
+                              nullable: true
+                            compositeFIGI:
+                              type: string
+                              nullable: true
+                            shareClassFIGI:
+                              type: string
+                              nullable: true
+                            securityType:
+                              type: string
+                              nullable: true
+                            securityType2:
+                              type: string
+                              nullable: true
+                            marketSector:
+                              type: string
+                              nullable: true
+                            securityDescription:
+                              type: string
+                              nullable: true
+                          required:
+                          - figi
+                          - name
+                          - ticker
+                          - exchCode
+                          - compositeFIGI
+                          - shareClassFIGI
+                          - securityType
+                          - securityType2
+                          - marketSector
+                          - securityDescription
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: finance.figi-search
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.0036
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.003600'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: query
+        in: query
+        required: true
+        description: Free-text search query.
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 120
+      - name: exchCode
+        in: query
+        required: false
+        description: Exch code.
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 10
+      - name: securityType
+        in: query
+        required: false
+        description: Security type.
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 60
+      - name: marketSector
+        in: query
+        required: false
+        description: Market sector.
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 20
+      - name: start
+        in: query
+        required: false
+        description: Start.
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 200
+      - name: limit
+        in: query
+        required: false
+        description: Maximum number of results to return.
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+      - $ref: '#/components/parameters/TrialMode'
+  /api/finance/form-144:
+    get:
+      tags:
+      - finance
+      summary: SEC Form 144 filings - notices of PROPOSED insider stock
+      description: 'SEC Form 144 filings — notices of PROPOSED insider stock sales (intent to sell restricted/control shares), newest first, via EDGAR full-text search. Market-wide by default, or filter by ticker/company/keyword (q). Each: filer + issuer names, filing date, accession, CIKs, and a filing URL. The heads-up before a Form 4 confirms the sale. Complements finance.insider-trades.'
+      operationId: finance_form-144
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized: items = Form 144 filings; meta.total = upstream match count.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            names:
+                              type: array
+                              items: {}
+                            fileDate:
+                              nullable: true
+                            form: {}
+                            accession:
+                              type: string
+                              nullable: true
+                            ciks:
+                              type: array
+                              items:
+                                type: string
+                            url:
+                              type: string
+                              nullable: true
+                          required:
+                          - names
+                          - accession
+                          - ciks
+                          - url
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                      meta:
+                        type: object
+                        properties:
+                          total:
+                            type: number
+                        required:
+                        - total
+                        additionalProperties: false
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: finance.form-144
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.0045
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.004500'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: q
+        in: query
+        required: false
+        description: Optional ticker/company/keyword filter, e.g. NVDA or "Shopify".
+        schema:
+          type: string
+          maxLength: 120
+      - name: startDate
+        in: query
+        required: false
+        description: Start of the date range (YYYY-MM-DD).
+        schema:
+          type: string
+          pattern: ^\d{4}-\d{2}-\d{2}$
+      - name: endDate
+        in: query
+        required: false
+        description: End of the date range (YYYY-MM-DD).
+        schema:
+          type: string
+          pattern: ^\d{4}-\d{2}-\d{2}$
+      - name: limit
+        in: query
+        required: false
+        description: Maximum number of results to return.
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+      - $ref: '#/components/parameters/TrialMode'
+  /api/finance/ifsc-india:
+    get:
+      tags:
+      - finance
+      summary: Indian bank branch lookup by IFSC code (the 11-character
+      description: Indian bank branch lookup by IFSC code (the 11-character Indian Financial System Code identifying a bank branch). Returns the bank name and code, branch, centre, district, state, city, full address, contact number, MICR code, and which payment rails the branch supports (IMPS, RTGS, NEFT, UPI). Free, open data (Razorpay / RBI directory). Deterministic bank-branch reference for payments, remittance, and KYC validation in India.
+      operationId: finance_ifsc-india
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized envelope: items = [one branch] (or [] if not found); total = 1 or 0.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            ifsc:
+                              type: string
+                              nullable: true
+                            bank:
+                              type: string
+                              nullable: true
+                            bankCode:
+                              type: string
+                              nullable: true
+                            branch:
+                              type: string
+                              nullable: true
+                            centre:
+                              type: string
+                              nullable: true
+                            district:
+                              type: string
+                              nullable: true
+                            state:
+                              type: string
+                              nullable: true
+                            city:
+                              type: string
+                              nullable: true
+                            address:
+                              type: string
+                              nullable: true
+                            contact:
+                              type: string
+                              nullable: true
+                            micr:
+                              type: string
+                              nullable: true
+                            imps:
+                              type: boolean
+                              nullable: true
+                            rtgs:
+                              type: boolean
+                              nullable: true
+                            neft:
+                              type: boolean
+                              nullable: true
+                            upi:
+                              type: boolean
+                              nullable: true
+                          required:
+                          - ifsc
+                          - bank
+                          - bankCode
+                          - branch
+                          - centre
+                          - district
+                          - state
+                          - city
+                          - address
+                          - contact
+                          - micr
+                          - imps
+                          - rtgs
+                          - neft
+                          - upi
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: finance.ifsc-india
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.0025
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.002500'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: ifsc
+        in: query
+        required: true
+        description: 11-character IFSC code.
+        schema:
+          type: string
+          minLength: 11
+          maxLength: 11
+      - $ref: '#/components/parameters/TrialMode'
+  /api/finance/insider-trades:
+    get:
+      tags:
+      - finance
+      summary: Recent SEC Form 4 insider transactions for a US public
+      description: 'Recent SEC Form 4 insider transactions for a US public company by ticker. Returns parsed transactions: insider name + relationship (director, officer/title, 10%+ owner), transaction date, SEC code (P=purchase, S=sale, A=grant, D=disposition, M=exercise, F=tax-withholding, G=gift), security title, shares, price/share, total USD value, post-transaction balance, direct vs indirect ownership. Each filing pulled separately and parsed from raw XML — bounded by limit (1-10, default 5). Backed by SEC.gov; underlying Form 4 filings are public records. For insider trades + filings + fundamentals merged by ticker in one call, see /api/finance/company-profile.'
+      operationId: finance_insider-trades
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized envelope: items = parsed Form 4 filings (owner relationship + per-transaction details); meta = issuer identity + query echo. total is null (items is the fetched window, not the issuer''s full Form 4 history).'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            accessionNumber:
+                              type: string
+                            filingDate:
+                              type: string
+                            periodOfReport:
+                              type: string
+                              nullable: true
+                            formXmlUrl:
+                              type: string
+                              format: uri
+                            documentUrl:
+                              type: string
+                              format: uri
+                            reportingOwner:
+                              type: object
+                              properties:
+                                cik:
+                                  type: string
+                                  nullable: true
+                                name:
+                                  type: string
+                                isDirector:
+                                  type: boolean
+                                isOfficer:
+                                  type: boolean
+                                officerTitle:
+                                  type: string
+                                  nullable: true
+                                isTenPercentOwner:
+                                  type: boolean
+                                isOther:
+                                  type: boolean
+                              required:
+                              - cik
+                              - name
+                              - isDirector
+                              - isOfficer
+                              - officerTitle
+                              - isTenPercentOwner
+                              - isOther
+                              additionalProperties: false
+                            transactions:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  securityTitle:
+                                    type: string
+                                  transactionDate:
+                                    type: string
+                                    nullable: true
+                                  code:
+                                    type: string
+                                    nullable: true
+                                  acquiredOrDisposed:
+                                    type: string
+                                    enum:
+                                    - A
+                                    - D
+                                    nullable: true
+                                  shares:
+                                    type: number
+                                    nullable: true
+                                  pricePerShare:
+                                    type: number
+                                    nullable: true
+                                  totalValueUsd:
+                                    type: number
+                                    nullable: true
+                                  sharesOwnedFollowing:
+                                    type: number
+                                    nullable: true
+                                  ownership:
+                                    type: string
+                                    enum:
+                                    - D
+                                    - I
+                                    nullable: true
+                                  isDerivative:
+                                    type: boolean
+                                required:
+                                - securityTitle
+                                - transactionDate
+                                - code
+                                - acquiredOrDisposed
+                                - shares
+                                - pricePerShare
+                                - totalValueUsd
+                                - sharesOwnedFollowing
+                                - ownership
+                                - isDerivative
+                                additionalProperties: false
+                          required:
+                          - accessionNumber
+                          - filingDate
+                          - periodOfReport
+                          - formXmlUrl
+                          - documentUrl
+                          - reportingOwner
+                          - transactions
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                      meta:
+                        type: object
+                        properties:
+                          query:
+                            type: object
+                            properties:
+                              ticker:
+                                type: string
+                              limit:
+                                type: number
+                            required:
+                            - ticker
+                            - limit
+                            additionalProperties: false
+                          cik:
+                            type: string
+                          ticker:
+                            type: string
+                          issuerName:
+                            type: string
+                        required:
+                        - query
+                        - cik
+                        - ticker
+                        - issuerName
+                        additionalProperties: false
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: finance.insider-trades
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.018
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.018000'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: ticker
+        in: query
+        required: true
+        description: 'US stock ticker (case-insensitive). Examples: AAPL, GOOGL, TSLA.'
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 10
+          pattern: ^[A-Za-z][A-Za-z0-9.-]{0,9}$
+      - name: limit
+        in: query
+        required: false
+        description: Max Form 4 filings to fetch + parse (1-10). Each is an extra upstream call so we bound this tight. Default 5.
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 10
+          default: 5
+      - $ref: '#/components/parameters/TrialMode'
+  /api/finance/mortgage-pulse:
+    get:
+      tags:
+      - finance
+      summary: Packaged US mortgage & housing-rate snapshot in one call
+      description: 'Packaged US mortgage & housing-rate snapshot in one call: latest 30-year and 15-year fixed mortgage rates, the 10-year Treasury yield (which mortgage rates track), the effective federal funds rate, the median sales price of houses sold, and housing starts. Each metric carries its value, the date it is as-of, a unit, and a plain-English label. Metrics: mortgage30yr, mortgage15yr, treasury10yr, fedFunds, medianSalePrice, housingStarts. No parameters. Source: FRED (St. Louis Fed) — series MORTGAGE30US, MORTGAGE15US, DGS10, FEDFUNDS, MSPUS, HOUST.'
+      operationId: finance_mortgage-pulse
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized envelope: items = [one snapshot object with asOf (most recent observation date) and metrics[] (each: metric, seriesId, label, unit, value, date)]; total = 1.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            asOf:
+                              type: string
+                              nullable: true
+                            metrics:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  metric:
+                                    type: string
+                                  seriesId:
+                                    type: string
+                                  label:
+                                    type: string
+                                  unit:
+                                    type: string
+                                  value:
+                                    type: number
+                                    nullable: true
+                                  date:
+                                    type: string
+                                    nullable: true
+                                required:
+                                - metric
+                                - seriesId
+                                - label
+                                - unit
+                                - value
+                                - date
+                                additionalProperties: false
+                          required:
+                          - asOf
+                          - metrics
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: finance.mortgage-pulse
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.012
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.012000'
+        protocols:
+        - x402: {}
+      parameters:
+      - $ref: '#/components/parameters/TrialMode'
+  /api/finance/sec-filings:
+    get:
+      tags:
+      - finance
+      summary: Recent SEC EDGAR filings for a US publicly-traded company
+      description: Recent SEC EDGAR filings for a US publicly-traded company by stock ticker. Resolves ticker → CIK via SEC's company_tickers.json, then fetches the company's submissions index from data.sec.gov. Returns company metadata (name, CIK, SIC industry classification, exchanges, fiscal year-end, state of incorporation) plus filings with form type, filing date, report date, accession number, primary-document URL, and filing-index URL. Filter to one form type (10-K, 10-Q, 8-K, 4, 13F-HR, SC 13G, S-1, etc.) via formType param. Default 20 results, max 100. Backed by SEC.gov; underlying filings are public-domain US government records. For filings + fundamentals + insider trades merged by ticker in one call, see /api/finance/company-profile.
+      operationId: finance_sec-filings
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized envelope: items = recent SEC filings with direct document URLs; meta.company = issuer metadata. total is null (EDGAR''s "recent" window is not the company''s full filing history).'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            accessionNumber:
+                              type: string
+                            form:
+                              type: string
+                            filingDate:
+                              type: string
+                            reportDate:
+                              type: string
+                              nullable: true
+                            acceptanceDateTime:
+                              type: string
+                              nullable: true
+                            primaryDocument:
+                              type: string
+                            documentUrl:
+                              type: string
+                              format: uri
+                            filingIndexUrl:
+                              type: string
+                              format: uri
+                            isXBRL:
+                              type: boolean
+                            size:
+                              type: integer
+                          required:
+                          - accessionNumber
+                          - form
+                          - filingDate
+                          - reportDate
+                          - acceptanceDateTime
+                          - primaryDocument
+                          - documentUrl
+                          - filingIndexUrl
+                          - isXBRL
+                          - size
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                      meta:
+                        type: object
+                        properties:
+                          query:
+                            type: object
+                            properties:
+                              ticker:
+                                type: string
+                              formType:
+                                type: string
+                                nullable: true
+                              limit:
+                                type: number
+                            required:
+                            - ticker
+                            - formType
+                            - limit
+                            additionalProperties: false
+                          company:
+                            type: object
+                            properties:
+                              cik:
+                                type: string
+                              ticker:
+                                type: string
+                              name:
+                                type: string
+                              sicDescription:
+                                type: string
+                                nullable: true
+                              exchanges:
+                                type: array
+                                items:
+                                  type: string
+                              fiscalYearEnd:
+                                type: string
+                                nullable: true
+                              stateOfIncorporation:
+                                type: string
+                                nullable: true
+                              category:
+                                type: string
+                                nullable: true
+                              website:
+                                type: string
+                                nullable: true
+                            required:
+                            - cik
+                            - ticker
+                            - name
+                            - sicDescription
+                            - exchanges
+                            - fiscalYearEnd
+                            - stateOfIncorporation
+                            - category
+                            - website
+                            additionalProperties: false
+                        required:
+                        - query
+                        - company
+                        additionalProperties: false
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: finance.sec-filings
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.009
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.009000'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: ticker
+        in: query
+        required: true
+        description: 'Stock ticker symbol (case-insensitive). Examples: AAPL, GOOGL, BRK.B, JNJ.'
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 10
+          pattern: ^[A-Za-z][A-Za-z0-9.-]{0,9}$
+      - name: formType
+        in: query
+        required: false
+        description: Optional filter to a single SEC form type, e.g., "10-K", "10-Q", "8-K", "13F-HR", "4", "S-1", "SC 13G".
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 20
+          pattern: ^[A-Za-z0-9./-]+$
+      - name: limit
+        in: query
+        required: false
+        description: Max filings to return (1-100). Default 20.
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 20
+      - $ref: '#/components/parameters/TrialMode'
+  /api/finance/security-resolve:
+    get:
+      tags:
+      - finance
+      summary: Universal security-identifier resolver
+      description: 'Universal security-identifier resolver. Give exactly one of ticker, isin, or lei and get the others back — ticker, SEC CIK, FIGI (incl. composite + share-class), LEI, and ISINs — plus the canonical issuer name. The one call that joins a security across the systems agents actually use: CIK for filings, FIGI for trading, LEI for the legal entity, ISIN for settlement. Composes SEC EDGAR, OpenFIGI, and GLEIF (CC0). Per-source status is returned, so a partial match is explicit rather than silently wrong. Note: CUSIP/SEDOL are accepted by sibling /finance/figi as inputs but never emitted here (licensed); ISINs come from GLEIF CC0 data.'
+      operationId: finance_security-resolve
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized envelope: items = [one resolved security with cross-system identifiers + per-source status]; total = 1.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            resolvedFrom:
+                              type: string
+                              enum:
+                              - ticker
+                              - isin
+                              - lei
+                            ticker:
+                              type: string
+                              nullable: true
+                            cik:
+                              type: string
+                              nullable: true
+                              description: 10-digit zero-padded SEC CIK.
+                            name:
+                              type: string
+                              nullable: true
+                              description: Canonical issuer name.
+                            figi:
+                              type: object
+                              properties:
+                                figi:
+                                  type: string
+                                  nullable: true
+                                compositeFIGI:
+                                  type: string
+                                  nullable: true
+                                shareClassFIGI:
+                                  type: string
+                                  nullable: true
+                                exchCode:
+                                  type: string
+                                  nullable: true
+                              required:
+                              - figi
+                              - compositeFIGI
+                              - shareClassFIGI
+                              - exchCode
+                              additionalProperties: false
+                              nullable: true
+                            lei:
+                              type: string
+                              nullable: true
+                            leiName:
+                              type: string
+                              nullable: true
+                            leiResolvedBy:
+                              type: string
+                              enum:
+                              - isin
+                              - name-match
+                              - direct
+                              nullable: true
+                              description: How the LEI was resolved; name-match is best-effort, verify leiName.
+                            isins:
+                              type: array
+                              items:
+                                type: string
+                            sources:
+                              type: object
+                              properties:
+                                sec:
+                                  type: string
+                                figi:
+                                  type: string
+                                gleif:
+                                  type: string
+                              required:
+                              - sec
+                              - figi
+                              - gleif
+                              additionalProperties: false
+                          required:
+                          - resolvedFrom
+                          - ticker
+                          - cik
+                          - name
+                          - figi
+                          - lei
+                          - leiName
+                          - leiResolvedBy
+                          - isins
+                          - sources
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: finance.security-resolve
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.012
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.012000'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: ticker
+        in: query
+        required: false
+        description: US stock ticker, e.g. AAPL.
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 12
+      - name: isin
+        in: query
+        required: false
+        description: ISIN, e.g. US0378331005.
+        schema:
+          type: string
+          pattern: ^[A-Za-z0-9]{12}$
+      - name: lei
+        in: query
+        required: false
+        description: 20-char LEI.
+        schema:
+          type: string
+          pattern: ^[A-Za-z0-9]{20}$
+      - $ref: '#/components/parameters/TrialMode'
+  /api/finance/thirteen-f:
+    get:
+      tags:
+      - finance
+      summary: Parsed institutional holdings from a 13F-HR filing
+      description: Parsed institutional holdings from a 13F-HR filing. By investment-manager CIK (e.g. 1067983 = Berkshire Hathaway). Returns each holding's nameOfIssuer, cusip, market value (whole USD per the modern Form 13F convention), shares/principal amount + type, putCall flag for options, and voting authority (sole/shared/none). Sorted by value descending. Pass formType for amendments (13F-HR/A) or non-filings (13F-NT). Backed by SEC.gov; underlying 13F filings are public records.
+      operationId: finance_thirteen-f
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized envelope: items = top N institutional holdings sorted by value descending; total = positions in the filing before the cap; meta = manager identity, source filing, filing-wide total value, query echo.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            nameOfIssuer:
+                              type: string
+                            titleOfClass:
+                              type: string
+                              nullable: true
+                            cusip:
+                              type: string
+                            valueUsd:
+                              type: number
+                            sharesOrPrinAmt:
+                              type: number
+                              nullable: true
+                            sharesOrPrinAmtType:
+                              type: string
+                              enum:
+                              - SH
+                              - PRN
+                              nullable: true
+                            investmentDiscretion:
+                              type: string
+                              nullable: true
+                            putCall:
+                              type: string
+                              enum:
+                              - PUT
+                              - CALL
+                              nullable: true
+                            votingAuthority:
+                              type: object
+                              properties:
+                                sole:
+                                  type: number
+                                  nullable: true
+                                shared:
+                                  type: number
+                                  nullable: true
+                                none:
+                                  type: number
+                                  nullable: true
+                              required:
+                              - sole
+                              - shared
+                              - none
+                              additionalProperties: false
+                          required:
+                          - nameOfIssuer
+                          - titleOfClass
+                          - cusip
+                          - valueUsd
+                          - sharesOrPrinAmt
+                          - sharesOrPrinAmtType
+                          - investmentDiscretion
+                          - putCall
+                          - votingAuthority
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                      meta:
+                        type: object
+                        properties:
+                          query:
+                            type: object
+                            properties:
+                              managerCik:
+                                type: string
+                              formType:
+                                type: string
+                              limit:
+                                type: number
+                            required:
+                            - managerCik
+                            - formType
+                            - limit
+                            additionalProperties: false
+                          cik:
+                            type: string
+                          managerName:
+                            type: string
+                          filing:
+                            type: object
+                            properties:
+                              accessionNumber:
+                                type: string
+                              form:
+                                type: string
+                              filingDate:
+                                type: string
+                              periodOfReport:
+                                type: string
+                                nullable: true
+                              infoTableUrl:
+                                type: string
+                                format: uri
+                              documentUrl:
+                                type: string
+                                format: uri
+                            required:
+                            - accessionNumber
+                            - form
+                            - filingDate
+                            - periodOfReport
+                            - infoTableUrl
+                            - documentUrl
+                            additionalProperties: false
+                          totalValueUsd:
+                            type: number
+                        required:
+                        - query
+                        - cik
+                        - managerName
+                        - filing
+                        - totalValueUsd
+                        additionalProperties: false
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: finance.thirteen-f
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.018
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.018000'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: managerCik
+        in: query
+        required: true
+        description: Investment manager's CIK (numeric). Berkshire Hathaway=1067983, Renaissance=1037389, Bridgewater=1350694, Vanguard=102909, BlackRock=1364742.
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 10
+          pattern: ^\d+$
+      - name: formType
+        in: query
+        required: false
+        description: 13F filing variant. Default 13F-HR (original report). Use 13F-HR/A for amendments, 13F-NT for notice of non-filings.
+        schema:
+          type: string
+          minLength: 3
+          maxLength: 20
+          pattern: ^13F-[A-Z/]{2,10}$
+          default: 13F-HR
+      - name: limit
+        in: query
+        required: false
+        description: Max holdings to return, sorted by value descending. (1-200). Default 25.
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 200
+          default: 25
+      - $ref: '#/components/parameters/TrialMode'
+  /api/finance/xbrl-frames:
+    get:
+      tags:
+      - finance
+      summary: SEC EDGAR XBRL Frames - one financial concept reported by
+      description: 'SEC EDGAR XBRL Frames — one financial concept reported by every public filer for a single period, for cross-company screening and comparison. Give an XBRL tag (e.g. Revenues, NetIncomeLoss, Assets), a unit (default USD), and a period (CY2023 for annual, CY2023Q1 for a quarter, CY2023Q4I for instant balance-sheet items), and get back every filer''s value — company name, CIK, location, period start/end, and the reported value — sorted high to low (or asc). Returns the total filer count and the top N. Free, public-domain (SEC). Distinct from finance.company-facts (one company, many metrics): this is one metric across all companies. For ranking, peer comparison, and market-wide analysis.'
+      operationId: finance_xbrl-frames
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized envelope: items = companies (sorted by value, sliced to limit); total = total filers; meta carries tag/label/unit/period.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            cik:
+                              type: number
+                            entityName:
+                              type: string
+                              nullable: true
+                            location:
+                              type: string
+                              nullable: true
+                            start:
+                              type: string
+                              nullable: true
+                            end:
+                              type: string
+                              nullable: true
+                            value:
+                              type: number
+                            accession:
+                              type: string
+                              nullable: true
+                          required:
+                          - cik
+                          - entityName
+                          - location
+                          - start
+                          - end
+                          - value
+                          - accession
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: finance.xbrl-frames
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.0054
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.005400'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: tag
+        in: query
+        required: true
+        description: Tag.
+        schema:
+          type: string
+          minLength: 2
+          maxLength: 80
+      - name: period
+        in: query
+        required: true
+        description: Period.
+        schema:
+          type: string
+          pattern: ^CY\d{4}(Q[1-4]I?)?$
+      - name: unit
+        in: query
+        required: false
+        description: Unit.
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 20
+      - name: taxonomy
+        in: query
+        required: false
+        description: Taxonomy.
+        schema:
+          type: string
+          minLength: 2
+          maxLength: 20
+      - name: sort
+        in: query
+        required: false
+        description: Field to sort results by.
+        schema:
+          type: string
+          enum:
+          - desc
+          - asc
+      - name: limit
+        in: query
+        required: false
+        description: Maximum number of results to return.
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+      - $ref: '#/components/parameters/TrialMode'
+components:
+  responses:
+    MethodNotAllowed:
+      description: Method not allowed — see `Allow` header for the supported method.
+    UpstreamError:
+      description: Upstream provider error.
+    ServerError:
+      description: Internal server error.
+    PaymentRequired:
+      description: Payment required. Body contains the x402 PaymentRequirements envelope with a multi-network accepts array; the per-call price is in accepts[].amount (and on the operation as x-2s-price). Sign for whichever rail you hold USDC on (EIP-3009 for Base, partial SPL transfer for Solana) and retry with the PAYMENT-SIGNATURE header (X-PAYMENT also accepted for v1 clients).
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/X402PaymentRequiredV2'
+    BadRequest:
+      description: Bad request — invalid parameters.
+  parameters:
+    TrialMode:
+      name: trial
+      in: query
+      required: false
+      description: 'Try before you buy. Set to 1 for one free real call per endpoint per hour — no wallet or payment needed — to verify the endpoint before paying. Equivalent to sending the "X-2s-Trial: 1" request header. Works on every endpoint.'
+      schema:
+        type: integer
+        enum:
+        - 1
+  schemas:
+    CallMeta:
+      type: object
+      description: Per-call meta envelope — endpoint id, cost, caller kind, settlement details.
+    Source:
+      type: object
+      description: 'Provenance of the data: upstream provider, source URL, and license.'
+      properties:
+        provider:
+          type: string
+          description: Upstream data provider.
+        url:
+          type: string
+          description: Source URL or documentation link.
+        license:
+          type: string
+          description: License / usage terms for the data.
+    X402PaymentRequiredV2:
+      type: object
+      description: x402 v2 PaymentRequired envelope. Pick any entry from accepts[], sign for that rail, retry with the PAYMENT-SIGNATURE header.
+      required:
+      - x402Version
+      - accepts
+      properties:
+        x402Version:
+          type: integer
+          const: 2
+        error:
+          type: string
+          description: Human-readable reason payment is required.
+        resource:
+          type: string
+          description: The resource URL being purchased.
+        accepts:
+          type: array
+          description: Payment requirement options, one per supported network (Base USDC, Solana USDC).
+          items:
+            type: object
+            required:
+            - scheme
+            - network
+            - amount
+            - asset
+            - payTo
+            - maxTimeoutSeconds
+            properties:
+              scheme:
+                type: string
+                enum:
+                - exact
+              network:
+                type: string
+                description: CAIP-2 network id, e.g. "eip155:8453" (Base) or "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp".
+              amount:
+                type: string
+                description: Price in atomic asset units (USDC has 6 decimals).
+              asset:
+                type: string
+                description: Asset contract address / mint.
+              payTo:
+                type: string
+                description: Treasury address to pay.
+              maxTimeoutSeconds:
+                type: integer
+              extra:
+                type: object
+                description: 'Rail-specific extras (EVM: EIP-712 domain name/version; Solana: feePayer).'
+                additionalProperties: true
+        extensions:
+          type: object
+          description: Optional discovery metadata (e.g. bazaar input/output schemas).
+          additionalProperties: true
+  securitySchemes:
+    x402Payment:
+      type: apiKey
+      in: header
+      name: PAYMENT-SIGNATURE
+      description: 'x402 protocol v2: base64-encoded PaymentPayload. Call any paid endpoint without auth to receive a 402 with a multi-network PaymentRequirements envelope. Sign for either rail: EIP-3009 transferWithAuthorization (Base USDC) OR a partial SPL token transfer (Solana USDC). Retry with PAYMENT-SIGNATURE header. X-PAYMENT is also accepted for v1 buyer clients. See https://x402.org.'

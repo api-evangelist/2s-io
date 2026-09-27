@@ -1,0 +1,466 @@
+openapi: 3.2.0
+info:
+  title: 2s — the (most) everything Nonprofit API
+  version: '1'
+  summary: The (most) everything API.
+  description: 'The (most) everything API for AI agents: 575+ pay-per-call endpoints on one origin.'
+  contact:
+    name: 2s
+    url: https://2s.io
+    email: alley@2s.io
+  x-logo:
+    url: https://2s.io/icon-512.png
+    altText: 2s
+  x-guidance: 'Pay-per-call REST API for AI agents — hundreds of endpoints returning ground-truth data (US public records, company & legal identifiers, finance/SEC, crypto/web3, security & CVEs, medical codes, weather & geocoding, agriculture, energy, maritime, music, and more). Every endpoint is paid per call in USDC via x402 (Base or Solana) — no API key, no signup. Call any endpoint with no auth to get a 402 PaymentRequirements envelope, sign it (EIP-3009 on Base, partial SPL transfer on Solana), and retry with the PAYMENT-SIGNATURE header. Add ?trial=1 for one free real call per endpoint per hour to test before paying. To discover the right endpoint: GET https://2s.io/api/directory for the full catalog, or GET https://2s.io/api/search/endpoints?q=<natural-language task> for a ranked match. Per-call price is on each operation as x-payment-info (from $0.001). Batch up to 50 calls behind one payment via POST https://2s.io/api/batch/run.'
+servers:
+- url: https://2s.io
+tags:
+- name: nonprofit
+paths:
+  /api/nonprofit/screen:
+    get:
+      tags:
+      - nonprofit
+      summary: Look up US 501(c) nonprofits and screen each result against
+      description: 'Look up US 501(c) nonprofits and screen each result against the OFAC sanctions list in one call. Pass q (organization name) or ein; each matched organization returns its registry record (EIN, name, location, NTEE code, subsection) plus a sanctions block — flagged status, match count, and the matching SDN entries with confidence scores. Grant-making due diligence, donation compliance, and charity-fraud triage. Components also standalone: /api/nonprofit/search (registry only) and /api/law/sanctions-check (screen any name). Same composition family as /api/business/entity-screen.'
+      operationId: nonprofit_screen
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: Nonprofits with a per-org OFAC sanctions block (flagged, matches, confidence).
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      query:
+                        type: string
+                      count:
+                        type: number
+                      organizations:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            org:
+                              type: object
+                              additionalProperties: {}
+                              description: Nonprofit registry record (EIN, name, location, NTEE).
+                            sanctions:
+                              type: object
+                              properties:
+                                found:
+                                  type: boolean
+                                  description: True when the screen ran successfully.
+                                error:
+                                  type: string
+                                  nullable: true
+                                flagged:
+                                  type: boolean
+                                  description: True when a high-confidence OFAC match exists.
+                                matchCount:
+                                  type: number
+                                matches:
+                                  type: array
+                                  items:
+                                    type: object
+                                    additionalProperties: {}
+                              required:
+                              - found
+                              - error
+                              - flagged
+                              - matchCount
+                              - matches
+                              additionalProperties: false
+                          required:
+                          - org
+                          - sanctions
+                          additionalProperties: false
+                      sources:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Source'
+                    required:
+                    - query
+                    - count
+                    - organizations
+                    - sources
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: nonprofit.screen
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.0126
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: legacy
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.012600'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: q
+        in: query
+        required: false
+        description: Organization name. Provide q or ein, not both.
+        schema:
+          type: string
+          minLength: 2
+          maxLength: 120
+      - name: ein
+        in: query
+        required: false
+        description: EIN.
+        schema:
+          type: string
+          pattern: ^\d{9}$
+      - name: limit
+        in: query
+        required: false
+        description: Maximum number of results to return.
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 10
+          default: 5
+      - $ref: '#/components/parameters/TrialMode'
+  /api/nonprofit/search:
+    get:
+      tags:
+      - nonprofit
+      summary: US 501(c) nonprofit organization search
+      description: US 501(c) nonprofit organization search. Lookup by 9-digit EIN (with or without hyphen), free-text name, 2-letter state, NTEE category code (e.g. 'B99' for education), or IRS subsection code (3 = 501(c)(3), 4 = 501(c)(4), etc.). Each record includes EIN, name, city/state, NTEE code, subsection code + human-readable subsection description (e.g. '501(c)(3) Charitable / Religious / Educational'), and relevance score. Sourced from ProPublica Nonprofit Explorer, which aggregates IRS Form 990 + BMF data; underlying IRS data is public domain.
+      operationId: nonprofit_search
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized envelope: items = matching nonprofit organizations; total = upstream match count; page = 0-indexed pagination (100/page); meta.query echoes the search.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            ein:
+                              type: string
+                            einFormatted:
+                              type: string
+                            name:
+                              type: string
+                            subName:
+                              type: string
+                              nullable: true
+                            city:
+                              type: string
+                              nullable: true
+                            state:
+                              type: string
+                              nullable: true
+                            nteeCode:
+                              type: string
+                              nullable: true
+                            subsectionCode:
+                              type: integer
+                              nullable: true
+                            subsectionDesc:
+                              type: string
+                              nullable: true
+                            score:
+                              type: number
+                              nullable: true
+                          required:
+                          - ein
+                          - einFormatted
+                          - name
+                          - subName
+                          - city
+                          - state
+                          - nteeCode
+                          - subsectionCode
+                          - subsectionDesc
+                          - score
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                      page:
+                        type: object
+                        properties:
+                          number:
+                            type: integer
+                          size:
+                            type: integer
+                          pages:
+                            type: integer
+                            nullable: true
+                        required:
+                        - number
+                        - size
+                        - pages
+                        additionalProperties: false
+                      meta:
+                        type: object
+                        properties:
+                          query:
+                            type: object
+                            properties:
+                              q:
+                                type: string
+                                nullable: true
+                              ein:
+                                type: string
+                                nullable: true
+                              state:
+                                type: string
+                                nullable: true
+                              nteeCode:
+                                type: string
+                                nullable: true
+                              subsectionCode:
+                                type: integer
+                                nullable: true
+                              page:
+                                type: integer
+                            required:
+                            - q
+                            - ein
+                            - state
+                            - nteeCode
+                            - subsectionCode
+                            - page
+                            additionalProperties: false
+                          returned:
+                            type: integer
+                        required:
+                        - query
+                        - returned
+                        additionalProperties: false
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: nonprofit.search
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.003
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.003000'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: q
+        in: query
+        required: false
+        description: Free-text search query.
+        schema:
+          type: string
+          minLength: 2
+          maxLength: 200
+      - name: ein
+        in: query
+        required: false
+        description: EIN.
+        schema:
+          type: string
+          minLength: 9
+          maxLength: 11
+          pattern: ^\d{2}-?\d{7}$
+      - name: state
+        in: query
+        required: false
+        description: US state — two-letter postal abbreviation (e.g. CA) or full name.
+        schema:
+          type: string
+          minLength: 2
+          maxLength: 2
+          pattern: ^[A-Za-z]{2}$
+      - name: nteeCode
+        in: query
+        required: false
+        description: Ntee code.
+        schema:
+          type: string
+          pattern: ^[A-Za-z][0-9]{1,3}$
+      - name: subsectionCode
+        in: query
+        required: false
+        description: Subsection code.
+        schema:
+          type: integer
+          minimum: 2
+          maximum: 92
+      - name: page
+        in: query
+        required: false
+        description: Page number (1-based) for paginated results.
+        schema:
+          type: integer
+          minimum: 0
+          maximum: 99
+          default: 0
+      - $ref: '#/components/parameters/TrialMode'
+components:
+  responses:
+    MethodNotAllowed:
+      description: Method not allowed — see `Allow` header for the supported method.
+    UpstreamError:
+      description: Upstream provider error.
+    ServerError:
+      description: Internal server error.
+    PaymentRequired:
+      description: Payment required. Body contains the x402 PaymentRequirements envelope with a multi-network accepts array; the per-call price is in accepts[].amount (and on the operation as x-2s-price). Sign for whichever rail you hold USDC on (EIP-3009 for Base, partial SPL transfer for Solana) and retry with the PAYMENT-SIGNATURE header (X-PAYMENT also accepted for v1 clients).
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/X402PaymentRequiredV2'
+    BadRequest:
+      description: Bad request — invalid parameters.
+  parameters:
+    TrialMode:
+      name: trial
+      in: query
+      required: false
+      description: 'Try before you buy. Set to 1 for one free real call per endpoint per hour — no wallet or payment needed — to verify the endpoint before paying. Equivalent to sending the "X-2s-Trial: 1" request header. Works on every endpoint.'
+      schema:
+        type: integer
+        enum:
+        - 1
+  schemas:
+    CallMeta:
+      type: object
+      description: Per-call meta envelope — endpoint id, cost, caller kind, settlement details.
+    Source:
+      type: object
+      description: 'Provenance of the data: upstream provider, source URL, and license.'
+      properties:
+        provider:
+          type: string
+          description: Upstream data provider.
+        url:
+          type: string
+          description: Source URL or documentation link.
+        license:
+          type: string
+          description: License / usage terms for the data.
+    X402PaymentRequiredV2:
+      type: object
+      description: x402 v2 PaymentRequired envelope. Pick any entry from accepts[], sign for that rail, retry with the PAYMENT-SIGNATURE header.
+      required:
+      - x402Version
+      - accepts
+      properties:
+        x402Version:
+          type: integer
+          const: 2
+        error:
+          type: string
+          description: Human-readable reason payment is required.
+        resource:
+          type: string
+          description: The resource URL being purchased.
+        accepts:
+          type: array
+          description: Payment requirement options, one per supported network (Base USDC, Solana USDC).
+          items:
+            type: object
+            required:
+            - scheme
+            - network
+            - amount
+            - asset
+            - payTo
+            - maxTimeoutSeconds
+            properties:
+              scheme:
+                type: string
+                enum:
+                - exact
+              network:
+                type: string
+                description: CAIP-2 network id, e.g. "eip155:8453" (Base) or "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp".
+              amount:
+                type: string
+                description: Price in atomic asset units (USDC has 6 decimals).
+              asset:
+                type: string
+                description: Asset contract address / mint.
+              payTo:
+                type: string
+                description: Treasury address to pay.
+              maxTimeoutSeconds:
+                type: integer
+              extra:
+                type: object
+                description: 'Rail-specific extras (EVM: EIP-712 domain name/version; Solana: feePayer).'
+                additionalProperties: true
+        extensions:
+          type: object
+          description: Optional discovery metadata (e.g. bazaar input/output schemas).
+          additionalProperties: true
+  securitySchemes:
+    x402Payment:
+      type: apiKey
+      in: header
+      name: PAYMENT-SIGNATURE
+      description: 'x402 protocol v2: base64-encoded PaymentPayload. Call any paid endpoint without auth to receive a 402 with a multi-network PaymentRequirements envelope. Sign for either rail: EIP-3009 transferWithAuthorization (Base USDC) OR a partial SPL token transfer (Solana USDC). Retry with PAYMENT-SIGNATURE header. X-PAYMENT is also accepted for v1 buyer clients. See https://x402.org.'

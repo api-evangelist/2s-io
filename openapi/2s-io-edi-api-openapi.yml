@@ -1,0 +1,1095 @@
+openapi: 3.2.0
+info:
+  title: 2s — the (most) everything Edi API
+  version: '1'
+  summary: The (most) everything API.
+  description: 'The (most) everything API for AI agents: 575+ pay-per-call endpoints on one origin.'
+  contact:
+    name: 2s
+    url: https://2s.io
+    email: alley@2s.io
+  x-logo:
+    url: https://2s.io/icon-512.png
+    altText: 2s
+  x-guidance: 'Pay-per-call REST API for AI agents — hundreds of endpoints returning ground-truth data (US public records, company & legal identifiers, finance/SEC, crypto/web3, security & CVEs, medical codes, weather & geocoding, agriculture, energy, maritime, music, and more). Every endpoint is paid per call in USDC via x402 (Base or Solana) — no API key, no signup. Call any endpoint with no auth to get a 402 PaymentRequirements envelope, sign it (EIP-3009 on Base, partial SPL transfer on Solana), and retry with the PAYMENT-SIGNATURE header. Add ?trial=1 for one free real call per endpoint per hour to test before paying. To discover the right endpoint: GET https://2s.io/api/directory for the full catalog, or GET https://2s.io/api/search/endpoints?q=<natural-language task> for a ranked match. Per-call price is on each operation as x-payment-info (from $0.001). Batch up to 50 calls behind one payment via POST https://2s.io/api/batch/run.'
+servers:
+- url: https://2s.io
+tags:
+- name: Edi
+paths:
+  /api/edi/ack:
+    post:
+      tags:
+      - Edi
+      summary: Generate the ANSI ASC X12 997 Functional Acknowledgment for
+      description: 'Generate the ANSI ASC X12 997 Functional Acknowledgment for a received EDI interchange. POST { edi } with the raw inbound interchange text (the 850/810/856/etc. you received); returns the ready-to-send 997 in meta.ack — sender/receiver mirrored back, delimiters echoed, one ST(997) per inbound functional group with correct AK1 (functional id + group control number), AK2/AK5 per transaction set, and AK9 with accurate included/received/accepted counts. Set status to control the response: A=Accepted (default), E=Accepted with errors, P=Partially accepted, R=Rejected, M/W/X=authentication/security rejection. Deterministic, no external calls. This is the reply leg of EDI: every transaction set you receive is supposed to be acknowledged, and assembling a valid 997 (especially the AK9 counts) is exactly the fiddly envelope bookkeeping agents shouldn''t hand-roll.'
+      operationId: edi_ack
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized envelope: meta.ack = the generated 997 text; items = per functional group acknowledged (status + AK9 counts + per-transaction-set response).'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            acknowledgedFunctionalGroup:
+                              type: string
+                            acknowledgedGroupControlNumber:
+                              type: string
+                              nullable: true
+                            status:
+                              type: string
+                            transactionSetsIncluded:
+                              type: integer
+                            transactionSetsReceived:
+                              type: integer
+                            transactionSetsAccepted:
+                              type: integer
+                            transactionSets:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  type:
+                                    type: string
+                                  controlNumber:
+                                    type: string
+                                    nullable: true
+                                  response:
+                                    type: string
+                                required:
+                                - type
+                                - controlNumber
+                                - response
+                                additionalProperties: false
+                          required:
+                          - acknowledgedFunctionalGroup
+                          - acknowledgedGroupControlNumber
+                          - status
+                          - transactionSetsIncluded
+                          - transactionSetsReceived
+                          - transactionSetsAccepted
+                          - transactionSets
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                      meta:
+                        type: object
+                        properties:
+                          ack:
+                            type: string
+                            description: The ready-to-send 997 interchange text.
+                          controlNumber:
+                            type: string
+                          acknowledges:
+                            type: object
+                            properties:
+                              senderId:
+                                type: string
+                                nullable: true
+                              receiverId:
+                                type: string
+                                nullable: true
+                              interchangeControlNumber:
+                                type: string
+                                nullable: true
+                              functionalGroupCount:
+                                type: integer
+                              transactionSetCount:
+                                type: integer
+                            required:
+                            - senderId
+                            - receiverId
+                            - interchangeControlNumber
+                            - functionalGroupCount
+                            - transactionSetCount
+                            additionalProperties: false
+                          delimiters:
+                            type: object
+                            properties:
+                              element:
+                                type: string
+                              component:
+                                type: string
+                              segment:
+                                type: string
+                            required:
+                            - element
+                            - component
+                            - segment
+                            additionalProperties: false
+                        required:
+                        - ack
+                        - controlNumber
+                        - acknowledges
+                        - delimiters
+                        additionalProperties: false
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: edi.ack
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.0045
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.004500'
+        protocols:
+        - x402: {}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                edi:
+                  type: string
+                  minLength: 106
+                  maxLength: 500000
+                  description: Edi.
+                status:
+                  type: string
+                  enum:
+                  - A
+                  - E
+                  - P
+                  - R
+                  - M
+                  - W
+                  - X
+                  description: Filter results by status.
+                controlNumber:
+                  type: string
+                  maxLength: 15
+                  description: Control number.
+              required:
+              - edi
+              additionalProperties: false
+      parameters:
+      - $ref: '#/components/parameters/TrialMode'
+  /api/edi/edifact:
+    post:
+      tags:
+      - Edi
+      summary: Parse a raw UN/EDIFACT document (the B2B EDI format used
+      description: 'Parse a raw UN/EDIFACT document (the B2B EDI format used across Europe, Asia, logistics and customs — the international counterpart to ANSI X12) into clean, structured JSON. POST { edi } with the raw interchange text. Reads the optional UNA service-string advice to auto-detect delimiters (or applies the UN defaults: component '':'', element ''+'', segment "''", release ''?''), handles release-character escaping, then returns the interchange envelope (UNB: syntax id, sender/recipient with qualifiers, date/time, control reference, test indicator), and each message with its type decoded (e.g. ORDERS = Purchase Order, INVOIC = Invoice, DESADV = Despatch Advice/ASN, ORDRSP = PO Response, CONTRL = Acknowledgment) plus version/release/agency from the UNH, every segment named (BGM, DTM, NAD, LIN, QTY, MOA, …), and a semantic summary — for an order that''s the order number, document/delivery dates, parties (buyer/seller/ship-to with role decoded), and line items (product id + quantity); for an invoice the invoice number, currency, parties and total; for a despatch advice the despatch number, date and package/line counts. Deterministic, no external calls. Turns opaque EDIFACT into something an agent can use without hand-rolling a parser.'
+      operationId: edi_edifact
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized envelope: items = messages (each decoded + summarized); meta = interchange envelope (UNB) + detected delimiters + counts.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            type:
+                              type: string
+                            typeName:
+                              type: string
+                            reference:
+                              type: string
+                              nullable: true
+                            version:
+                              type: string
+                              nullable: true
+                            release:
+                              type: string
+                              nullable: true
+                            agency:
+                              type: string
+                              nullable: true
+                            segmentCount:
+                              type: integer
+                            summary:
+                              type: object
+                              additionalProperties: {}
+                              description: Type-specific semantic summary (order/invoice number, parties, line items, totals, etc.).
+                            segments:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  tag:
+                                    type: string
+                                  name:
+                                    type: string
+                                  elements:
+                                    type: array
+                                    items:
+                                      anyOf:
+                                      - type: string
+                                      - type: array
+                                        items:
+                                          type: string
+                                required:
+                                - tag
+                                - name
+                                - elements
+                                additionalProperties: false
+                          required:
+                          - type
+                          - typeName
+                          - reference
+                          - version
+                          - release
+                          - agency
+                          - segmentCount
+                          - summary
+                          - segments
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                      meta:
+                        type: object
+                        properties:
+                          interchange:
+                            type: object
+                            additionalProperties: {}
+                          delimiters:
+                            type: object
+                            properties:
+                              component:
+                                type: string
+                              element:
+                                type: string
+                              decimal:
+                                type: string
+                              release:
+                                type: string
+                              segment:
+                                type: string
+                              unaPresent:
+                                type: boolean
+                            required:
+                            - component
+                            - element
+                            - decimal
+                            - release
+                            - segment
+                            - unaPresent
+                            additionalProperties: false
+                          messageCount:
+                            type: integer
+                          segmentCount:
+                            type: integer
+                        required:
+                        - interchange
+                        - delimiters
+                        - messageCount
+                        - segmentCount
+                        additionalProperties: false
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: edi.edifact
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.0045
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.004500'
+        protocols:
+        - x402: {}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                edi:
+                  type: string
+                  minLength: 10
+                  maxLength: 500000
+                  description: Edi.
+              required:
+              - edi
+              additionalProperties: false
+      parameters:
+      - $ref: '#/components/parameters/TrialMode'
+  /api/edi/edifact-generate:
+    post:
+      tags:
+      - Edi
+      summary: Generate an outbound UN/EDIFACT document from JSON - the
+      description: Generate an outbound UN/EDIFACT document from JSON — the international counterpart to edi.generate (X12). POST type ('ORDERS' = purchase order or 'INVOIC' = invoice) + senderId, recipientId (with optional qualifiers), documentNumber, optional date (CCYYMMDD), parties (NAD role+name, e.g. BY buyer / SU supplier / IV invoicee), items (quantity, productId, price), and for INVOIC an optional total. Returns the full EDIFACT interchange in meta.edi — a correct UNA/UNB/UNH…UNT/UNZ envelope with BGM, DTM, NAD, LIN/QTY/PRI, MOA/CNT — with proper delimiters and release-character escaping. Deterministic, no external calls. Round-trips through edi.edifact.
+      operationId: edi_edifact-generate
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized envelope: items=[{controlRef,segmentCount}]; meta.edi = the generated EDIFACT.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            controlRef:
+                              type: string
+                            segmentCount:
+                              type: integer
+                          required:
+                          - controlRef
+                          - segmentCount
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                      meta:
+                        type: object
+                        properties:
+                          edi:
+                            type: string
+                            description: The full UN/EDIFACT interchange.
+                        required:
+                        - edi
+                        additionalProperties: false
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: edi.edifact-generate
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.0045
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.004500'
+        protocols:
+        - x402: {}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                type:
+                  type: string
+                  enum:
+                  - ORDERS
+                  - INVOIC
+                  description: Filter results by type.
+                senderId:
+                  type: string
+                  minLength: 1
+                  maxLength: 35
+                  description: Sender ID.
+                recipientId:
+                  type: string
+                  minLength: 1
+                  maxLength: 35
+                  description: Recipient ID.
+                senderQualifier:
+                  type: string
+                  minLength: 1
+                  maxLength: 4
+                  description: Sender qualifier.
+                recipientQualifier:
+                  type: string
+                  minLength: 1
+                  maxLength: 4
+                  description: Recipient qualifier.
+                documentNumber:
+                  type: string
+                  minLength: 1
+                  maxLength: 35
+                  description: Document number.
+                date:
+                  type: string
+                  minLength: 6
+                  maxLength: 8
+                  description: Date in YYYY-MM-DD format.
+                parties:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      role:
+                        type: string
+                        minLength: 1
+                        maxLength: 3
+                        description: Role.
+                      name:
+                        type: string
+                        minLength: 1
+                        maxLength: 70
+                        description: Name to search for.
+                    required:
+                    - role
+                    - name
+                    additionalProperties: false
+                  maxItems: 20
+                  description: Parties.
+                items:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      quantity:
+                        anyOf:
+                        - type: number
+                        - type: string
+                        description: Quantity.
+                      productId:
+                        type: string
+                        maxLength: 35
+                        description: Product ID.
+                      price:
+                        anyOf:
+                        - type: number
+                        - type: string
+                        description: Price.
+                      idType:
+                        type: string
+                        maxLength: 3
+                        description: ID type.
+                    required:
+                    - quantity
+                    additionalProperties: false
+                  minItems: 1
+                  maxItems: 1000
+                  description: Items.
+                total:
+                  type: number
+                  description: Total.
+                controlRef:
+                  type: string
+                  maxLength: 14
+                  description: Control ref.
+              required:
+              - type
+              - senderId
+              - recipientId
+              - documentNumber
+              - items
+              additionalProperties: false
+      parameters:
+      - $ref: '#/components/parameters/TrialMode'
+  /api/edi/generate:
+    post:
+      tags:
+      - Edi
+      summary: Generate a ready-to-send ANSI ASC X12 EDI document from
+      description: 'Generate a ready-to-send ANSI ASC X12 EDI document from structured JSON. POST type (''850'' Purchase Order, ''810'' Invoice, or ''856'' Ship Notice/ASN) plus senderId, receiverId, documentNumber (PO#/invoice#/shipment id), optional date, parties (N1 loops — role like ST/BT/VN + name), and items (quantity, uom, price, productId). For an 810 you can pass poNumber and total; for an 856 pass poNumber (the PO shipped). Returns the full X12 interchange in meta.edi — correct ISA/GS/ST…SE/GE/IEA envelope, party loops, PO1/IT1 line items (or the 856 HL Shipment→Order→Item hierarchy with LIN/SN1), and CTT/TDS totals (implied 2-decimal). Deterministic, no external calls. The outbound complement to edi.parse and edi.ack: assemble valid EDI envelopes instead of hand-rolling segment terminators and control numbers.'
+      operationId: edi_generate
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized envelope: meta.edi = the generated X12 document; items[0] = a summary.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            type:
+                              type: string
+                            documentNumber:
+                              type: string
+                            lineItems:
+                              type: integer
+                          required:
+                          - type
+                          - documentNumber
+                          - lineItems
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                      meta:
+                        type: object
+                        properties:
+                          edi:
+                            type: string
+                            description: The generated X12 interchange.
+                          segmentCount:
+                            type: integer
+                          controlNumber:
+                            type: string
+                        required:
+                        - edi
+                        - segmentCount
+                        - controlNumber
+                        additionalProperties: false
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: edi.generate
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.0045
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.004500'
+        protocols:
+        - x402: {}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                type:
+                  type: string
+                  enum:
+                  - '850'
+                  - '810'
+                  - '856'
+                  description: Filter results by type.
+                senderId:
+                  type: string
+                  minLength: 1
+                  maxLength: 15
+                  description: Sender ID.
+                receiverId:
+                  type: string
+                  minLength: 1
+                  maxLength: 15
+                  description: Receiver ID.
+                senderQualifier:
+                  type: string
+                  maxLength: 2
+                  description: Sender qualifier.
+                receiverQualifier:
+                  type: string
+                  maxLength: 2
+                  description: Receiver qualifier.
+                documentNumber:
+                  type: string
+                  minLength: 1
+                  maxLength: 60
+                  description: Document number.
+                poNumber:
+                  type: string
+                  maxLength: 60
+                  description: Po number.
+                date:
+                  type: string
+                  maxLength: 10
+                  description: Date in YYYY-MM-DD format.
+                parties:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      role:
+                        type: string
+                        minLength: 1
+                        maxLength: 3
+                        description: Entity-id code (ST=ship-to, BT=bill-to, VN=vendor, SF=ship-from, …).
+                      name:
+                        type: string
+                        minLength: 1
+                        maxLength: 60
+                        description: Name to search for.
+                      idQualifier:
+                        type: string
+                        maxLength: 2
+                        description: ID qualifier.
+                      id:
+                        type: string
+                        maxLength: 80
+                        description: Unique identifier of the record to fetch.
+                    required:
+                    - role
+                    - name
+                    additionalProperties: false
+                  maxItems: 20
+                  description: Parties.
+                items:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      quantity:
+                        anyOf:
+                        - type: number
+                        - type: string
+                        description: Quantity.
+                      uom:
+                        type: string
+                        maxLength: 2
+                        description: Unit of measure (EA, CA, …; default EA).
+                      price:
+                        anyOf:
+                        - type: number
+                        - type: string
+                        description: Price.
+                      productId:
+                        type: string
+                        maxLength: 48
+                        description: Product ID.
+                      idQualifier:
+                        type: string
+                        maxLength: 2
+                        description: Product id qualifier (VP, UP, BP, …; default VP).
+                    required:
+                    - quantity
+                    additionalProperties: false
+                  minItems: 1
+                  maxItems: 1000
+                  description: Items.
+                total:
+                  type: number
+                  description: 810 invoice total in USD.
+                controlNumber:
+                  type: string
+                  maxLength: 15
+                  description: Control number.
+                usage:
+                  type: string
+                  enum:
+                  - P
+                  - T
+                  description: Usage.
+              required:
+              - type
+              - senderId
+              - receiverId
+              - documentNumber
+              - items
+              additionalProperties: false
+      parameters:
+      - $ref: '#/components/parameters/TrialMode'
+  /api/edi/parse:
+    post:
+      tags:
+      - Edi
+      summary: Parse a raw ANSI ASC X12 EDI document (the format used for
+      description: Parse a raw ANSI ASC X12 EDI document (the format used for B2B purchase orders, invoices, ship notices, etc.) into clean, structured JSON. POST { edi } with the raw interchange text. Auto-detects the delimiters from the ISA envelope, then returns the interchange metadata (sender/receiver/date/control number/test-or-production), each functional group, and each transaction set with its type decoded (e.g. 850 = Purchase Order, 810 = Invoice, 856 = Ship Notice/ASN, 855 = PO Acknowledgment, 997 = Functional Acknowledgment), every segment named (BEG, N1, PO1, …), and a semantic summary — for a PO that's the PO number, dates, parties (ship-to/vendor with address), and line items (qty/uom/price/product id); for an invoice the invoice + PO numbers and total; for an ASN the shipment id and carrier; for a 997 the acknowledged group + status. Deterministic, no external calls. Turns opaque EDI into something an agent can actually use without hand-rolling an X12 parser.
+      operationId: edi_parse
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized envelope: items = transaction sets (each decoded + summarized); meta = interchange envelope + detected delimiters + counts.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            functionalCode:
+                              type: string
+                            functionalName:
+                              type: string
+                            type:
+                              type: string
+                            typeName:
+                              type: string
+                            controlNumber:
+                              type: string
+                              nullable: true
+                            segmentCount:
+                              type: integer
+                            summary:
+                              type: object
+                              additionalProperties: {}
+                              description: Type-specific semantic summary (PO number, parties, line items, totals, etc.).
+                            segments:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  tag:
+                                    type: string
+                                  name:
+                                    type: string
+                                  elements:
+                                    type: array
+                                    items:
+                                      anyOf:
+                                      - type: string
+                                      - type: array
+                                        items:
+                                          type: string
+                                required:
+                                - tag
+                                - name
+                                - elements
+                                additionalProperties: false
+                          required:
+                          - functionalCode
+                          - functionalName
+                          - type
+                          - typeName
+                          - controlNumber
+                          - segmentCount
+                          - summary
+                          - segments
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                      meta:
+                        type: object
+                        properties:
+                          interchange:
+                            type: object
+                            additionalProperties: {}
+                          delimiters:
+                            type: object
+                            properties:
+                              element:
+                                type: string
+                              component:
+                                type: string
+                              segment:
+                                type: string
+                              repetition:
+                                type: string
+                                nullable: true
+                            required:
+                            - element
+                            - component
+                            - segment
+                            - repetition
+                            additionalProperties: false
+                          functionalGroupCount:
+                            type: integer
+                          transactionSetCount:
+                            type: integer
+                          segmentCount:
+                            type: integer
+                        required:
+                        - interchange
+                        - delimiters
+                        - functionalGroupCount
+                        - transactionSetCount
+                        - segmentCount
+                        additionalProperties: false
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: edi.parse
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.0045
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.004500'
+        protocols:
+        - x402: {}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                edi:
+                  type: string
+                  minLength: 106
+                  maxLength: 500000
+                  description: Edi.
+              required:
+              - edi
+              additionalProperties: false
+      parameters:
+      - $ref: '#/components/parameters/TrialMode'
+components:
+  responses:
+    MethodNotAllowed:
+      description: Method not allowed — see `Allow` header for the supported method.
+    UpstreamError:
+      description: Upstream provider error.
+    ServerError:
+      description: Internal server error.
+    PaymentRequired:
+      description: Payment required. Body contains the x402 PaymentRequirements envelope with a multi-network accepts array; the per-call price is in accepts[].amount (and on the operation as x-2s-price). Sign for whichever rail you hold USDC on (EIP-3009 for Base, partial SPL transfer for Solana) and retry with the PAYMENT-SIGNATURE header (X-PAYMENT also accepted for v1 clients).
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/X402PaymentRequiredV2'
+    BadRequest:
+      description: Bad request — invalid parameters.
+  parameters:
+    TrialMode:
+      name: trial
+      in: query
+      required: false
+      description: 'Try before you buy. Set to 1 for one free real call per endpoint per hour — no wallet or payment needed — to verify the endpoint before paying. Equivalent to sending the "X-2s-Trial: 1" request header. Works on every endpoint.'
+      schema:
+        type: integer
+        enum:
+        - 1
+  schemas:
+    CallMeta:
+      type: object
+      description: Per-call meta envelope — endpoint id, cost, caller kind, settlement details.
+    Source:
+      type: object
+      description: 'Provenance of the data: upstream provider, source URL, and license.'
+      properties:
+        provider:
+          type: string
+          description: Upstream data provider.
+        url:
+          type: string
+          description: Source URL or documentation link.
+        license:
+          type: string
+          description: License / usage terms for the data.
+    X402PaymentRequiredV2:
+      type: object
+      description: x402 v2 PaymentRequired envelope. Pick any entry from accepts[], sign for that rail, retry with the PAYMENT-SIGNATURE header.
+      required:
+      - x402Version
+      - accepts
+      properties:
+        x402Version:
+          type: integer
+          const: 2
+        error:
+          type: string
+          description: Human-readable reason payment is required.
+        resource:
+          type: string
+          description: The resource URL being purchased.
+        accepts:
+          type: array
+          description: Payment requirement options, one per supported network (Base USDC, Solana USDC).
+          items:
+            type: object
+            required:
+            - scheme
+            - network
+            - amount
+            - asset
+            - payTo
+            - maxTimeoutSeconds
+            properties:
+              scheme:
+                type: string
+                enum:
+                - exact
+              network:
+                type: string
+                description: CAIP-2 network id, e.g. "eip155:8453" (Base) or "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp".
+              amount:
+                type: string
+                description: Price in atomic asset units (USDC has 6 decimals).
+              asset:
+                type: string
+                description: Asset contract address / mint.
+              payTo:
+                type: string
+                description: Treasury address to pay.
+              maxTimeoutSeconds:
+                type: integer
+              extra:
+                type: object
+                description: 'Rail-specific extras (EVM: EIP-712 domain name/version; Solana: feePayer).'
+                additionalProperties: true
+        extensions:
+          type: object
+          description: Optional discovery metadata (e.g. bazaar input/output schemas).
+          additionalProperties: true
+  securitySchemes:
+    x402Payment:
+      type: apiKey
+      in: header
+      name: PAYMENT-SIGNATURE
+      description: 'x402 protocol v2: base64-encoded PaymentPayload. Call any paid endpoint without auth to receive a 402 with a multi-network PaymentRequirements envelope. Sign for either rail: EIP-3009 transferWithAuthorization (Base USDC) OR a partial SPL token transfer (Solana USDC). Retry with PAYMENT-SIGNATURE header. X-PAYMENT is also accepted for v1 buyer clients. See https://x402.org.'

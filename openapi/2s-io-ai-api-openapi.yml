@@ -1,0 +1,1979 @@
+openapi: 3.2.0
+info:
+  title: 2s — the (most) everything AI API
+  version: '1'
+  summary: The (most) everything API.
+  description: 'The (most) everything API for AI agents: 575+ pay-per-call endpoints on one origin.'
+  contact:
+    name: 2s
+    url: https://2s.io
+    email: alley@2s.io
+  x-logo:
+    url: https://2s.io/icon-512.png
+    altText: 2s
+  x-guidance: 'Pay-per-call REST API for AI agents — hundreds of endpoints returning ground-truth data (US public records, company & legal identifiers, finance/SEC, crypto/web3, security & CVEs, medical codes, weather & geocoding, agriculture, energy, maritime, music, and more). Every endpoint is paid per call in USDC via x402 (Base or Solana) — no API key, no signup. Call any endpoint with no auth to get a 402 PaymentRequirements envelope, sign it (EIP-3009 on Base, partial SPL transfer on Solana), and retry with the PAYMENT-SIGNATURE header. Add ?trial=1 for one free real call per endpoint per hour to test before paying. To discover the right endpoint: GET https://2s.io/api/directory for the full catalog, or GET https://2s.io/api/search/endpoints?q=<natural-language task> for a ranked match. Per-call price is on each operation as x-payment-info (from $0.001). Batch up to 50 calls behind one payment via POST https://2s.io/api/batch/run.'
+servers:
+- url: https://2s.io
+tags:
+- name: AI
+paths:
+  /api/ai/chat:
+    post:
+      tags:
+      - AI
+      summary: OpenAI-compatible chat completions across every frontier
+      description: OpenAI-compatible chat completions across every frontier model on one endpoint — GPT-5, Claude, Gemini, Grok, DeepSeek, Llama, Mistral and ~290 more. POST { model, messages, max_tokens?, temperature?, top_p?, stop? } and get back a standard chat.completion (choices[].message + usage). Pay per call in USDC via x402 — no accounts, no provider keys, no subscriptions. Price scales with the model and max_tokens and is quoted in the 402. List selectable models at GET /api/ai/models.
+      operationId: ai_chat
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: OK
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: ai.chat
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.0025
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: legacy
+      x-payment-info:
+        price:
+          mode: dynamic
+          currency: USD
+          min: '0.002500'
+          max: '50.000000'
+        protocols:
+        - x402: {}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                model:
+                  type: string
+                  minLength: 1
+                  maxLength: 80
+                  description: 'Gateway model id, e.g. openai/gpt-5, anthropic/claude-opus-4.8, google/gemini-3-pro-preview. Full list: GET /api/ai/models.'
+                messages:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      role:
+                        type: string
+                        enum:
+                        - system
+                        - user
+                        - assistant
+                        description: Role.
+                      content:
+                        type: string
+                        description: Content.
+                    required:
+                    - role
+                    - content
+                    additionalProperties: false
+                  minItems: 1
+                  description: OpenAI-style message list.
+                max_tokens:
+                  type: integer
+                  minimum: 1
+                  maximum: 8192
+                  description: Max output tokens (default 1024).
+                temperature:
+                  type: number
+                  minimum: 0
+                  maximum: 2
+                  description: Temperature.
+                top_p:
+                  type: number
+                  minimum: 0
+                  maximum: 1
+                  description: Top p.
+                stop:
+                  anyOf:
+                  - type: string
+                  - type: array
+                    items:
+                      type: string
+                  description: Stop.
+              required:
+              - model
+              - messages
+              additionalProperties: false
+      parameters:
+      - $ref: '#/components/parameters/TrialMode'
+  /api/ai/classify:
+    post:
+      tags:
+      - AI
+      summary: Zero-shot text classification
+      description: Zero-shot text classification. POST { text, labels[], multiLabel? }. Assigns the text to one of your labels (or several when multiLabel=true) with a confidence score and a one-line rationale. No training data needed — define the labels at call time. Great for routing, tagging, triage, and intent detection.
+      operationId: ai_classify
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized: items = [classification].'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            labels:
+                              type: array
+                              items:
+                                type: string
+                            top:
+                              type: string
+                              nullable: true
+                            confidence:
+                              type: number
+                              nullable: true
+                            reasoning:
+                              type: string
+                              nullable: true
+                          required:
+                          - labels
+                          - top
+                          - confidence
+                          - reasoning
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: ai.classify
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.045
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.045000'
+        protocols:
+        - x402: {}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                text:
+                  type: string
+                  minLength: 1
+                  maxLength: 12000
+                  description: Text.
+                labels:
+                  type: array
+                  items:
+                    type: string
+                    minLength: 1
+                    maxLength: 60
+                  minItems: 2
+                  maxItems: 20
+                  description: Candidate labels to choose from.
+                multiLabel:
+                  type: boolean
+                  description: Allow multiple labels (default single).
+              required:
+              - text
+              - labels
+              additionalProperties: false
+      parameters:
+      - $ref: '#/components/parameters/TrialMode'
+  /api/ai/council:
+    post:
+      tags:
+      - AI
+      summary: Ask several frontier models the same question and get one
+      description: Ask several frontier models the same question and get one synthesized answer. Choose a preset council — fast (3 quick models), balanced (3 strong models with a peer-refine round), or deep (5 models plus refine) — or supply your own set of 2–8 models. A chairman model merges the responses into a single consensus with a confidence score and any points of dissent, and each member’s individual answer is returned alongside. Price scales with the council size and answer length, and is quoted up front in the 402. Models auto-resolve to their latest available version; any unavailable model simply drops out (at least 2 are needed).
+      operationId: ai_council
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized envelope: items = [the consensus result]; total = 1. meta carries the mode, chairman model, and how many members answered.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            consensus:
+                              type: string
+                              description: The synthesized best answer.
+                            confidence:
+                              type: number
+                              description: 0–1 confidence; high when the council agreed.
+                            agreement:
+                              type: string
+                              description: One-line note on what the council agreed on.
+                            dissent:
+                              type: array
+                              items:
+                                type: string
+                              description: Notable disagreements or points one model added; empty on full agreement.
+                            models:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  model:
+                                    type: string
+                                  answered:
+                                    type: boolean
+                                  answer:
+                                    type: string
+                                    nullable: true
+                                required:
+                                - model
+                                - answered
+                                - answer
+                                additionalProperties: false
+                              description: Each council member and its individual answer (null if it did not respond).
+                          required:
+                          - consensus
+                          - confidence
+                          - agreement
+                          - dissent
+                          - models
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                      meta:
+                        type: object
+                        properties:
+                          mode:
+                            type: string
+                          chairman:
+                            type: string
+                          modelCount:
+                            type: integer
+                          answered:
+                            type: integer
+                        required:
+                        - mode
+                        - chairman
+                        - modelCount
+                        - answered
+                        additionalProperties: false
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: ai.council
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.03
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: dynamic
+          currency: USD
+          min: '0.030000'
+          max: '50.000000'
+        protocols:
+        - x402: {}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                prompt:
+                  type: string
+                  minLength: 1
+                  maxLength: 12000
+                  description: The question to put to the council.
+                mode:
+                  type: string
+                  enum:
+                  - fast
+                  - balanced
+                  - deep
+                  description: Preset council. Default balanced. Ignored if `models` is given.
+                models:
+                  type: array
+                  items:
+                    type: string
+                    minLength: 1
+                    maxLength: 80
+                  minItems: 2
+                  maxItems: 8
+                  description: 'Custom council of 2–8 gateway model ids, e.g. ["openai/gpt-5","anthropic/claude-opus","google/gemini-3-pro"] (overrides `mode`). Full selectable list + live prices: GET /api/ai/council/menu.'
+                maxTokens:
+                  type: integer
+                  minimum: 128
+                  maximum: 4096
+                  description: Max output tokens per model. Default 640.
+              required:
+              - prompt
+              additionalProperties: false
+      parameters:
+      - $ref: '#/components/parameters/TrialMode'
+  /api/ai/describe-image:
+    post:
+      tags:
+      - AI
+      summary: Describe an image. POST { imageUrl, instruction? }. Returns
+      description: Describe an image. POST { imageUrl, instruction? }. Returns { imageUrl, altText (5-15 word accessibility text), description (2-3 sentences), contentType (photograph|illustration|screenshot|diagram|document|mixed|other), text (verbatim OCR transcription, "" if none), mainObjects[], dominantColors[] (hex) }. Accepts JPEG, PNG, GIF, WebP. 1MB image size cap.
+      operationId: ai_describe-image
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized envelope: items = [description] (one structured image description: altText, description, OCR text, main objects, dominant colors); total = 1.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            imageUrl:
+                              type: string
+                            altText:
+                              type: string
+                              description: Short accessibility text (~5-15 words).
+                            description:
+                              type: string
+                              description: 2-3 sentence description.
+                            contentType:
+                              type: string
+                              enum:
+                              - photograph
+                              - illustration
+                              - screenshot
+                              - diagram
+                              - document
+                              - mixed
+                              - other
+                            text:
+                              type: string
+                              description: Verbatim OCR transcription, "" if no text present.
+                            mainObjects:
+                              type: array
+                              items:
+                                type: string
+                              description: Salient objects/subjects in the image.
+                            dominantColors:
+                              type: array
+                              items:
+                                type: string
+                              description: Hex color codes (e.g. "#1a3b5f") of dominant colors.
+                          required:
+                          - imageUrl
+                          - altText
+                          - description
+                          - contentType
+                          - text
+                          - mainObjects
+                          - dominantColors
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: ai.describe-image
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.045
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.045000'
+        protocols:
+        - x402: {}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                imageUrl:
+                  type: string
+                  format: uri
+                  maxLength: 2048
+                  description: HTTPS URL of a JPEG, PNG, GIF, or WebP image (≤1MB).
+                instruction:
+                  type: string
+                  maxLength: 1000
+                  description: Optional caller-supplied focus hint, e.g. "describe the chart axes".
+              required:
+              - imageUrl
+              additionalProperties: false
+      parameters:
+      - $ref: '#/components/parameters/TrialMode'
+  /api/ai/entities:
+    post:
+      tags:
+      - AI
+      summary: Named-entity recognition
+      description: Named-entity recognition. POST { text }. Extracts people, organizations, locations, dates, money, products, laws, events and more — each with a standard type and mention count. For knowledge extraction, redaction prep, and document indexing.
+      operationId: ai_entities
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized: items = [{ entities, count }].'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            entities:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  text:
+                                    type: string
+                                  type:
+                                    type: string
+                                  mentions:
+                                    type: number
+                                    nullable: true
+                                required:
+                                - text
+                                - type
+                                - mentions
+                                additionalProperties: false
+                            count:
+                              type: number
+                          required:
+                          - entities
+                          - count
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: ai.entities
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.09
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.090000'
+        protocols:
+        - x402: {}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                text:
+                  type: string
+                  minLength: 1
+                  maxLength: 12000
+                  description: Text.
+              required:
+              - text
+              additionalProperties: false
+      parameters:
+      - $ref: '#/components/parameters/TrialMode'
+  /api/ai/extract:
+    post:
+      tags:
+      - AI
+      summary: Extract structured data from a webpage
+      description: Extract structured data from a webpage. POST { url, schema, instruction? }. The schema is a JSON Schema object (top-level type:"object") describing the shape you want back; output is guaranteed to conform. Returns { url, finalUrl, extracted, meta:{ truncated } }.
+      operationId: ai_extract
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized envelope: items = [extraction] (one object: the schema-conforming extracted data, source URLs, truncation flag); total = 1.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            url:
+                              type: string
+                              description: Requested URL.
+                            finalUrl:
+                              type: string
+                              description: Final URL after redirects.
+                            extracted:
+                              type: object
+                              additionalProperties: {}
+                              description: The extracted object, conforming to the caller-supplied JSON Schema.
+                            truncated:
+                              type: boolean
+                              description: True if the source page was truncated before extraction.
+                          required:
+                          - url
+                          - finalUrl
+                          - extracted
+                          - truncated
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: ai.extract
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.1875
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.187500'
+        protocols:
+        - x402: {}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                url:
+                  type: string
+                  format: uri
+                  maxLength: 2048
+                  description: URL to process.
+                schema:
+                  type: object
+                  additionalProperties: {}
+                  description: Schema.
+                instruction:
+                  type: string
+                  maxLength: 2000
+                  description: Instruction.
+              required:
+              - url
+              - schema
+              additionalProperties: false
+      parameters:
+      - $ref: '#/components/parameters/TrialMode'
+  /api/ai/image:
+    post:
+      tags:
+      - AI
+      summary: Generate images from a text prompt across the gateway's
+      description: 'Generate images from a text prompt across the gateway’s image models (gpt-image, Gemini image, FLUX, Grok Imagine, …) on one endpoint. POST { model, prompt, n?, size? } → OpenAI-style { created, data: [{ b64_json }] }. Pay per call in USDC via x402 — no accounts or provider keys. Priced per model from $0.03/image (quoted in the 402). List models at GET /api/ai/models.'
+      operationId: ai_image
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: OK
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: ai.image
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.09
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: legacy
+      x-payment-info:
+        price:
+          mode: dynamic
+          currency: USD
+          min: '0.090000'
+          max: '50.000000'
+        protocols:
+        - x402: {}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                model:
+                  type: string
+                  minLength: 1
+                  maxLength: 80
+                  description: Gateway image model id, e.g. openai/gpt-image-1, google/gemini-3-pro-image, black-forest-labs/flux-1.1-pro.
+                prompt:
+                  type: string
+                  minLength: 1
+                  maxLength: 4000
+                  description: Text prompt.
+                n:
+                  type: integer
+                  minimum: 1
+                  maximum: 4
+                  description: Number of images (1-4, default 1).
+                size:
+                  type: string
+                  maxLength: 16
+                  description: Optional WxH, e.g. 1024x1024.
+              required:
+              - model
+              - prompt
+              additionalProperties: false
+      parameters:
+      - $ref: '#/components/parameters/TrialMode'
+  /api/ai/moderate:
+    post:
+      tags:
+      - AI
+      summary: Content moderation. POST { text }. Flags content across
+      description: Content moderation. POST { text }. Flags content across categories — hate, harassment, sexual, sexual/minors, violence, self-harm, dangerous, illicit — with a per-category boolean and 0..1 severity score, plus an overall flagged verdict. For UGC filtering, trust & safety, and pre-publish checks.
+      operationId: ai_moderate
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized: items = [{ flagged, categories, scores }].'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            flagged:
+                              type: boolean
+                            categories:
+                              type: object
+                              additionalProperties:
+                                type: boolean
+                            scores:
+                              type: object
+                              additionalProperties:
+                                type: number
+                          required:
+                          - flagged
+                          - categories
+                          - scores
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: ai.moderate
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.045
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.045000'
+        protocols:
+        - x402: {}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                text:
+                  type: string
+                  minLength: 1
+                  maxLength: 12000
+                  description: Text.
+              required:
+              - text
+              additionalProperties: false
+      parameters:
+      - $ref: '#/components/parameters/TrialMode'
+  /api/ai/ocr:
+    post:
+      tags:
+      - AI
+      summary: OCR + layout extraction
+      description: OCR + layout extraction. POST { imageUrl, instruction? }. Returns verbatim transcribed text in reading order, any detected tables as markdown, the primary language, and a handwriting flag. For reading receipts, forms, screenshots, scanned pages, and labels. JPEG/PNG/GIF/WebP.
+      operationId: ai_ocr
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized: items = [OCR result].'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            imageUrl:
+                              type: string
+                            fullText:
+                              type: string
+                            tables:
+                              type: array
+                              items:
+                                type: string
+                            language:
+                              type: string
+                              nullable: true
+                            hasHandwriting:
+                              type: boolean
+                              nullable: true
+                          required:
+                          - imageUrl
+                          - fullText
+                          - tables
+                          - language
+                          - hasHandwriting
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: ai.ocr
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.09
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.090000'
+        protocols:
+        - x402: {}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                imageUrl:
+                  type: string
+                  format: uri
+                  maxLength: 2048
+                  description: Public image URL (JPEG/PNG/GIF/WebP).
+                instruction:
+                  type: string
+                  maxLength: 500
+                  description: Optional steering, e.g. "only the table" or "preserve line numbers".
+              required:
+              - imageUrl
+              additionalProperties: false
+      parameters:
+      - $ref: '#/components/parameters/TrialMode'
+  /api/ai/pii:
+    post:
+      tags:
+      - AI
+      summary: PII detection. POST { text }. Finds personally identifiable
+      description: PII detection. POST { text }. Finds personally identifiable information — names, emails, phones, addresses, SSNs, credit cards, bank/IP/passport/DOB and more — returning each finding with its type and exact substring so you can redact it. For compliance, logging hygiene, and data-minimization before storing or sending text.
+      operationId: ai_pii
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized: items = [{ hasPii, count, types, entities }].'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            hasPii:
+                              type: boolean
+                            count:
+                              type: number
+                            types:
+                              type: array
+                              items:
+                                type: string
+                            entities:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  type:
+                                    type: string
+                                  value:
+                                    type: string
+                                required:
+                                - type
+                                - value
+                                additionalProperties: false
+                          required:
+                          - hasPii
+                          - count
+                          - types
+                          - entities
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: ai.pii
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.075
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.075000'
+        protocols:
+        - x402: {}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                text:
+                  type: string
+                  minLength: 1
+                  maxLength: 12000
+                  description: Text.
+              required:
+              - text
+              additionalProperties: false
+      parameters:
+      - $ref: '#/components/parameters/TrialMode'
+  /api/ai/research:
+    post:
+      tags:
+      - AI
+      summary: Grounded research brief
+      description: 'Grounded research brief. POST { query, urls? }. Gathers sources (Wikipedia + any URLs you supply), then synthesizes a factual, cited brief: a 2-4 sentence summary, key facts, and the source list. Grounded only in the fetched sources (no free-form invention). For agent research, due diligence, and topic primers.'
+      operationId: ai_research
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized: items = [research brief]; sources lists what was used.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            query:
+                              type: string
+                            summary:
+                              type: string
+                            keyFacts:
+                              type: array
+                              items:
+                                type: string
+                            sources:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  title:
+                                    type: string
+                                  url:
+                                    type: string
+                                required:
+                                - title
+                                - url
+                                additionalProperties: false
+                          required:
+                          - query
+                          - summary
+                          - keyFacts
+                          - sources
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: ai.research
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.105
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.105000'
+        protocols:
+        - x402: {}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                query:
+                  type: string
+                  minLength: 2
+                  maxLength: 400
+                  description: Topic, entity, or question to research.
+                urls:
+                  type: array
+                  items:
+                    type: string
+                    format: uri
+                    maxLength: 2048
+                  maxItems: 5
+                  description: Optional source URLs to ground the brief in, alongside Wikipedia.
+              required:
+              - query
+              additionalProperties: false
+      parameters:
+      - $ref: '#/components/parameters/TrialMode'
+  /api/ai/screenshot:
+    post:
+      tags:
+      - AI
+      summary: Render a URL as a screenshot
+      description: 'Render a URL as a screenshot. POST { url, width?, height?, fullPage?, format?, quality?, waitUntil?, timeoutMs?, deviceScaleFactor?, blockAds? }. Returns raw image bytes (no JSON envelope) with X-2s-Render-Ms and X-2s-Image-Bytes headers. Viewport clamped 320-3840 × 320-2160. Timeout clamped 1-15s. Defaults: 1280×720 PNG, networkidle2 wait, ad-blocking on. Use cases: visual verification, archival, change detection, OG-card generation, RSS thumbnails.'
+      operationId: ai_screenshot
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: Raw image bytes (PNG / JPEG / WebP per `format`). X-2s-Render-Ms + X-2s-Image-Bytes response headers describe the render. No JSON envelope on success.
+          content:
+            image/*:
+              schema:
+                type: string
+                format: binary
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: ai.screenshot
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.01875
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: legacy
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.018750'
+        protocols:
+        - x402: {}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                url:
+                  type: string
+                  format: uri
+                  maxLength: 2048
+                  description: HTTPS URL to render.
+                width:
+                  type: integer
+                  minimum: 320
+                  maximum: 3840
+                  description: Viewport width (320-3840). Default 1280.
+                height:
+                  type: integer
+                  minimum: 320
+                  maximum: 2160
+                  description: Viewport height (320-2160). Default 720.
+                fullPage:
+                  type: boolean
+                  description: Capture the full scrollable page instead of the viewport.
+                format:
+                  type: string
+                  enum:
+                  - png
+                  - jpeg
+                  - webp
+                  description: Image format. Default png.
+                quality:
+                  type: integer
+                  minimum: 1
+                  maximum: 100
+                  description: JPEG/WebP quality 1-100. Ignored for PNG.
+                waitUntil:
+                  type: string
+                  enum:
+                  - load
+                  - domcontentloaded
+                  - networkidle0
+                  - networkidle2
+                  description: Wait condition before snap. Default networkidle2.
+                timeoutMs:
+                  type: integer
+                  minimum: 1000
+                  maximum: 15000
+                  description: Render timeout in milliseconds (1000-15000). Default 8000.
+                deviceScaleFactor:
+                  type: integer
+                  minimum: 1
+                  maximum: 3
+                  description: Pixel density multiplier 1-3. Default 1.
+                blockAds:
+                  type: boolean
+                  description: Block ads + trackers. Default true.
+              required:
+              - url
+              additionalProperties: false
+      parameters:
+      - $ref: '#/components/parameters/TrialMode'
+  /api/ai/sentiment:
+    post:
+      tags:
+      - AI
+      summary: Sentiment analysis. POST { text }. Returns overall
+      description: Sentiment analysis. POST { text }. Returns overall sentiment (positive/negative/neutral/mixed), a polarity score from -1 to 1, a confidence, and a one-line rationale. For reviews, social posts, support messages, and feedback triage.
+      operationId: ai_sentiment
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized: items = [sentiment].'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            sentiment:
+                              type: string
+                              nullable: true
+                            score:
+                              type: number
+                              nullable: true
+                            confidence:
+                              type: number
+                              nullable: true
+                            rationale:
+                              type: string
+                              nullable: true
+                          required:
+                          - sentiment
+                          - score
+                          - confidence
+                          - rationale
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: ai.sentiment
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.045
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.045000'
+        protocols:
+        - x402: {}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                text:
+                  type: string
+                  minLength: 1
+                  maxLength: 12000
+                  description: Text.
+              required:
+              - text
+              additionalProperties: false
+      parameters:
+      - $ref: '#/components/parameters/TrialMode'
+  /api/ai/summarize:
+    post:
+      tags:
+      - AI
+      summary: Summarize a webpage. POST { url, instruction? }. Returns {
+      description: 'Summarize a webpage. POST { url, instruction? }. Returns { url, finalUrl, summary (1-3 sentences), keyPoints (3-7 bullets), title, audience, estimatedReadingMinutes, meta:{ truncated } }. Sibling to /api/ai/extract — use extract when you need a typed payload conforming to your own schema; use summarize when you want a ready-made digest. Supports x402 upto billing: authorize the quoted max, pay only your actual usage.'
+      operationId: ai_summarize
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized envelope: items = [summary] (one structured page summary: summary, keyPoints, title, audience, reading time); total = 1.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            url:
+                              type: string
+                              description: Requested URL.
+                            finalUrl:
+                              type: string
+                              description: Final URL after redirects.
+                            summary:
+                              type: string
+                              description: 1-3 sentence digest.
+                            keyPoints:
+                              type: array
+                              items:
+                                type: string
+                              description: 3-7 bullet key points.
+                            title:
+                              type: string
+                              description: Page title.
+                            audience:
+                              type: string
+                              description: Inferred target audience.
+                            estimatedReadingMinutes:
+                              type: integer
+                              description: Estimated reading time in minutes.
+                            truncated:
+                              type: boolean
+                              description: True if the source page was truncated before summarizing.
+                          required:
+                          - url
+                          - finalUrl
+                          - summary
+                          - keyPoints
+                          - title
+                          - audience
+                          - estimatedReadingMinutes
+                          - truncated
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: ai.summarize
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.1575
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.157500'
+        protocols:
+        - x402: {}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                url:
+                  type: string
+                  format: uri
+                  maxLength: 2048
+                  description: URL to process.
+                instruction:
+                  type: string
+                  maxLength: 1000
+                  description: Instruction.
+              required:
+              - url
+              additionalProperties: false
+      parameters:
+      - $ref: '#/components/parameters/TrialMode'
+  /api/ai/translate:
+    post:
+      tags:
+      - AI
+      summary: Translate text. POST { text, targetLanguage
+      description: Translate text. POST { text, targetLanguage, sourceLanguage? } — language codes are BCP-47 (e.g. "en", "es-MX", "zh-Hans"). Source auto-detected when omitted. Returns { text, targetLanguage, detectedSourceLanguage, confidence (high|medium|low) }. Best for short-to-medium passages; chunk long documents on your side.
+      operationId: ai_translate
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized envelope: items = [translation] (one result: translated text, detected source language, confidence); total = 1.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            text:
+                              type: string
+                              description: Translated text in targetLanguage.
+                            targetLanguage:
+                              type: string
+                            detectedSourceLanguage:
+                              type: string
+                              description: BCP-47 source language tag (echoed when supplied, detected otherwise).
+                            confidence:
+                              type: string
+                              enum:
+                              - high
+                              - medium
+                              - low
+                              description: Model confidence in the translation.
+                          required:
+                          - text
+                          - targetLanguage
+                          - detectedSourceLanguage
+                          - confidence
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: ai.translate
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.0705
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.070500'
+        protocols:
+        - x402: {}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                text:
+                  type: string
+                  minLength: 1
+                  maxLength: 6000
+                  description: Source text to translate (1-6000 chars).
+                targetLanguage:
+                  type: string
+                  minLength: 2
+                  maxLength: 20
+                  description: Target language as BCP-47 (e.g. "en", "es-MX", "zh-Hans").
+                sourceLanguage:
+                  type: string
+                  minLength: 2
+                  maxLength: 20
+                  description: Source language as BCP-47. Auto-detected when omitted.
+              required:
+              - text
+              - targetLanguage
+              additionalProperties: false
+      parameters:
+      - $ref: '#/components/parameters/TrialMode'
+  /api/ai/web-answer:
+    post:
+      tags:
+      - AI
+      summary: Answer a question from the live web
+      description: Answer a question from the live web. POST { query, topic?, maxResults? }. Runs a deep web search and returns a synthesized, citation-backed answer plus the ranked source pages (title, URL, snippet). For up-to-the-minute questions an LLM alone can't answer — news, prices, current events, recent releases. topic=news biases toward recent reporting.
+      operationId: ai_web-answer
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized: items = [{ answer, sources }].'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            answer:
+                              type: string
+                              nullable: true
+                            sources:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  title:
+                                    type: string
+                                    nullable: true
+                                  url:
+                                    type: string
+                                    nullable: true
+                                  content:
+                                    type: string
+                                    nullable: true
+                                  score:
+                                    type: number
+                                    nullable: true
+                                required:
+                                - title
+                                - url
+                                - content
+                                - score
+                                additionalProperties: false
+                          required:
+                          - answer
+                          - sources
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: ai.web-answer
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.0825
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.082500'
+        protocols:
+        - x402: {}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                query:
+                  type: string
+                  minLength: 2
+                  maxLength: 400
+                  description: Free-text search query.
+                topic:
+                  type: string
+                  enum:
+                  - general
+                  - news
+                  description: Topic.
+                maxResults:
+                  type: integer
+                  minimum: 1
+                  maximum: 10
+                  description: Max results.
+              required:
+              - query
+              additionalProperties: false
+      parameters:
+      - $ref: '#/components/parameters/TrialMode'
+components:
+  responses:
+    MethodNotAllowed:
+      description: Method not allowed — see `Allow` header for the supported method.
+    UpstreamError:
+      description: Upstream provider error.
+    ServerError:
+      description: Internal server error.
+    PaymentRequired:
+      description: Payment required. Body contains the x402 PaymentRequirements envelope with a multi-network accepts array; the per-call price is in accepts[].amount (and on the operation as x-2s-price). Sign for whichever rail you hold USDC on (EIP-3009 for Base, partial SPL transfer for Solana) and retry with the PAYMENT-SIGNATURE header (X-PAYMENT also accepted for v1 clients).
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/X402PaymentRequiredV2'
+    BadRequest:
+      description: Bad request — invalid parameters.
+  parameters:
+    TrialMode:
+      name: trial
+      in: query
+      required: false
+      description: 'Try before you buy. Set to 1 for one free real call per endpoint per hour — no wallet or payment needed — to verify the endpoint before paying. Equivalent to sending the "X-2s-Trial: 1" request header. Works on every endpoint.'
+      schema:
+        type: integer
+        enum:
+        - 1
+  schemas:
+    CallMeta:
+      type: object
+      description: Per-call meta envelope — endpoint id, cost, caller kind, settlement details.
+    Source:
+      type: object
+      description: 'Provenance of the data: upstream provider, source URL, and license.'
+      properties:
+        provider:
+          type: string
+          description: Upstream data provider.
+        url:
+          type: string
+          description: Source URL or documentation link.
+        license:
+          type: string
+          description: License / usage terms for the data.
+    X402PaymentRequiredV2:
+      type: object
+      description: x402 v2 PaymentRequired envelope. Pick any entry from accepts[], sign for that rail, retry with the PAYMENT-SIGNATURE header.
+      required:
+      - x402Version
+      - accepts
+      properties:
+        x402Version:
+          type: integer
+          const: 2
+        error:
+          type: string
+          description: Human-readable reason payment is required.
+        resource:
+          type: string
+          description: The resource URL being purchased.
+        accepts:
+          type: array
+          description: Payment requirement options, one per supported network (Base USDC, Solana USDC).
+          items:
+            type: object
+            required:
+            - scheme
+            - network
+            - amount
+            - asset
+            - payTo
+            - maxTimeoutSeconds
+            properties:
+              scheme:
+                type: string
+                enum:
+                - exact
+              network:
+                type: string
+                description: CAIP-2 network id, e.g. "eip155:8453" (Base) or "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp".
+              amount:
+                type: string
+                description: Price in atomic asset units (USDC has 6 decimals).
+              asset:
+                type: string
+                description: Asset contract address / mint.
+              payTo:
+                type: string
+                description: Treasury address to pay.
+              maxTimeoutSeconds:
+                type: integer
+              extra:
+                type: object
+                description: 'Rail-specific extras (EVM: EIP-712 domain name/version; Solana: feePayer).'
+                additionalProperties: true
+        extensions:
+          type: object
+          description: Optional discovery metadata (e.g. bazaar input/output schemas).
+          additionalProperties: true
+  securitySchemes:
+    x402Payment:
+      type: apiKey
+      in: header
+      name: PAYMENT-SIGNATURE
+      description: 'x402 protocol v2: base64-encoded PaymentPayload. Call any paid endpoint without auth to receive a 402 with a multi-network PaymentRequirements envelope. Sign for either rail: EIP-3009 transferWithAuthorization (Base USDC) OR a partial SPL token transfer (Solana USDC). Retry with PAYMENT-SIGNATURE header. X-PAYMENT is also accepted for v1 buyer clients. See https://x402.org.'

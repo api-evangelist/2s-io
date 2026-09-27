@@ -1,0 +1,2671 @@
+openapi: 3.2.0
+info:
+  title: 2s — the (most) everything Security API
+  version: '1'
+  summary: The (most) everything API.
+  description: 'The (most) everything API for AI agents: 575+ pay-per-call endpoints on one origin.'
+  contact:
+    name: 2s
+    url: https://2s.io
+    email: alley@2s.io
+  x-logo:
+    url: https://2s.io/icon-512.png
+    altText: 2s
+  x-guidance: 'Pay-per-call REST API for AI agents — hundreds of endpoints returning ground-truth data (US public records, company & legal identifiers, finance/SEC, crypto/web3, security & CVEs, medical codes, weather & geocoding, agriculture, energy, maritime, music, and more). Every endpoint is paid per call in USDC via x402 (Base or Solana) — no API key, no signup. Call any endpoint with no auth to get a 402 PaymentRequirements envelope, sign it (EIP-3009 on Base, partial SPL transfer on Solana), and retry with the PAYMENT-SIGNATURE header. Add ?trial=1 for one free real call per endpoint per hour to test before paying. To discover the right endpoint: GET https://2s.io/api/directory for the full catalog, or GET https://2s.io/api/search/endpoints?q=<natural-language task> for a ranked match. Per-call price is on each operation as x-payment-info (from $0.001). Batch up to 50 calls behind one payment via POST https://2s.io/api/batch/run.'
+servers:
+- url: https://2s.io
+tags:
+- name: Security
+paths:
+  /api/security/attack:
+    get:
+      tags:
+      - Security
+      summary: Authoritative MITRE ATT&CK (Enterprise) technique lookup
+      description: Authoritative MITRE ATT&CK (Enterprise) technique lookup. Pass id (e.g. T1059 or sub-technique T1059.001) for the canonical technique — name, tactics (kill-chain phases), description, platforms, sub-technique flag + parent, mitigations, and detection guidance — or query for a keyword search returning ranked techniques. Bundled current ATT&CK matrix (~700 techniques), zero external calls. Agents cite T-numbers and tactic names that must be exact; this returns version-pinned, citeable data instead of hallucinated IDs. For threat modeling, detection engineering, and report enrichment.
+      operationId: security_attack
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized envelope: items=[{mode:lookup,item}] or search results.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            mode:
+                              type: string
+                              enum:
+                              - lookup
+                              - search
+                              description: lookup when id was given, search when query was given.
+                            item:
+                              type: object
+                              properties:
+                                id:
+                                  type: string
+                                  description: ATT&CK technique id (T1059 / T1059.001).
+                                name:
+                                  type: string
+                                tactics:
+                                  type: array
+                                  items:
+                                    type: string
+                                  description: Kill-chain phases, e.g. "execution".
+                                description:
+                                  type: string
+                                platforms:
+                                  type: array
+                                  items:
+                                    type: string
+                                isSubtechnique:
+                                  type: boolean
+                                parent:
+                                  type: string
+                                  nullable: true
+                                  description: Parent technique id for sub-techniques.
+                                mitigations:
+                                  type: array
+                                  items:
+                                    type: string
+                                detection:
+                                  type: string
+                                  nullable: true
+                              required:
+                              - id
+                              - name
+                              - tactics
+                              - description
+                              - platforms
+                              - isSubtechnique
+                              - parent
+                              - mitigations
+                              - detection
+                              additionalProperties: false
+                              description: 'Lookup mode only: the canonical technique.'
+                            total:
+                              type: number
+                              description: 'Search mode only: total ranked matches.'
+                            items:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  id:
+                                    type: string
+                                  name:
+                                    type: string
+                                  abstraction:
+                                    type: string
+                                  description:
+                                    type: string
+                                    nullable: true
+                                    description: Truncated to 200 chars.
+                                required:
+                                - id
+                                - name
+                                - description
+                                additionalProperties: false
+                              description: 'Search mode only: ranked matches (page of total).'
+                            source:
+                              $ref: '#/components/schemas/Source'
+                          required:
+                          - mode
+                          - source
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: security.attack
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.0025
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.002500'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: id
+        in: query
+        required: false
+        description: Unique identifier of the record to fetch.
+        schema:
+          type: string
+          minLength: 2
+          maxLength: 20
+      - name: query
+        in: query
+        required: false
+        description: Free-text search query.
+        schema:
+          type: string
+          minLength: 2
+          maxLength: 80
+      - name: limit
+        in: query
+        required: false
+        description: Maximum number of results to return.
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+      - $ref: '#/components/parameters/TrialMode'
+  /api/security/capec:
+    get:
+      tags:
+      - Security
+      summary: Authoritative MITRE CAPEC (Common Attack Pattern
+      description: Authoritative MITRE CAPEC (Common Attack Pattern Enumeration) lookup. Pass id (e.g. CAPEC-66, or just 66) for the canonical attack pattern — name, abstraction, description, typical likelihood + severity, mapped CWE weaknesses (with names), and related patterns (with names) — or query for a keyword search. Bundled catalog (~615 patterns), zero external calls. The attacker's-eye complement to security.cwe (the defender's weakness view) — the CAPEC↔CWE cross-links let an agent pivot between how an attack works and the weakness it exploits, with exact citeable IDs.
+      operationId: security_capec
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized envelope: items=[{mode:lookup,item}] or search results.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            mode:
+                              type: string
+                              enum:
+                              - lookup
+                              - search
+                              description: lookup when id was given, search when query was given.
+                            item:
+                              type: object
+                              properties:
+                                id:
+                                  type: string
+                                  description: CAPEC id (e.g. CAPEC-66).
+                                name:
+                                  type: string
+                                abstraction:
+                                  type: string
+                                status:
+                                  type: string
+                                description:
+                                  type: string
+                                  nullable: true
+                                likelihood:
+                                  type: string
+                                  nullable: true
+                                  description: Typical likelihood of attack.
+                                severity:
+                                  type: string
+                                  nullable: true
+                                  description: Typical severity.
+                                mappedCwe:
+                                  type: array
+                                  items:
+                                    type: object
+                                    properties:
+                                      cwe:
+                                        type: string
+                                      name:
+                                        type: string
+                                        nullable: true
+                                    required:
+                                    - cwe
+                                    - name
+                                    additionalProperties: false
+                                  description: Mapped CWE weaknesses with canonical names.
+                                relationships:
+                                  type: array
+                                  items:
+                                    type: object
+                                    properties:
+                                      nature:
+                                        type: string
+                                      capec:
+                                        type: string
+                                      name:
+                                        type: string
+                                        nullable: true
+                                    required:
+                                    - nature
+                                    - capec
+                                    - name
+                                    additionalProperties: false
+                                  description: Related patterns (ChildOf, CanPrecede, PeerOf, …) with names.
+                              required:
+                              - id
+                              - name
+                              - abstraction
+                              - status
+                              - description
+                              - likelihood
+                              - severity
+                              - mappedCwe
+                              - relationships
+                              additionalProperties: false
+                              description: 'Lookup mode only: the canonical attack pattern.'
+                            total:
+                              type: number
+                              description: 'Search mode only: total ranked matches.'
+                            items:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  id:
+                                    type: string
+                                  name:
+                                    type: string
+                                  abstraction:
+                                    type: string
+                                  description:
+                                    type: string
+                                    nullable: true
+                                    description: Truncated to 200 chars.
+                                required:
+                                - id
+                                - name
+                                - description
+                                additionalProperties: false
+                              description: 'Search mode only: ranked matches (page of total).'
+                            source:
+                              $ref: '#/components/schemas/Source'
+                          required:
+                          - mode
+                          - source
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: security.capec
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.0025
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.002500'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: id
+        in: query
+        required: false
+        description: Unique identifier of the record to fetch.
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 20
+      - name: query
+        in: query
+        required: false
+        description: Free-text search query.
+        schema:
+          type: string
+          minLength: 2
+          maxLength: 80
+      - name: limit
+        in: query
+        required: false
+        description: Maximum number of results to return.
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+      - $ref: '#/components/parameters/TrialMode'
+  /api/security/cve:
+    get:
+      tags:
+      - Security
+      summary: Look up a CVE by id (e.g
+      description: 'Look up a CVE by id (e.g. CVE-2021-44228) across three authoritative vulnerability feeds in one call. Query: cve (CVE-YYYY-NNNN). Returns the canonical record — description, CVSS base score + severity + vector, CWE weakness ids, published/modified dates, reference links — plus whether it is on the US CISA Known Exploited Vulnerabilities catalog (with remediation due date and known-ransomware flag) and its EPSS exploit-probability score and percentile. The exploited and EPSS sections report independently, so one feed being unavailable does not fail the call. 404 if the CVE id is unknown. For triage, prioritization, and anti-hallucination on vulnerability claims.'
+      operationId: security_cve
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      cve:
+                        type: string
+                      published:
+                        type: string
+                        nullable: true
+                      lastModified:
+                        type: string
+                        nullable: true
+                      vulnStatus:
+                        type: string
+                        nullable: true
+                      description:
+                        type: string
+                        nullable: true
+                      cvss:
+                        type: object
+                        additionalProperties: {}
+                        nullable: true
+                      cwes:
+                        type: array
+                        items:
+                          type: string
+                      references:
+                        type: array
+                        items:
+                          type: object
+                          additionalProperties: {}
+                      knownExploited:
+                        type: object
+                        additionalProperties: {}
+                      knownExploitedError:
+                        type: string
+                        nullable: true
+                      epss:
+                        type: object
+                        additionalProperties: {}
+                        nullable: true
+                      epssError:
+                        type: string
+                        nullable: true
+                      sources:
+                        type: array
+                        items:
+                          type: object
+                          additionalProperties: {}
+                    required:
+                    - cve
+                    - published
+                    - lastModified
+                    - vulnStatus
+                    - description
+                    - cvss
+                    - cwes
+                    - references
+                    - knownExploited
+                    - knownExploitedError
+                    - epss
+                    - epssError
+                    - sources
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: security.cve
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.0045
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: legacy
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.004500'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: cve
+        in: query
+        required: true
+        description: CVE identifier in the form CVE-YYYY-NNNN (e.g. CVE-2021-44228).
+        schema:
+          type: string
+          minLength: 6
+          maxLength: 40
+      - $ref: '#/components/parameters/TrialMode'
+  /api/security/cve-changes:
+    get:
+      tags:
+      - Security
+      summary: CVE change feed - the CVE records MODIFIED within a time
+      description: CVE change feed — the CVE records MODIFIED within a time window, so an agent can incrementally maintain a vulnerability view instead of re-scanning. Pass since (YYYY-MM-DD or ISO datetime); until defaults to now (window must be ≤ 120 days, the NVD limit). Optionally narrow by keyword (product/text) or cpe (exact CPE). Returns each changed CVE with its id, published + lastModified timestamps, current vulnStatus (e.g. Modified, Analyzed, Rejected), best-available CVSS score/severity, description, and kevListed — whether it is now on the CISA Known-Exploited Vulnerabilities catalog (the high-signal flag for a poller). Newest modification first. Sourced live from NVD (NIST) + CISA KEV, free/keyless. Pair with security.cve for full per-CVE detail.
+      operationId: security_cve-changes
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized envelope: items = CVEs modified in the window (newest first, KEV-flagged); meta.window + total.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            id:
+                              type: string
+                            published:
+                              type: string
+                              nullable: true
+                            lastModified:
+                              type: string
+                              nullable: true
+                            vulnStatus:
+                              type: string
+                              nullable: true
+                            description:
+                              type: string
+                              nullable: true
+                            cvss:
+                              type: object
+                              additionalProperties: {}
+                              nullable: true
+                            kevListed:
+                              type: boolean
+                          required:
+                          - id
+                          - published
+                          - lastModified
+                          - vulnStatus
+                          - description
+                          - cvss
+                          - kevListed
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                      meta:
+                        type: object
+                        properties:
+                          window:
+                            type: object
+                            properties:
+                              since:
+                                type: string
+                              until:
+                                type: string
+                            required:
+                            - since
+                            - until
+                            additionalProperties: false
+                          total:
+                            type: integer
+                        required:
+                        - window
+                        - total
+                        additionalProperties: false
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: security.cve-changes
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.0054
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.005400'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: since
+        in: query
+        required: true
+        description: Since.
+        schema:
+          type: string
+          minLength: 8
+          maxLength: 30
+      - name: until
+        in: query
+        required: false
+        description: Until.
+        schema:
+          type: string
+          minLength: 8
+          maxLength: 30
+      - name: keyword
+        in: query
+        required: false
+        description: Keyword.
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 100
+      - name: cpe
+        in: query
+        required: false
+        description: Cpe.
+        schema:
+          type: string
+          minLength: 3
+          maxLength: 200
+      - name: limit
+        in: query
+        required: false
+        description: Maximum number of results to return.
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+      - $ref: '#/components/parameters/TrialMode'
+  /api/security/cve-search:
+    get:
+      tags:
+      - Security
+      summary: Find vulnerabilities affecting a product by searching the
+      description: Find vulnerabilities affecting a product by searching the NIST National Vulnerability Database. Pass product (free-text keyword, e.g. "apache log4j", "openssl", "wordpress plugin contact-form-7") or cpe (an exact CPE 2.3 name, e.g. cpe:2.3:a:apache:log4j:2.14.1:*:*:*:*:*:*:*). Returns matching CVEs newest-first, each with its id, description, CVSS base score/severity/vector, and dates. Optional limit (1–50). For "what CVEs affect X" / surveying a product's vulnerability history — distinct from security.cve, which resolves a single CVE id across NVD + CISA KEV + EPSS. Free, keyless.
+      operationId: security_cve-search
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized envelope: items = matching CVEs (newest first); meta.total = full match count.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            id:
+                              type: string
+                            description:
+                              type: string
+                              nullable: true
+                            cvss:
+                              type: object
+                              additionalProperties: {}
+                              nullable: true
+                              description: Best-available CVSS (base score, severity, vector).
+                            published:
+                              type: string
+                              nullable: true
+                            lastModified:
+                              type: string
+                              nullable: true
+                          required:
+                          - id
+                          - description
+                          - cvss
+                          - published
+                          - lastModified
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                      meta:
+                        type: object
+                        properties:
+                          total:
+                            type: integer
+                          query:
+                            type: string
+                        required:
+                        - total
+                        - query
+                        additionalProperties: false
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: security.cve-search
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.0054
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.005400'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: product
+        in: query
+        required: false
+        description: Free-text product/keyword (e.g. "apache log4j").
+        schema:
+          type: string
+          minLength: 2
+          maxLength: 200
+      - name: cpe
+        in: query
+        required: false
+        description: Exact CPE 2.3 name (e.g. cpe:2.3:a:apache:log4j:2.14.1:*:*:*:*:*:*:*).
+        schema:
+          type: string
+          minLength: 5
+          maxLength: 300
+      - name: limit
+        in: query
+        required: false
+        description: Max CVEs to return (1–50, default 20).
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 50
+      - $ref: '#/components/parameters/TrialMode'
+  /api/security/cwe:
+    get:
+      tags:
+      - Security
+      summary: Authoritative MITRE CWE (Common Weakness Enumeration) lookup
+      description: Authoritative MITRE CWE (Common Weakness Enumeration) lookup. Pass id (e.g. CWE-79, or just 79) for the canonical weakness — name, abstraction, description, extended description, ChildOf/ParentOf relationships (with names), and mapped CAPEC attack patterns (with names) — or query for a keyword search returning ranked matches. Bundled catalog (~970 weaknesses), zero external calls. Agents hallucinate CWE IDs and names constantly; this returns exact, citeable, version-pinned data. Pairs with security.cve (which returns CWE ids) and security.capec.
+      operationId: security_cwe
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized envelope: items=[{mode:lookup,item}] or search results.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            mode:
+                              type: string
+                              enum:
+                              - lookup
+                              - search
+                              description: lookup when id was given, search when query was given.
+                            item:
+                              type: object
+                              properties:
+                                id:
+                                  type: string
+                                  description: CWE id (e.g. CWE-79).
+                                name:
+                                  type: string
+                                abstraction:
+                                  type: string
+                                status:
+                                  type: string
+                                description:
+                                  type: string
+                                extended:
+                                  type: string
+                                  nullable: true
+                                  description: Extended description.
+                                relationships:
+                                  type: array
+                                  items:
+                                    type: object
+                                    properties:
+                                      nature:
+                                        type: string
+                                      cwe:
+                                        type: string
+                                      name:
+                                        type: string
+                                        nullable: true
+                                    required:
+                                    - nature
+                                    - cwe
+                                    - name
+                                    additionalProperties: false
+                                  description: ChildOf/ParentOf/etc. relationships with canonical names.
+                                mappedCapec:
+                                  type: array
+                                  items:
+                                    type: object
+                                    properties:
+                                      capec:
+                                        type: string
+                                      name:
+                                        type: string
+                                        nullable: true
+                                    required:
+                                    - capec
+                                    - name
+                                    additionalProperties: false
+                                  description: Mapped CAPEC attack patterns with canonical names.
+                              required:
+                              - id
+                              - name
+                              - abstraction
+                              - status
+                              - description
+                              - extended
+                              - relationships
+                              - mappedCapec
+                              additionalProperties: false
+                              description: 'Lookup mode only: the canonical weakness.'
+                            total:
+                              type: number
+                              description: 'Search mode only: total ranked matches.'
+                            items:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  id:
+                                    type: string
+                                  name:
+                                    type: string
+                                  abstraction:
+                                    type: string
+                                  description:
+                                    type: string
+                                    nullable: true
+                                    description: Truncated to 200 chars.
+                                required:
+                                - id
+                                - name
+                                - description
+                                additionalProperties: false
+                              description: 'Search mode only: ranked matches (page of total).'
+                            source:
+                              $ref: '#/components/schemas/Source'
+                          required:
+                          - mode
+                          - source
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: security.cwe
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.0025
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.002500'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: id
+        in: query
+        required: false
+        description: Unique identifier of the record to fetch.
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 20
+      - name: query
+        in: query
+        required: false
+        description: Free-text search query.
+        schema:
+          type: string
+          minLength: 2
+          maxLength: 80
+      - name: limit
+        in: query
+        required: false
+        description: Maximum number of results to return.
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+      - $ref: '#/components/parameters/TrialMode'
+  /api/security/exploit-availability:
+    get:
+      tags:
+      - Security
+      summary: Does public exploit code exist for a CVE, and where?
+      description: 'Does public exploit code exist for a CVE, and where? Pass cve (e.g. CVE-2021-44228). Returns hasPublicExploit, the count, hasMetasploitModule and hasVerifiedExploit flags, and the Exploit-DB entries (id, description, type, platform, date, verified, Metasploit flag, link). Bundled inverted index from the Exploit-DB archive (~25k CVEs). This is the triage signal BEYOND security.cve''s KEV (exploited in the wild) + EPSS (exploit probability): is the vulnerability actually weaponized with available code? Use the trio together to decide how urgently to patch. Absence is not proof no exploit exists (private/other archives not covered).'
+      operationId: security_exploit-availability
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized envelope: items = [exploit-availability result]; total = 1.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            cve:
+                              type: string
+                            hasPublicExploit:
+                              type: boolean
+                            exploitCount:
+                              type: integer
+                            hasMetasploitModule:
+                              type: boolean
+                            hasVerifiedExploit:
+                              type: boolean
+                            exploits:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  edbId:
+                                    type: string
+                                  description:
+                                    type: string
+                                  type:
+                                    type: string
+                                  platform:
+                                    type: string
+                                  date:
+                                    type: string
+                                  verified:
+                                    type: boolean
+                                  metasploit:
+                                    type: boolean
+                                  url:
+                                    type: string
+                                required:
+                                - edbId
+                                - description
+                                - type
+                                - platform
+                                - date
+                                - verified
+                                - metasploit
+                                - url
+                                additionalProperties: false
+                            note:
+                              type: string
+                          required:
+                          - cve
+                          - hasPublicExploit
+                          - exploitCount
+                          - hasMetasploitModule
+                          - hasVerifiedExploit
+                          - exploits
+                          - note
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: security.exploit-availability
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.0025
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.002500'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: cve
+        in: query
+        required: true
+        description: CVE.
+        schema:
+          type: string
+          minLength: 6
+          maxLength: 30
+      - $ref: '#/components/parameters/TrialMode'
+  /api/security/http-headers:
+    get:
+      tags:
+      - Security
+      summary: Fetch a URL and grade its HTTP security headers
+      description: 'Fetch a URL and grade its HTTP security headers. Pass url (scheme optional — defaults to https). Returns an overall letter grade + score, the list of present/missing headers, and a per-header analysis with the live value and specific issues for: Strict-Transport-Security (HSTS max-age/includeSubDomains), Content-Security-Policy (flags ''unsafe-inline''/''unsafe-eval''/missing default-src), X-Frame-Options or CSP frame-ancestors (clickjacking), X-Content-Type-Options (nosniff), Referrer-Policy, Permissions-Policy, and Cross-Origin-Opener/Resource-Policy. Also flags Server/X-Powered-By info disclosure. Analyzed from the target''s LIVE response headers through an SSRF-guarded fetch (private/loopback targets refused) — an LLM cannot see a site''s current headers. For web-app security review, vendor assessment, and CI gates.'
+      operationId: security_http-headers
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized envelope: items = [header report with grade + per-header analysis]; total = 1.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            url:
+                              type: string
+                            finalUrl:
+                              type: string
+                            status:
+                              type: integer
+                            grade:
+                              type: string
+                            score:
+                              type: number
+                            maxScore:
+                              type: number
+                            present:
+                              type: array
+                              items:
+                                type: string
+                            missing:
+                              type: array
+                              items:
+                                type: string
+                            headers:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  header:
+                                    type: string
+                                  present:
+                                    type: boolean
+                                  value:
+                                    type: string
+                                    nullable: true
+                                  weight:
+                                    type: number
+                                  issues:
+                                    type: array
+                                    items:
+                                      type: string
+                                required:
+                                - header
+                                - present
+                                - value
+                                - weight
+                                - issues
+                                additionalProperties: false
+                            infoDisclosure:
+                              type: object
+                              properties:
+                                server:
+                                  type: string
+                                  nullable: true
+                                xPoweredBy:
+                                  type: string
+                                  nullable: true
+                              required:
+                              - server
+                              - xPoweredBy
+                              additionalProperties: false
+                            note:
+                              type: string
+                          required:
+                          - url
+                          - finalUrl
+                          - status
+                          - grade
+                          - score
+                          - maxScore
+                          - present
+                          - missing
+                          - headers
+                          - infoDisclosure
+                          - note
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: security.http-headers
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.0045
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.004500'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: url
+        in: query
+        required: true
+        description: URL to process.
+        schema:
+          type: string
+          minLength: 3
+          maxLength: 2048
+      - $ref: '#/components/parameters/TrialMode'
+  /api/security/ics-advisories:
+    get:
+      tags:
+      - Security
+      summary: CISA Industrial Control Systems (ICS) advisories
+      description: CISA Industrial Control Systems (ICS) advisories — vulnerabilities in operational-technology gear (SCADA, PLCs, building automation, energy/manufacturing/transportation systems, and medical devices), from the official CISA advisory RSS feed. Each item is normalized to the canonical advisory id (ICSA-YY-DDD-NN, or ICSMA-YY-DDD-NN for medical), title, link to the full advisory, publication date (ISO), and a plain-text summary. Optionally filter by keyword (e.g. a vendor like "Siemens") and cap the count. Returned newest-first. Free, public-domain (CISA).
+      operationId: security_ics-advisories
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized envelope: items = ICS advisories (newest-first, sliced to limit); total = matching advisories; meta carries the query.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            advisoryId:
+                              type: string
+                              nullable: true
+                            title:
+                              type: string
+                            link:
+                              type: string
+                              nullable: true
+                            published:
+                              type: string
+                              nullable: true
+                            summary:
+                              type: string
+                          required:
+                          - advisoryId
+                          - title
+                          - link
+                          - published
+                          - summary
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: security.ics-advisories
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.012
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.012000'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: q
+        in: query
+        required: false
+        description: Case-insensitive keyword filter on title + summary, e.g. a vendor like "Siemens".
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 100
+      - name: limit
+        in: query
+        required: false
+        description: Max advisories to return (1-100, default 25).
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+      - $ref: '#/components/parameters/TrialMode'
+  /api/security/ioc-reputation:
+    get:
+      tags:
+      - Security
+      summary: Threat-intelligence reputation for an indicator of
+      description: 'Threat-intelligence reputation for an indicator of compromise (IOC) — pass ioc as an IP, domain, URL, or file hash (md5/sha1/sha256) and the type is auto-detected. Returns a malicious boolean plus a per-source breakdown: abuse.ch ThreatFox (IOC→malware/threat mapping), URLhaus (malicious URLs on a host/URL), MalwareBazaar (known malware samples by hash), Feodo Tracker (active botnet C2 IPs), Tor exit-node membership, and Spamhaus DROP (hijacked/criminal netblocks). Each source reports listed + a detail. Sourced from live, hourly-rotating threat feeds an LLM cannot know — a ground-truth liveness check for SOC alert triage, log enrichment, and blocklist decisions. Absence of a match is not proof of safety.'
+      operationId: security_ioc-reputation
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized envelope: items = [IOC reputation verdict with per-source breakdown]; total = 1.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            ioc:
+                              type: string
+                            type:
+                              type: string
+                              description: ip | domain | url | hash
+                            malicious:
+                              type: boolean
+                            sourcesChecked:
+                              type: integer
+                            sourcesUnavailable:
+                              type: integer
+                              description: Feeds that were down/unreachable — excluded from sourcesChecked, never reported as "not listed".
+                            hits:
+                              type: integer
+                            results:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  source:
+                                    type: string
+                                  listed:
+                                    type: boolean
+                                  detail:
+                                    type: string
+                                    nullable: true
+                                required:
+                                - source
+                                - listed
+                                - detail
+                                additionalProperties: false
+                            note:
+                              type: string
+                          required:
+                          - ioc
+                          - type
+                          - malicious
+                          - sourcesChecked
+                          - sourcesUnavailable
+                          - hits
+                          - results
+                          - note
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: security.ioc-reputation
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.0054
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.005400'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: ioc
+        in: query
+        required: true
+        description: Ioc.
+        schema:
+          type: string
+          minLength: 3
+          maxLength: 2048
+      - $ref: '#/components/parameters/TrialMode'
+  /api/security/ip-abuse:
+    get:
+      tags:
+      - Security
+      summary: AbuseIPDB abuse report for a single IP - the crowd-sourced
+      description: AbuseIPDB abuse report for a single IP — the crowd-sourced abuse-confidence score (0-100) the fail2ban / SSH-scanner / web-attack ecosystem reports into. Pass ip (IPv4 or IPv6). Returns abuseConfidenceScore, totalReports, numDistinctUsers, lastReportedAt, usageType (e.g. Data Center / Residential), ISP, domain, hostnames, isTor, isWhitelisted, and country. Set verbose=true for the individual report records (categories + reporter country). Optional maxAgeInDays (1-365, default 90) bounds the reporting window. Live crowd data an LLM cannot know — SOC alert triage, login-abuse blocking, and firewall decisions.
+      operationId: security_ip-abuse
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized envelope: items = [AbuseIPDB check for the IP]; total = 1.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            ipAddress:
+                              type: string
+                              nullable: true
+                            isPublic:
+                              type: boolean
+                              nullable: true
+                            ipVersion:
+                              type: integer
+                              nullable: true
+                            isWhitelisted:
+                              type: boolean
+                              nullable: true
+                            abuseConfidenceScore:
+                              type: integer
+                              nullable: true
+                            countryCode:
+                              type: string
+                              nullable: true
+                            usageType:
+                              type: string
+                              nullable: true
+                            isp:
+                              type: string
+                              nullable: true
+                            domain:
+                              type: string
+                              nullable: true
+                            hostnames:
+                              type: array
+                              items:
+                                type: string
+                            isTor:
+                              type: boolean
+                              nullable: true
+                            totalReports:
+                              type: integer
+                              nullable: true
+                            numDistinctUsers:
+                              type: integer
+                              nullable: true
+                            lastReportedAt:
+                              type: string
+                              nullable: true
+                            reports:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  reportedAt:
+                                    type: string
+                                    nullable: true
+                                  comment:
+                                    type: string
+                                    nullable: true
+                                  categories:
+                                    type: array
+                                    items:
+                                      type: integer
+                                  reporterId:
+                                    type: integer
+                                    nullable: true
+                                  reporterCountryCode:
+                                    type: string
+                                    nullable: true
+                                required:
+                                - reportedAt
+                                - comment
+                                - categories
+                                - reporterId
+                                - reporterCountryCode
+                                additionalProperties: false
+                          required:
+                          - ipAddress
+                          - isPublic
+                          - ipVersion
+                          - isWhitelisted
+                          - abuseConfidenceScore
+                          - countryCode
+                          - usageType
+                          - isp
+                          - domain
+                          - hostnames
+                          - isTor
+                          - totalReports
+                          - numDistinctUsers
+                          - lastReportedAt
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: security.ip-abuse
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.0054
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.005400'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: ip
+        in: query
+        required: true
+        description: IP.
+        schema:
+          type: string
+          minLength: 3
+          maxLength: 45
+      - name: maxAgeInDays
+        in: query
+        required: false
+        description: Max age in days.
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 365
+          default: 90
+      - name: verbose
+        in: query
+        required: false
+        description: Verbose.
+        schema:
+          type: boolean
+          default: false
+      - $ref: '#/components/parameters/TrialMode'
+  /api/security/ip-blacklist:
+    get:
+      tags:
+      - Security
+      summary: AbuseIPDB bulk blacklist - the most-reported abusive IPs
+      description: AbuseIPDB bulk blacklist — the most-reported abusive IPs above a confidence threshold, the canonical fail2ban / firewall block-feed. Returns ipAddress, countryCode, abuseConfidenceScore, and lastReportedAt for each entry, plus the list's generatedAt timestamp. Tune confidenceMinimum (25-100, default 90), limit (1-10000, default 100), ipVersion (4 or 6), and onlyCountries / exceptCountries (comma-separated ISO-2). Live crowd-sourced threat feed for populating drop lists, WAF rules, and edge blocklists.
+      operationId: security_ip-blacklist
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized envelope: items = blacklist entries; total = count; meta = {generatedAt, confidenceMinimum, count}.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            ipAddress:
+                              type: string
+                              nullable: true
+                            countryCode:
+                              type: string
+                              nullable: true
+                            abuseConfidenceScore:
+                              type: integer
+                              nullable: true
+                            lastReportedAt:
+                              type: string
+                              nullable: true
+                          required:
+                          - ipAddress
+                          - countryCode
+                          - abuseConfidenceScore
+                          - lastReportedAt
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                      meta:
+                        type: object
+                        properties:
+                          generatedAt:
+                            type: string
+                            nullable: true
+                          confidenceMinimum:
+                            type: integer
+                          count:
+                            type: integer
+                        required:
+                        - generatedAt
+                        - confidenceMinimum
+                        - count
+                        additionalProperties: false
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: security.ip-blacklist
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.006
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.006000'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: confidenceMinimum
+        in: query
+        required: false
+        description: Confidence minimum.
+        schema:
+          type: integer
+          minimum: 25
+          maximum: 100
+          default: 90
+      - name: limit
+        in: query
+        required: false
+        description: Maximum number of results to return.
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 10000
+          default: 100
+      - name: ipVersion
+        in: query
+        required: false
+        description: IP version.
+        schema:
+          type: integer
+      - name: onlyCountries
+        in: query
+        required: false
+        description: Only countries.
+        schema:
+          type: string
+          maxLength: 400
+      - name: exceptCountries
+        in: query
+        required: false
+        description: Except countries.
+        schema:
+          type: string
+          maxLength: 400
+      - $ref: '#/components/parameters/TrialMode'
+  /api/security/ip-block:
+    get:
+      tags:
+      - Security
+      summary: AbuseIPDB subnet (CIDR) check - which IPs inside a network
+      description: 'AbuseIPDB subnet (CIDR) check — which IPs inside a network block have been reported for abuse. Pass network as a CIDR (e.g. 118.25.0.0/24; AbuseIPDB supports up to /16 for IPv4, /112 for IPv6). Returns the block metadata (network/netmask/min-max addresses, possible hosts, address-space description) plus reportedAddress: each flagged IP with numReports, abuseConfidenceScore, mostRecentReport, and country. Optional maxAgeInDays (1-365, default 30) and limit. Use to vet a hosting range, score a customer''s netblock, or sweep your own allocation.'
+      operationId: security_ip-block
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized envelope: items = [block summary with reportedAddress list]; total = 1; meta = {network}.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            networkAddress:
+                              type: string
+                              nullable: true
+                            netmask:
+                              type: string
+                              nullable: true
+                            minAddress:
+                              type: string
+                              nullable: true
+                            maxAddress:
+                              type: string
+                              nullable: true
+                            numPossibleHosts:
+                              type: integer
+                              nullable: true
+                            addressSpaceDesc:
+                              type: string
+                              nullable: true
+                            reportedAddress:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  ipAddress:
+                                    type: string
+                                    nullable: true
+                                  numReports:
+                                    type: integer
+                                    nullable: true
+                                  mostRecentReport:
+                                    type: string
+                                    nullable: true
+                                  abuseConfidenceScore:
+                                    type: integer
+                                    nullable: true
+                                  countryCode:
+                                    type: string
+                                    nullable: true
+                                required:
+                                - ipAddress
+                                - numReports
+                                - mostRecentReport
+                                - abuseConfidenceScore
+                                - countryCode
+                                additionalProperties: false
+                          required:
+                          - networkAddress
+                          - netmask
+                          - minAddress
+                          - maxAddress
+                          - numPossibleHosts
+                          - addressSpaceDesc
+                          - reportedAddress
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                      meta:
+                        type: object
+                        properties:
+                          network:
+                            type: string
+                        required:
+                        - network
+                        additionalProperties: false
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: security.ip-block
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.006
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.006000'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: network
+        in: query
+        required: true
+        description: Network.
+        schema:
+          type: string
+          minLength: 5
+          maxLength: 50
+      - name: maxAgeInDays
+        in: query
+        required: false
+        description: Max age in days.
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 365
+          default: 30
+      - name: limit
+        in: query
+        required: false
+        description: Maximum number of results to return.
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 1000
+          default: 100
+      - $ref: '#/components/parameters/TrialMode'
+  /api/security/ip-reputation:
+    get:
+      tags:
+      - Security
+      summary: Multi-source IP reputation with one combined authority
+      description: 'Multi-source IP reputation with one combined authority score (0-100). Polls four independent reputation sources in parallel and blends them: AbuseIPDB (crowd-sourced abuse confidence), abuse.ch threat-lists (Feodo botnet C2 + ThreatFox + Spamhaus DROP + Tor exit nodes), blocklist.de (fail2ban attack-report network), and StopForumSpam. Returns combinedScore, a verdict (clean / low / suspicious / malicious), which sources flagged it, per-source opinions (score + weight + detail), and enrichment (ISP, usage type, country, ASN, Tor). An authoritative threat-list hit (botnet/malware/hijacked netblock) hard-floors the verdict at malicious. Per-source isolation: a down feed degrades that opinion only. The one-call answer for ''should I trust this IP?'' instead of trusting a single feed.'
+      operationId: security_ip-reputation
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized envelope: items = [combined multi-source IP reputation]; total = 1; meta = {verdict, combinedScore, sourcesAvailable, sourcesFlagged, partial}.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            ip:
+                              type: string
+                            ipVersion:
+                              type: integer
+                            combinedScore:
+                              type: integer
+                            verdict:
+                              type: string
+                              enum:
+                              - clean
+                              - low
+                              - suspicious
+                              - malicious
+                            flaggedBy:
+                              type: array
+                              items:
+                                type: string
+                            sourcesAvailable:
+                              type: integer
+                            sourcesFlagged:
+                              type: integer
+                            enrichment:
+                              type: object
+                              properties:
+                                isp:
+                                  type: string
+                                  nullable: true
+                                usageType:
+                                  type: string
+                                  nullable: true
+                                countryCode:
+                                  type: string
+                                  nullable: true
+                                domain:
+                                  type: string
+                                  nullable: true
+                                asn:
+                                  type: integer
+                                  nullable: true
+                                isTor:
+                                  type: boolean
+                                  nullable: true
+                              required:
+                              - isp
+                              - usageType
+                              - countryCode
+                              - domain
+                              - asn
+                              - isTor
+                              additionalProperties: false
+                            opinions:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  source:
+                                    type: string
+                                  available:
+                                    type: boolean
+                                  malicious:
+                                    type: boolean
+                                  score:
+                                    type: number
+                                    nullable: true
+                                  weight:
+                                    type: number
+                                  detail:
+                                    type: string
+                                    nullable: true
+                                required:
+                                - source
+                                - available
+                                - malicious
+                                - score
+                                - weight
+                                - detail
+                                additionalProperties: false
+                            partial:
+                              type: array
+                              items:
+                                type: string
+                          required:
+                          - ip
+                          - ipVersion
+                          - combinedScore
+                          - verdict
+                          - flaggedBy
+                          - sourcesAvailable
+                          - sourcesFlagged
+                          - enrichment
+                          - opinions
+                          - partial
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                      meta:
+                        type: object
+                        properties:
+                          verdict:
+                            type: string
+                          combinedScore:
+                            type: integer
+                          sourcesAvailable:
+                            type: integer
+                          sourcesFlagged:
+                            type: integer
+                          partial:
+                            type: array
+                            items:
+                              type: string
+                        required:
+                        - verdict
+                        - combinedScore
+                        - sourcesAvailable
+                        - sourcesFlagged
+                        - partial
+                        additionalProperties: false
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: security.ip-reputation
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.009
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.009000'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: ip
+        in: query
+        required: true
+        description: IP.
+        schema:
+          type: string
+          minLength: 3
+          maxLength: 45
+      - $ref: '#/components/parameters/TrialMode'
+  /api/security/package:
+    get:
+      tags:
+      - Security
+      summary: Security and provenance for an open-source package
+      description: 'Security and provenance for an open-source package, composed live from three authoritative sources in one call. Pass ecosystem (npm, pypi, go, maven, cargo, nuget) + name (+ optional version; defaults to latest). Returns: known vulnerabilities from OSV (osv.dev — aggregates GitHub Security Advisories, PyPA, RustSec, Go vuln DB, etc.) each with its id, CVE aliases, summary, severity, and references; the resolved license and deprecation status (deps.dev); and the source repo''s OpenSSF Scorecard health score (overall + per-check) plus stars/forks/open-issues. All live — newly-disclosed advisories appear within hours. Distinct from registry.npm-lookup / pypi-lookup (metadata only): this answers "is this dependency safe to add, what license does it carry, and how well-maintained is it."'
+      operationId: security_package
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized envelope: items[0] = the package security composite (vulns + license + scorecard).'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            package:
+                              type: object
+                              properties:
+                                ecosystem:
+                                  type: string
+                                name:
+                                  type: string
+                                version:
+                                  type: string
+                                  nullable: true
+                              required:
+                              - ecosystem
+                              - name
+                              - version
+                              additionalProperties: false
+                            vulnerabilityCount:
+                              type: integer
+                            vulnerabilities:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  id:
+                                    type: string
+                                    nullable: true
+                                    description: Advisory id (e.g. GHSA-…).
+                                  aliases:
+                                    type: array
+                                    items:
+                                      type: string
+                                    description: Aliases incl. CVE ids.
+                                  summary:
+                                    type: string
+                                    nullable: true
+                                  severity:
+                                    type: string
+                                    nullable: true
+                                    description: Severity label or CVSS vector.
+                                  published:
+                                    type: string
+                                    nullable: true
+                                  modified:
+                                    type: string
+                                    nullable: true
+                                  references:
+                                    type: array
+                                    items:
+                                      type: string
+                                required:
+                                - id
+                                - aliases
+                                - summary
+                                - severity
+                                - published
+                                - modified
+                                - references
+                                additionalProperties: false
+                            license:
+                              type: string
+                              nullable: true
+                            deprecated:
+                              type: boolean
+                            deprecatedReason:
+                              type: string
+                              nullable: true
+                            publishedAt:
+                              type: string
+                              nullable: true
+                            sourceRepo:
+                              type: string
+                              nullable: true
+                            scorecard:
+                              type: object
+                              properties:
+                                overallScore:
+                                  type: number
+                                  nullable: true
+                                date:
+                                  type: string
+                                  nullable: true
+                                checks:
+                                  type: array
+                                  items:
+                                    type: object
+                                    properties:
+                                      name:
+                                        type: string
+                                        nullable: true
+                                      score:
+                                        type: number
+                                        nullable: true
+                                    required:
+                                    - name
+                                    - score
+                                    additionalProperties: false
+                              required:
+                              - overallScore
+                              - date
+                              - checks
+                              additionalProperties: false
+                              nullable: true
+                              description: OpenSSF Scorecard repo-health score (0–10).
+                            repo:
+                              type: object
+                              properties:
+                                stars:
+                                  type: number
+                                  nullable: true
+                                forks:
+                                  type: number
+                                  nullable: true
+                                openIssues:
+                                  type: number
+                                  nullable: true
+                              required:
+                              - stars
+                              - forks
+                              - openIssues
+                              additionalProperties: false
+                              nullable: true
+                            errors:
+                              type: object
+                              additionalProperties:
+                                type: string
+                              description: Per-source errors (a degraded source does not fail the call).
+                          required:
+                          - package
+                          - vulnerabilityCount
+                          - vulnerabilities
+                          - license
+                          - deprecated
+                          - deprecatedReason
+                          - publishedAt
+                          - sourceRepo
+                          - scorecard
+                          - repo
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                      meta:
+                        type: object
+                        properties:
+                          sources:
+                            type: array
+                            items:
+                              type: string
+                        required:
+                        - sources
+                        additionalProperties: false
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: security.package
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.0054
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.005400'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: ecosystem
+        in: query
+        required: true
+        description: 'Package ecosystem: npm, pypi, go, maven, cargo, or nuget.'
+        schema:
+          type: string
+          enum:
+          - npm
+          - pypi
+          - go
+          - maven
+          - cargo
+          - nuget
+      - name: name
+        in: query
+        required: true
+        description: Package name (e.g. lodash, requests, github.com/gin-gonic/gin).
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 214
+      - name: version
+        in: query
+        required: false
+        description: Specific version (defaults to the latest/default version).
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 120
+      - $ref: '#/components/parameters/TrialMode'
+  /api/security/password-exposure:
+    post:
+      tags:
+      - Security
+      summary: Check whether a password has appeared in known data
+      description: Check whether a password has appeared in known data breaches, using Have I Been Pwned's Pwned Passwords k-anonymity model — only the first 5 characters of the password's SHA-1 hash are ever sent upstream, so the service never sees the password or the full hash. POST { password } (hashed server-side) OR { sha1 } (the 40-hex SHA-1, for true zero-knowledge — hash it client-side and send only that). Returns breached (boolean), count (how many times it appears in breach corpora), and the sha1Prefix used. Backed by a 900M+ breached-credential corpus an LLM cannot know. For signup/password-policy enforcement and credential-hygiene checks. Absence is not a guarantee of strength.
+      operationId: security_password-exposure
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized envelope: items = [exposure result]; total = 1. Only the 5-char SHA-1 prefix is sent upstream.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            breached:
+                              type: boolean
+                            count:
+                              type: integer
+                            sha1Prefix:
+                              type: string
+                            inputMode:
+                              type: string
+                            note:
+                              type: string
+                          required:
+                          - breached
+                          - count
+                          - sha1Prefix
+                          - inputMode
+                          - note
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: security.password-exposure
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.0025
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.002500'
+        protocols:
+        - x402: {}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                password:
+                  type: string
+                  minLength: 1
+                  maxLength: 512
+                  description: Password.
+                sha1:
+                  type: string
+                  minLength: 40
+                  maxLength: 40
+                  description: Sha1.
+              additionalProperties: false
+      parameters:
+      - $ref: '#/components/parameters/TrialMode'
+components:
+  responses:
+    MethodNotAllowed:
+      description: Method not allowed — see `Allow` header for the supported method.
+    UpstreamError:
+      description: Upstream provider error.
+    ServerError:
+      description: Internal server error.
+    PaymentRequired:
+      description: Payment required. Body contains the x402 PaymentRequirements envelope with a multi-network accepts array; the per-call price is in accepts[].amount (and on the operation as x-2s-price). Sign for whichever rail you hold USDC on (EIP-3009 for Base, partial SPL transfer for Solana) and retry with the PAYMENT-SIGNATURE header (X-PAYMENT also accepted for v1 clients).
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/X402PaymentRequiredV2'
+    BadRequest:
+      description: Bad request — invalid parameters.
+  parameters:
+    TrialMode:
+      name: trial
+      in: query
+      required: false
+      description: 'Try before you buy. Set to 1 for one free real call per endpoint per hour — no wallet or payment needed — to verify the endpoint before paying. Equivalent to sending the "X-2s-Trial: 1" request header. Works on every endpoint.'
+      schema:
+        type: integer
+        enum:
+        - 1
+  schemas:
+    CallMeta:
+      type: object
+      description: Per-call meta envelope — endpoint id, cost, caller kind, settlement details.
+    Source:
+      type: object
+      description: 'Provenance of the data: upstream provider, source URL, and license.'
+      properties:
+        provider:
+          type: string
+          description: Upstream data provider.
+        url:
+          type: string
+          description: Source URL or documentation link.
+        license:
+          type: string
+          description: License / usage terms for the data.
+    X402PaymentRequiredV2:
+      type: object
+      description: x402 v2 PaymentRequired envelope. Pick any entry from accepts[], sign for that rail, retry with the PAYMENT-SIGNATURE header.
+      required:
+      - x402Version
+      - accepts
+      properties:
+        x402Version:
+          type: integer
+          const: 2
+        error:
+          type: string
+          description: Human-readable reason payment is required.
+        resource:
+          type: string
+          description: The resource URL being purchased.
+        accepts:
+          type: array
+          description: Payment requirement options, one per supported network (Base USDC, Solana USDC).
+          items:
+            type: object
+            required:
+            - scheme
+            - network
+            - amount
+            - asset
+            - payTo
+            - maxTimeoutSeconds
+            properties:
+              scheme:
+                type: string
+                enum:
+                - exact
+              network:
+                type: string
+                description: CAIP-2 network id, e.g. "eip155:8453" (Base) or "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp".
+              amount:
+                type: string
+                description: Price in atomic asset units (USDC has 6 decimals).
+              asset:
+                type: string
+                description: Asset contract address / mint.
+              payTo:
+                type: string
+                description: Treasury address to pay.
+              maxTimeoutSeconds:
+                type: integer
+              extra:
+                type: object
+                description: 'Rail-specific extras (EVM: EIP-712 domain name/version; Solana: feePayer).'
+                additionalProperties: true
+        extensions:
+          type: object
+          description: Optional discovery metadata (e.g. bazaar input/output schemas).
+          additionalProperties: true
+  securitySchemes:
+    x402Payment:
+      type: apiKey
+      in: header
+      name: PAYMENT-SIGNATURE
+      description: 'x402 protocol v2: base64-encoded PaymentPayload. Call any paid endpoint without auth to receive a 402 with a multi-network PaymentRequirements envelope. Sign for either rail: EIP-3009 transferWithAuthorization (Base USDC) OR a partial SPL token transfer (Solana USDC). Retry with PAYMENT-SIGNATURE header. X-PAYMENT is also accepted for v1 buyer clients. See https://x402.org.'

@@ -1,0 +1,1885 @@
+openapi: 3.2.0
+info:
+  title: 2s — the (most) everything Dev API
+  version: '1'
+  summary: The (most) everything API.
+  description: 'The (most) everything API for AI agents: 575+ pay-per-call endpoints on one origin.'
+  contact:
+    name: 2s
+    url: https://2s.io
+    email: alley@2s.io
+  x-logo:
+    url: https://2s.io/icon-512.png
+    altText: 2s
+  x-guidance: 'Pay-per-call REST API for AI agents — hundreds of endpoints returning ground-truth data (US public records, company & legal identifiers, finance/SEC, crypto/web3, security & CVEs, medical codes, weather & geocoding, agriculture, energy, maritime, music, and more). Every endpoint is paid per call in USDC via x402 (Base or Solana) — no API key, no signup. Call any endpoint with no auth to get a 402 PaymentRequirements envelope, sign it (EIP-3009 on Base, partial SPL transfer on Solana), and retry with the PAYMENT-SIGNATURE header. Add ?trial=1 for one free real call per endpoint per hour to test before paying. To discover the right endpoint: GET https://2s.io/api/directory for the full catalog, or GET https://2s.io/api/search/endpoints?q=<natural-language task> for a ranked match. Per-call price is on each operation as x-payment-info (from $0.001). Batch up to 50 calls behind one payment via POST https://2s.io/api/batch/run.'
+servers:
+- url: https://2s.io
+tags:
+- name: Dev
+paths:
+  /api/dev/crates-search:
+    get:
+      tags:
+      - Dev
+      summary: Search crates.io for Rust packages (keyless)
+      description: 'Search crates.io for Rust packages (keyless). Each result: name, latest stable version, description, total + recent downloads, and repository/homepage/documentation links. For agents discovering or vetting Rust dependencies.'
+      operationId: dev_crates-search
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized: items = matching Rust crates.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            name:
+                              type: string
+                              nullable: true
+                            version:
+                              type: string
+                              nullable: true
+                            description:
+                              type: string
+                              nullable: true
+                            downloads:
+                              type: number
+                              nullable: true
+                            recentDownloads:
+                              type: number
+                              nullable: true
+                            repository:
+                              type: string
+                              nullable: true
+                            homepage:
+                              type: string
+                              nullable: true
+                            documentation:
+                              type: string
+                              nullable: true
+                            updatedAt:
+                              type: string
+                              nullable: true
+                          required:
+                          - name
+                          - version
+                          - description
+                          - downloads
+                          - recentDownloads
+                          - repository
+                          - homepage
+                          - documentation
+                          - updatedAt
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: dev.crates-search
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.0036
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.003600'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: q
+        in: query
+        required: true
+        description: Crate search text, e.g. "tokio async".
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 200
+      - name: limit
+        in: query
+        required: false
+        description: Maximum number of results to return.
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 30
+      - $ref: '#/components/parameters/TrialMode'
+  /api/dev/csv-to-json:
+    post:
+      tags:
+      - Dev
+      summary: Convert CSV/TSV text to a JSON array
+      description: Convert CSV/TSV text to a JSON array. POST { csv, delimiter?, header? }. Auto-detects comma vs tab, handles quoted fields and escaped quotes, and coerces numbers/booleans/empty→null. With header=true (default) each row becomes an object keyed by the header row; header=false returns arrays.
+      operationId: dev_csv-to-json
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized: items = parsed rows; meta.delimiter = detected/used delimiter.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties: {}
+                          additionalProperties: true
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                      meta:
+                        type: object
+                        properties:
+                          delimiter:
+                            type: string
+                        required:
+                        - delimiter
+                        additionalProperties: false
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: dev.csv-to-json
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.0025
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.002500'
+        protocols:
+        - x402: {}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                csv:
+                  type: string
+                  minLength: 1
+                  maxLength: 200000
+                  description: CSV.
+                delimiter:
+                  type: string
+                  maxLength: 1
+                  description: Delimiter.
+                header:
+                  type: boolean
+                  description: Header.
+              required:
+              - csv
+              additionalProperties: false
+      parameters:
+      - $ref: '#/components/parameters/TrialMode'
+  /api/dev/diff-json:
+    post:
+      tags:
+      - Dev
+      summary: Structured deep diff of two JSON values
+      description: Structured deep diff of two JSON values. POST { a, b }. Returns a list of changes, each with a dot-path and type (added / removed / changed) plus from/to values, and a total change count. For change-detection, config drift, and review tooling.
+      operationId: dev_diff-json
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized: items = [diff].'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            changeCount:
+                              type: number
+                            changes:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  path:
+                                    type: string
+                                  type:
+                                    type: string
+                                  from: {}
+                                  to: {}
+                                required:
+                                - path
+                                - type
+                                additionalProperties: false
+                          required:
+                          - changeCount
+                          - changes
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: dev.diff-json
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.0025
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.002500'
+        protocols:
+        - x402: {}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                a:
+                  description: A.
+                b:
+                  description: B.
+              additionalProperties: false
+      parameters:
+      - $ref: '#/components/parameters/TrialMode'
+  /api/dev/flatten-json:
+    post:
+      tags:
+      - Dev
+      summary: Flatten a nested JSON object/array into dot-notation keys
+      description: Flatten a nested JSON object/array into dot-notation keys. POST { data, delimiter? }. E.g. {a:{b:[1,2]}} → {"a.b.0":1,"a.b.1":2}. Useful for diffing, CSV export, search indexing, or feeding flat key/value config to tools.
+      operationId: dev_flatten-json
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized: items = [flattened object].'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties: {}
+                          additionalProperties: true
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: dev.flatten-json
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.0025
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.002500'
+        protocols:
+        - x402: {}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  description: Data.
+                delimiter:
+                  type: string
+                  maxLength: 3
+                  description: Delimiter.
+              additionalProperties: false
+      parameters:
+      - $ref: '#/components/parameters/TrialMode'
+  /api/dev/gitlab-search:
+    get:
+      tags:
+      - Dev
+      summary: Search public GitLab projects (keyless), ranked by stars
+      description: 'Search public GitLab projects (keyless), ranked by stars. Each result: full name, path, description, star and fork counts, web URL, last-activity timestamp, and topics. Complements code.repo-lookup (GitHub) for cross-host repository discovery.'
+      operationId: dev_gitlab-search
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized: items = matching GitLab projects.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            name:
+                              type: string
+                              nullable: true
+                            path:
+                              type: string
+                              nullable: true
+                            description:
+                              type: string
+                              nullable: true
+                            stars:
+                              type: number
+                              nullable: true
+                            forks:
+                              type: number
+                              nullable: true
+                            webUrl:
+                              type: string
+                              nullable: true
+                            lastActivityAt:
+                              type: string
+                              nullable: true
+                            topics:
+                              type: array
+                              items: {}
+                          required:
+                          - name
+                          - path
+                          - description
+                          - stars
+                          - forks
+                          - webUrl
+                          - lastActivityAt
+                          - topics
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: dev.gitlab-search
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.0036
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.003600'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: q
+        in: query
+        required: true
+        description: Project search text, e.g. "kubernetes operator".
+        schema:
+          type: string
+          minLength: 2
+          maxLength: 200
+      - name: limit
+        in: query
+        required: false
+        description: Maximum number of results to return.
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 30
+      - $ref: '#/components/parameters/TrialMode'
+  /api/dev/json-to-csv:
+    post:
+      tags:
+      - Dev
+      summary: Convert a JSON array of objects to CSV
+      description: Convert a JSON array of objects to CSV. POST { data, delimiter? }. Column headers are the union of keys across all rows; values are CSV-escaped (quotes, commas, newlines), nested objects are JSON-stringified, null→empty. Returns the CSV string + column list.
+      operationId: dev_json-to-csv
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized: items = [{ csv, columns, rows }].'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            csv:
+                              type: string
+                            columns:
+                              type: array
+                              items:
+                                type: string
+                            rows:
+                              type: number
+                          required:
+                          - csv
+                          - columns
+                          - rows
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: dev.json-to-csv
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.0025
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.002500'
+        protocols:
+        - x402: {}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  type: array
+                  items: {}
+                  maxItems: 10000
+                  description: Data.
+                delimiter:
+                  type: string
+                  maxLength: 1
+                  description: Delimiter.
+              required:
+              - data
+              additionalProperties: false
+      parameters:
+      - $ref: '#/components/parameters/TrialMode'
+  /api/dev/json-to-typescript:
+    post:
+      tags:
+      - Dev
+      summary: Infer a TypeScript interface from a sample JSON value
+      description: Infer a TypeScript interface from a sample JSON value. POST { sample, rootName? }. Handles nested objects, arrays (merged element type), and primitives; merges keys across array elements. Returns a ready-to-paste interface string.
+      operationId: dev_json-to-typescript
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized: items = [{ typescript }].'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            typescript:
+                              type: string
+                          required:
+                          - typescript
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: dev.json-to-typescript
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.0025
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.002500'
+        protocols:
+        - x402: {}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                sample:
+                  description: Sample.
+                rootName:
+                  type: string
+                  pattern: ^[A-Za-z_$][\w$]*$
+                  maxLength: 60
+                  description: Root name.
+              additionalProperties: false
+      parameters:
+      - $ref: '#/components/parameters/TrialMode'
+  /api/dev/json-to-zod:
+    post:
+      tags:
+      - Dev
+      summary: Infer a Zod schema from a sample JSON value
+      description: Infer a Zod schema from a sample JSON value. POST { sample, name? }. Handles nested objects, arrays, and primitives, merging keys across array elements. Returns a ready-to-paste `const name = z.object({...})` string.
+      operationId: dev_json-to-zod
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized: items = [{ zod }].'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            zod:
+                              type: string
+                          required:
+                          - zod
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: dev.json-to-zod
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.0025
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.002500'
+        protocols:
+        - x402: {}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                sample:
+                  description: Sample.
+                name:
+                  type: string
+                  pattern: ^[A-Za-z_$][\w$]*$
+                  maxLength: 60
+                  description: Name to search for.
+              additionalProperties: false
+      parameters:
+      - $ref: '#/components/parameters/TrialMode'
+  /api/dev/jwt-decode:
+    post:
+      tags:
+      - Dev
+      summary: Decode a JWT without verifying its signature
+      description: Decode a JWT without verifying its signature. POST { token }. Returns the decoded header and payload, plus issuedAt/expiresAt/notBefore as ISO timestamps, and expired / notYetValid flags. Signature is NOT checked — decode/inspection only. For agents reading token claims (scopes, sub, exp) before acting.
+      operationId: dev_jwt-decode
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized: items = [decoded JWT].'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            header:
+                              type: object
+                              additionalProperties: {}
+                              description: Decoded JOSE header (arbitrary fields).
+                            payload:
+                              type: object
+                              additionalProperties: {}
+                              description: Decoded claims (arbitrary fields).
+                            issuedAt:
+                              type: string
+                              nullable: true
+                              description: iat as ISO 8601; null when absent.
+                            expiresAt:
+                              type: string
+                              nullable: true
+                              description: exp as ISO 8601; null when absent.
+                            notBefore:
+                              type: string
+                              nullable: true
+                              description: nbf as ISO 8601; null when absent.
+                            expired:
+                              type: boolean
+                              nullable: true
+                              description: null when no exp claim.
+                            notYetValid:
+                              type: boolean
+                              nullable: true
+                              description: null when no nbf claim.
+                            signaturePresent:
+                              type: boolean
+                            note:
+                              type: string
+                          required:
+                          - header
+                          - payload
+                          - issuedAt
+                          - expiresAt
+                          - notBefore
+                          - expired
+                          - notYetValid
+                          - signaturePresent
+                          - note
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: dev.jwt-decode
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.0025
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.002500'
+        protocols:
+        - x402: {}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                token:
+                  type: string
+                  minLength: 10
+                  maxLength: 8192
+                  description: Token.
+              required:
+              - token
+              additionalProperties: false
+      parameters:
+      - $ref: '#/components/parameters/TrialMode'
+  /api/dev/npm-search:
+    get:
+      tags:
+      - Dev
+      summary: Search the npm registry for JavaScript/TypeScript packages
+      description: 'Search the npm registry for JavaScript/TypeScript packages (keyless). Each result: name, latest version, description, keywords, publisher, last-publish date, and npm/homepage/repository links. For agents discovering or vetting dependencies.'
+      operationId: dev_npm-search
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized: items = matching npm packages.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            name:
+                              type: string
+                              nullable: true
+                            version:
+                              type: string
+                              nullable: true
+                            description:
+                              type: string
+                              nullable: true
+                            keywords:
+                              type: array
+                              items: {}
+                            publisher:
+                              type: string
+                              nullable: true
+                            date:
+                              type: string
+                              nullable: true
+                            npm:
+                              type: string
+                              nullable: true
+                            homepage:
+                              type: string
+                              nullable: true
+                            repository:
+                              type: string
+                              nullable: true
+                          required:
+                          - name
+                          - version
+                          - description
+                          - keywords
+                          - publisher
+                          - date
+                          - npm
+                          - homepage
+                          - repository
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: dev.npm-search
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.0036
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.003600'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: q
+        in: query
+        required: true
+        description: Package search text, e.g. "react query".
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 200
+      - name: limit
+        in: query
+        required: false
+        description: Maximum number of results to return.
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 30
+      - $ref: '#/components/parameters/TrialMode'
+  /api/dev/preflight:
+    post:
+      tags:
+      - Dev
+      summary: Check whether a shell command is runnable before you (or an
+      description: 'Check whether a shell command is runnable before you (or an agent) run it — a pre-execution gate. POST { command } with a command that targets the network (curl, wget, httpie, or anything carrying a URL). Parses out the HTTP method, target URL, and headers, then returns a structured verdict: verdict (''runnable'' or ''invalid''), a runnable boolean, and a checks breakdown (hasTarget, urlValid, schemeOk, hostPresent, methodValid, privateTarget). By default the check is STATIC and deterministic — no network call — answering ''is there a well-formed http(s) target and a valid method?'' (a command with no URL is invalid). Pass probe=true to also run a guarded HEAD request against the target and report dnsResolves, reachable, tlsValid, and httpStatus — answering ''would this actually connect right now?''. Private/loopback/reserved targets are refused (SSRF-safe). Built for gating agent-generated commands and CI pipelines.'
+      operationId: dev_preflight
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized envelope: items = [preflight verdict with per-check evidence]; total = 1.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            command:
+                              type: string
+                            tool:
+                              type: string
+                              nullable: true
+                            method:
+                              type: string
+                            url:
+                              type: string
+                              nullable: true
+                            targets:
+                              type: array
+                              items:
+                                type: string
+                            verdict:
+                              type: string
+                              description: '''runnable'' or ''invalid'''
+                            runnable:
+                              type: boolean
+                            mode:
+                              type: string
+                              description: '''static'' or ''live'''
+                            reason:
+                              type: string
+                              nullable: true
+                            checks:
+                              type: object
+                              properties:
+                                hasTarget:
+                                  type: boolean
+                                urlValid:
+                                  type: boolean
+                                schemeOk:
+                                  type: boolean
+                                hostPresent:
+                                  type: boolean
+                                methodValid:
+                                  type: boolean
+                                privateTarget:
+                                  type: boolean
+                                dnsResolves:
+                                  type: boolean
+                                  nullable: true
+                                reachable:
+                                  type: boolean
+                                  nullable: true
+                                tlsValid:
+                                  type: boolean
+                                  nullable: true
+                                httpStatus:
+                                  type: number
+                                  nullable: true
+                              required:
+                              - hasTarget
+                              - urlValid
+                              - schemeOk
+                              - hostPresent
+                              - methodValid
+                              - privateTarget
+                              - dnsResolves
+                              - reachable
+                              - tlsValid
+                              - httpStatus
+                              additionalProperties: false
+                            note:
+                              type: string
+                          required:
+                          - command
+                          - tool
+                          - method
+                          - url
+                          - targets
+                          - verdict
+                          - runnable
+                          - mode
+                          - reason
+                          - checks
+                          - note
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: dev.preflight
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.0025
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.002500'
+        protocols:
+        - x402: {}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                command:
+                  type: string
+                  minLength: 1
+                  maxLength: 8192
+                  description: Command.
+                probe:
+                  type: boolean
+                  description: Probe.
+              required:
+              - command
+              additionalProperties: false
+      parameters:
+      - $ref: '#/components/parameters/TrialMode'
+  /api/dev/regex-test:
+    post:
+      tags:
+      - Dev
+      summary: Test a JavaScript regular expression against input text
+      description: Test a JavaScript regular expression against input text. POST { pattern, flags?, input }. Returns each match with its index, numbered capture groups, and named groups (up to 1000 matches with the g flag). Pure compute, no upstream.
+      operationId: dev_regex-test
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized: items = matches; meta has pattern/flags/matched/matchCount.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            match:
+                              type: string
+                            index:
+                              type: number
+                            groups:
+                              type: array
+                              items:
+                                type: string
+                            namedGroups:
+                              type: object
+                              additionalProperties:
+                                type: string
+                              nullable: true
+                          required:
+                          - match
+                          - index
+                          - groups
+                          - namedGroups
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                      meta:
+                        type: object
+                        properties:
+                          pattern:
+                            type: string
+                          flags:
+                            type: string
+                          matched:
+                            type: boolean
+                          matchCount:
+                            type: number
+                        required:
+                        - pattern
+                        - flags
+                        - matched
+                        - matchCount
+                        additionalProperties: false
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: dev.regex-test
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.0025
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.002500'
+        protocols:
+        - x402: {}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                pattern:
+                  type: string
+                  minLength: 1
+                  maxLength: 1000
+                  description: Pattern.
+                flags:
+                  type: string
+                  maxLength: 8
+                  description: Flags.
+                input:
+                  type: string
+                  maxLength: 50000
+                  description: Input.
+              required:
+              - pattern
+              - input
+              additionalProperties: false
+      parameters:
+      - $ref: '#/components/parameters/TrialMode'
+  /api/dev/rfc:
+    get:
+      tags:
+      - Dev
+      summary: Look up an IETF RFC by number
+      description: 'Look up an IETF RFC by number. Pass number as RFC2616, 2616, or the integer 2616. Returns the RFC title, authors, publication date, status (e.g. INTERNET STANDARD, PROPOSED STANDARD, DRAFT STANDARD, INFORMATIONAL, EXPERIMENTAL, HISTORIC, BEST CURRENT PRACTICE), stream (IETF/IAB/IRTF/Independent/Legacy), DOI, canonical rfc-editor.org URL, and the full standards relationship chain: which RFCs this one obsoletes / is obsoleted by, and which it updates / is updated by. Authoritative data from the IETF/RFC Editor index. Use this to resolve whether a spec is current or superseded before relying on it.'
+      operationId: dev_rfc
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      query:
+                        type: object
+                        properties:
+                          number:
+                            type: number
+                        required:
+                        - number
+                        additionalProperties: false
+                      returned:
+                        type: number
+                      rfc:
+                        type: object
+                        properties:
+                          number:
+                            type: number
+                          title:
+                            type: string
+                            nullable: true
+                          authors:
+                            type: array
+                            items:
+                              type: string
+                          date:
+                            type: string
+                            nullable: true
+                          status:
+                            type: string
+                            nullable: true
+                          stream:
+                            type: string
+                            nullable: true
+                          obsoletes:
+                            type: array
+                            items:
+                              type: number
+                          obsoletedBy:
+                            type: array
+                            items:
+                              type: number
+                          updates:
+                            type: array
+                            items:
+                              type: number
+                          updatedBy:
+                            type: array
+                            items:
+                              type: number
+                          doi:
+                            type: string
+                            nullable: true
+                          url:
+                            type: string
+                        required:
+                        - number
+                        - title
+                        - authors
+                        - date
+                        - status
+                        - stream
+                        - obsoletes
+                        - obsoletedBy
+                        - updates
+                        - updatedBy
+                        - doi
+                        - url
+                        additionalProperties: false
+                        nullable: true
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - query
+                    - returned
+                    - rfc
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: dev.rfc
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.003
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: legacy
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.003000'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: number
+        in: query
+        required: true
+        description: RFC number, e.g. RFC2616 or 2616.
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 12
+      - $ref: '#/components/parameters/TrialMode'
+  /api/dev/stackoverflow-search:
+    get:
+      tags:
+      - Dev
+      summary: Search Stack Overflow questions (keyless)
+      description: 'Search Stack Overflow questions (keyless). Each result: title, link, score, answer count, answered flag, view count, tags, creation date, and question id. Sort by relevance, votes, activity, or creation. For coding agents that need authoritative Q&A on errors, APIs, and language features.'
+      operationId: dev_stackoverflow-search
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized: items = matching questions.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            title:
+                              type: string
+                              nullable: true
+                            link:
+                              type: string
+                              nullable: true
+                            score:
+                              type: number
+                              nullable: true
+                            answerCount:
+                              type: number
+                              nullable: true
+                            isAnswered:
+                              type: boolean
+                            viewCount:
+                              type: number
+                              nullable: true
+                            tags:
+                              type: array
+                              items: {}
+                            creationDate:
+                              type: string
+                              nullable: true
+                            questionId:
+                              type: number
+                              nullable: true
+                          required:
+                          - title
+                          - link
+                          - score
+                          - answerCount
+                          - isAnswered
+                          - viewCount
+                          - tags
+                          - creationDate
+                          - questionId
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: dev.stackoverflow-search
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.0036
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.003600'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: q
+        in: query
+        required: true
+        description: Search query, e.g. "async await deadlock c#".
+        schema:
+          type: string
+          minLength: 2
+          maxLength: 200
+      - name: sort
+        in: query
+        required: false
+        description: Default relevance.
+        schema:
+          type: string
+          enum:
+          - relevance
+          - votes
+          - activity
+          - creation
+      - name: limit
+        in: query
+        required: false
+        description: Maximum number of results to return.
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 30
+      - $ref: '#/components/parameters/TrialMode'
+  /api/dev/uuid:
+    get:
+      tags:
+      - Dev
+      summary: Generate UUIDs. version v4 (random) or v7 (time-ordered
+      description: Generate UUIDs. version v4 (random) or v7 (time-ordered, sortable); count 1-100. Cryptographically random. Pure compute, no upstream.
+      operationId: dev_uuid
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized: items = generated UUID strings.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: string
+                          description: Generated UUID (36-char hyphenated form).
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: dev.uuid
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.0025
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.002500'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: version
+        in: query
+        required: false
+        description: Default v4.
+        schema:
+          type: string
+          enum:
+          - v4
+          - v7
+      - name: count
+        in: query
+        required: false
+        description: Count.
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+      - $ref: '#/components/parameters/TrialMode'
+components:
+  responses:
+    MethodNotAllowed:
+      description: Method not allowed — see `Allow` header for the supported method.
+    UpstreamError:
+      description: Upstream provider error.
+    ServerError:
+      description: Internal server error.
+    PaymentRequired:
+      description: Payment required. Body contains the x402 PaymentRequirements envelope with a multi-network accepts array; the per-call price is in accepts[].amount (and on the operation as x-2s-price). Sign for whichever rail you hold USDC on (EIP-3009 for Base, partial SPL transfer for Solana) and retry with the PAYMENT-SIGNATURE header (X-PAYMENT also accepted for v1 clients).
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/X402PaymentRequiredV2'
+    BadRequest:
+      description: Bad request — invalid parameters.
+  parameters:
+    TrialMode:
+      name: trial
+      in: query
+      required: false
+      description: 'Try before you buy. Set to 1 for one free real call per endpoint per hour — no wallet or payment needed — to verify the endpoint before paying. Equivalent to sending the "X-2s-Trial: 1" request header. Works on every endpoint.'
+      schema:
+        type: integer
+        enum:
+        - 1
+  schemas:
+    CallMeta:
+      type: object
+      description: Per-call meta envelope — endpoint id, cost, caller kind, settlement details.
+    Source:
+      type: object
+      description: 'Provenance of the data: upstream provider, source URL, and license.'
+      properties:
+        provider:
+          type: string
+          description: Upstream data provider.
+        url:
+          type: string
+          description: Source URL or documentation link.
+        license:
+          type: string
+          description: License / usage terms for the data.
+    X402PaymentRequiredV2:
+      type: object
+      description: x402 v2 PaymentRequired envelope. Pick any entry from accepts[], sign for that rail, retry with the PAYMENT-SIGNATURE header.
+      required:
+      - x402Version
+      - accepts
+      properties:
+        x402Version:
+          type: integer
+          const: 2
+        error:
+          type: string
+          description: Human-readable reason payment is required.
+        resource:
+          type: string
+          description: The resource URL being purchased.
+        accepts:
+          type: array
+          description: Payment requirement options, one per supported network (Base USDC, Solana USDC).
+          items:
+            type: object
+            required:
+            - scheme
+            - network
+            - amount
+            - asset
+            - payTo
+            - maxTimeoutSeconds
+            properties:
+              scheme:
+                type: string
+                enum:
+                - exact
+              network:
+                type: string
+                description: CAIP-2 network id, e.g. "eip155:8453" (Base) or "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp".
+              amount:
+                type: string
+                description: Price in atomic asset units (USDC has 6 decimals).
+              asset:
+                type: string
+                description: Asset contract address / mint.
+              payTo:
+                type: string
+                description: Treasury address to pay.
+              maxTimeoutSeconds:
+                type: integer
+              extra:
+                type: object
+                description: 'Rail-specific extras (EVM: EIP-712 domain name/version; Solana: feePayer).'
+                additionalProperties: true
+        extensions:
+          type: object
+          description: Optional discovery metadata (e.g. bazaar input/output schemas).
+          additionalProperties: true
+  securitySchemes:
+    x402Payment:
+      type: apiKey
+      in: header
+      name: PAYMENT-SIGNATURE
+      description: 'x402 protocol v2: base64-encoded PaymentPayload. Call any paid endpoint without auth to receive a 402 with a multi-network PaymentRequirements envelope. Sign for either rail: EIP-3009 transferWithAuthorization (Base USDC) OR a partial SPL token transfer (Solana USDC). Retry with PAYMENT-SIGNATURE header. X-PAYMENT is also accepted for v1 buyer clients. See https://x402.org.'

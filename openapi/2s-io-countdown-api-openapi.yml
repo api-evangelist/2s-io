@@ -1,0 +1,382 @@
+openapi: 3.2.0
+info:
+  title: 2s — the (most) everything Countdown API
+  version: '1'
+  summary: The (most) everything API.
+  description: 'The (most) everything API for AI agents: 575+ pay-per-call endpoints on one origin.'
+  contact:
+    name: 2s
+    url: https://2s.io
+    email: alley@2s.io
+  x-logo:
+    url: https://2s.io/icon-512.png
+    altText: 2s
+  x-guidance: 'Pay-per-call REST API for AI agents — hundreds of endpoints returning ground-truth data (US public records, company & legal identifiers, finance/SEC, crypto/web3, security & CVEs, medical codes, weather & geocoding, agriculture, energy, maritime, music, and more). Every endpoint is paid per call in USDC via x402 (Base or Solana) — no API key, no signup. Call any endpoint with no auth to get a 402 PaymentRequirements envelope, sign it (EIP-3009 on Base, partial SPL transfer on Solana), and retry with the PAYMENT-SIGNATURE header. Add ?trial=1 for one free real call per endpoint per hour to test before paying. To discover the right endpoint: GET https://2s.io/api/directory for the full catalog, or GET https://2s.io/api/search/endpoints?q=<natural-language task> for a ranked match. Per-call price is on each operation as x-payment-info (from $0.001). Batch up to 50 calls behind one payment via POST https://2s.io/api/batch/run.'
+servers:
+- url: https://2s.io
+tags:
+- name: countdown
+paths:
+  /api/countdown/gif:
+    get:
+      tags:
+      - countdown
+      summary: Animated countdown GIF from the current UTC time to endDate
+      description: 'Animated countdown GIF from the current UTC time to endDate. Always uncached. Supports 5 templates (default, minimal, neon, retro, corporate) and full customization: colors, fonts, dimensions, padding, cell padding, labels, dividers. Animates for `seconds` frames at `fps`.'
+      operationId: countdown_gif
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: OK
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: countdown.gif
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.015
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: legacy
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.015000'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: endDate
+        in: query
+        required: true
+        description: End of the date range (YYYY-MM-DD).
+        schema:
+          type: string
+          format: date-time
+      - name: template
+        in: query
+        required: false
+        description: Template.
+        schema:
+          type: string
+          enum:
+          - default
+          - minimal
+          - neon
+          - retro
+          - corporate
+      - name: seconds
+        in: query
+        required: false
+        description: Seconds.
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 60
+      - name: fps
+        in: query
+        required: false
+        description: Fps.
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 10
+      - name: width
+        in: query
+        required: false
+        description: Width.
+        schema:
+          type: integer
+          minimum: 200
+          maximum: 1600
+      - name: height
+        in: query
+        required: false
+        description: Height.
+        schema:
+          type: integer
+          minimum: 80
+          maximum: 800
+      - name: padding
+        in: query
+        required: false
+        description: Padding.
+        schema:
+          type: integer
+          minimum: 0
+          maximum: 200
+      - name: cellPadding
+        in: query
+        required: false
+        description: Cell padding.
+        schema:
+          type: integer
+          minimum: 0
+          maximum: 200
+      - name: digitFontSize
+        in: query
+        required: false
+        description: Digit font size.
+        schema:
+          type: integer
+          minimum: 20
+          maximum: 300
+      - name: labelFontSize
+        in: query
+        required: false
+        description: Label font size.
+        schema:
+          type: integer
+          minimum: 6
+          maximum: 80
+      - name: labelPaddingY
+        in: query
+        required: false
+        description: Label padding y.
+        schema:
+          type: integer
+          minimum: 0
+          maximum: 60
+      - name: digitPaddingY
+        in: query
+        required: false
+        description: Digit padding y.
+        schema:
+          type: integer
+          minimum: -60
+          maximum: 60
+      - name: letterSpacing
+        in: query
+        required: false
+        description: Letter spacing.
+        schema:
+          type: number
+          minimum: 0
+          maximum: 20
+      - name: bg
+        in: query
+        required: false
+        description: Bg.
+        schema:
+          type: string
+          maxLength: 40
+      - name: fg
+        in: query
+        required: false
+        description: Fg.
+        schema:
+          type: string
+          maxLength: 40
+      - name: labelColor
+        in: query
+        required: false
+        description: Label color.
+        schema:
+          type: string
+          maxLength: 40
+      - name: dividerColor
+        in: query
+        required: false
+        description: Divider color.
+        schema:
+          type: string
+          maxLength: 40
+      - name: digitFont
+        in: query
+        required: false
+        description: Digit font.
+        schema:
+          type: string
+          enum:
+          - mono
+          - sans
+      - name: labelFont
+        in: query
+        required: false
+        description: Label font.
+        schema:
+          type: string
+          enum:
+          - mono
+          - sans
+      - name: digitWeight
+        in: query
+        required: false
+        description: Digit weight.
+        schema:
+          type: string
+          enum:
+          - regular
+          - bold
+      - name: showLabels
+        in: query
+        required: false
+        description: Show labels.
+        schema:
+          anyOf:
+          - type: boolean
+          - type: string
+            enum:
+            - 'true'
+            - 'false'
+            - '0'
+            - '1'
+      - name: showDays
+        in: query
+        required: false
+        description: Show days.
+        schema:
+          anyOf:
+          - type: boolean
+          - type: string
+            enum:
+            - 'true'
+            - 'false'
+            - '0'
+            - '1'
+      - name: dividerChar
+        in: query
+        required: false
+        description: Divider char.
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 3
+      - name: expiredText
+        in: query
+        required: false
+        description: Expired text.
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 30
+      - name: labelDays
+        in: query
+        required: false
+        description: Label days.
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 12
+      - name: labelHours
+        in: query
+        required: false
+        description: Label hours.
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 12
+      - name: labelMinutes
+        in: query
+        required: false
+        description: Label minutes.
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 12
+      - name: labelSeconds
+        in: query
+        required: false
+        description: Label seconds.
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 12
+      - $ref: '#/components/parameters/TrialMode'
+components:
+  responses:
+    MethodNotAllowed:
+      description: Method not allowed — see `Allow` header for the supported method.
+    UpstreamError:
+      description: Upstream provider error.
+    ServerError:
+      description: Internal server error.
+    PaymentRequired:
+      description: Payment required. Body contains the x402 PaymentRequirements envelope with a multi-network accepts array; the per-call price is in accepts[].amount (and on the operation as x-2s-price). Sign for whichever rail you hold USDC on (EIP-3009 for Base, partial SPL transfer for Solana) and retry with the PAYMENT-SIGNATURE header (X-PAYMENT also accepted for v1 clients).
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/X402PaymentRequiredV2'
+    BadRequest:
+      description: Bad request — invalid parameters.
+  parameters:
+    TrialMode:
+      name: trial
+      in: query
+      required: false
+      description: 'Try before you buy. Set to 1 for one free real call per endpoint per hour — no wallet or payment needed — to verify the endpoint before paying. Equivalent to sending the "X-2s-Trial: 1" request header. Works on every endpoint.'
+      schema:
+        type: integer
+        enum:
+        - 1
+  schemas:
+    X402PaymentRequiredV2:
+      type: object
+      description: x402 v2 PaymentRequired envelope. Pick any entry from accepts[], sign for that rail, retry with the PAYMENT-SIGNATURE header.
+      required:
+      - x402Version
+      - accepts
+      properties:
+        x402Version:
+          type: integer
+          const: 2
+        error:
+          type: string
+          description: Human-readable reason payment is required.
+        resource:
+          type: string
+          description: The resource URL being purchased.
+        accepts:
+          type: array
+          description: Payment requirement options, one per supported network (Base USDC, Solana USDC).
+          items:
+            type: object
+            required:
+            - scheme
+            - network
+            - amount
+            - asset
+            - payTo
+            - maxTimeoutSeconds
+            properties:
+              scheme:
+                type: string
+                enum:
+                - exact
+              network:
+                type: string
+                description: CAIP-2 network id, e.g. "eip155:8453" (Base) or "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp".
+              amount:
+                type: string
+                description: Price in atomic asset units (USDC has 6 decimals).
+              asset:
+                type: string
+                description: Asset contract address / mint.
+              payTo:
+                type: string
+                description: Treasury address to pay.
+              maxTimeoutSeconds:
+                type: integer
+              extra:
+                type: object
+                description: 'Rail-specific extras (EVM: EIP-712 domain name/version; Solana: feePayer).'
+                additionalProperties: true
+        extensions:
+          type: object
+          description: Optional discovery metadata (e.g. bazaar input/output schemas).
+          additionalProperties: true
+  securitySchemes:
+    x402Payment:
+      type: apiKey
+      in: header
+      name: PAYMENT-SIGNATURE
+      description: 'x402 protocol v2: base64-encoded PaymentPayload. Call any paid endpoint without auth to receive a 402 with a multi-network PaymentRequirements envelope. Sign for either rail: EIP-3009 transferWithAuthorization (Base USDC) OR a partial SPL token transfer (Solana USDC). Retry with PAYMENT-SIGNATURE header. X-PAYMENT is also accepted for v1 buyer clients. See https://x402.org.'

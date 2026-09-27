@@ -1,0 +1,717 @@
+openapi: 3.2.0
+info:
+  title: 2s — the (most) everything Research API
+  version: '1'
+  summary: The (most) everything API.
+  description: 'The (most) everything API for AI agents: 575+ pay-per-call endpoints on one origin.'
+  contact:
+    name: 2s
+    url: https://2s.io
+    email: alley@2s.io
+  x-logo:
+    url: https://2s.io/icon-512.png
+    altText: 2s
+  x-guidance: 'Pay-per-call REST API for AI agents — hundreds of endpoints returning ground-truth data (US public records, company & legal identifiers, finance/SEC, crypto/web3, security & CVEs, medical codes, weather & geocoding, agriculture, energy, maritime, music, and more). Every endpoint is paid per call in USDC via x402 (Base or Solana) — no API key, no signup. Call any endpoint with no auth to get a 402 PaymentRequirements envelope, sign it (EIP-3009 on Base, partial SPL transfer on Solana), and retry with the PAYMENT-SIGNATURE header. Add ?trial=1 for one free real call per endpoint per hour to test before paying. To discover the right endpoint: GET https://2s.io/api/directory for the full catalog, or GET https://2s.io/api/search/endpoints?q=<natural-language task> for a ranked match. Per-call price is on each operation as x-payment-info (from $0.001). Batch up to 50 calls behind one payment via POST https://2s.io/api/batch/run.'
+servers:
+- url: https://2s.io
+tags:
+- name: Research
+paths:
+  /api/research/author:
+    get:
+      tags:
+      - Research
+      summary: Resolve a researcher by ORCID iD
+      description: 'Resolve a researcher by ORCID iD. Pass orcid (e.g. 0000-0002-1825-0097, with or without the https://orcid.org/ prefix). Returns the researcher name, affiliations (employments and educations with organization, role, department, years, and a current flag), a total works count, and a works summary (title, type, year, DOI when present). Data: ORCID Public API, free and keyless; per-record visibility is set by the record holder. The canonical author key in scholarly metadata — pair with /api/papers/search, /api/paper/doi-lookup, and /api/research/org (ROR institutions). Use to verify an author identity, current institution, or publication record before citing.'
+      operationId: research_author
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      orcid:
+                        type: string
+                      url:
+                        type: string
+                      name:
+                        type: object
+                        properties:
+                          given:
+                            type: string
+                            nullable: true
+                          family:
+                            type: string
+                            nullable: true
+                          credit:
+                            type: string
+                            nullable: true
+                        required:
+                        - given
+                        - family
+                        - credit
+                        additionalProperties: false
+                      affiliations:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            type:
+                              type: string
+                              enum:
+                              - employment
+                              - education
+                            organization:
+                              type: string
+                              nullable: true
+                            roleTitle:
+                              type: string
+                              nullable: true
+                            department:
+                              type: string
+                              nullable: true
+                            startYear:
+                              type: number
+                              nullable: true
+                            endYear:
+                              type: number
+                              nullable: true
+                            current:
+                              type: boolean
+                            country:
+                              type: string
+                              nullable: true
+                          required:
+                          - type
+                          - organization
+                          - roleTitle
+                          - department
+                          - startYear
+                          - endYear
+                          - current
+                          - country
+                          additionalProperties: false
+                      worksCount:
+                        type: number
+                      works:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            title:
+                              type: string
+                              nullable: true
+                            type:
+                              type: string
+                              nullable: true
+                            year:
+                              type: number
+                              nullable: true
+                            doi:
+                              type: string
+                              nullable: true
+                          required:
+                          - title
+                          - type
+                          - year
+                          - doi
+                          additionalProperties: false
+                      sources:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Source'
+                    required:
+                    - orcid
+                    - url
+                    - name
+                    - affiliations
+                    - worksCount
+                    - works
+                    - sources
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: research.author
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.003
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: legacy
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.003000'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: orcid
+        in: query
+        required: true
+        description: ORCID iD, e.g. 0000-0002-1825-0097.
+        schema:
+          type: string
+          minLength: 16
+          maxLength: 60
+      - name: worksLimit
+        in: query
+        required: false
+        description: Works limit.
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 50
+          default: 20
+      - $ref: '#/components/parameters/TrialMode'
+  /api/research/funding:
+    get:
+      tags:
+      - Research
+      summary: Search US federal biomedical research grants via NIH RePORTER
+      description: 'Search US federal biomedical research grants via NIH RePORTER. Filter by term (free-text over project title, terms, and abstract), org (funded institution name), pi (principal-investigator name), and/or fiscalYear; page with limit (1-50) and offset. Returns each award with project number, title, fiscal year, award amount (USD), contact PI, organization (name, city, state, country, department), funding agency/institute, and project start/end dates — newest fiscal year first, with a total match count. Data: NIH RePORTER, free and public-domain. Fresh post-training award data agents cannot know; pair with /api/research/org (ROR) and /api/research/author (ORCID). Use for funding landscape research, competitor/lab tracking, and grant-opportunity context.'
+      operationId: research_funding
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      query:
+                        type: object
+                        properties:
+                          term:
+                            type: string
+                            nullable: true
+                          org:
+                            type: string
+                            nullable: true
+                          pi:
+                            type: string
+                            nullable: true
+                          fiscalYear:
+                            type: number
+                            nullable: true
+                          limit:
+                            type: number
+                          offset:
+                            type: number
+                        required:
+                        - term
+                        - org
+                        - pi
+                        - fiscalYear
+                        - limit
+                        - offset
+                        additionalProperties: false
+                      total:
+                        type: number
+                        nullable: true
+                      count:
+                        type: number
+                      awards:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            projectNum:
+                              type: string
+                              nullable: true
+                            title:
+                              type: string
+                              nullable: true
+                            fiscalYear:
+                              type: number
+                              nullable: true
+                            awardAmount:
+                              type: number
+                              nullable: true
+                            piName:
+                              type: string
+                              nullable: true
+                            organization:
+                              type: string
+                              nullable: true
+                            orgCity:
+                              type: string
+                              nullable: true
+                            orgState:
+                              type: string
+                              nullable: true
+                            orgCountry:
+                              type: string
+                              nullable: true
+                            department:
+                              type: string
+                              nullable: true
+                            agency:
+                              type: string
+                              nullable: true
+                            agencyName:
+                              type: string
+                              nullable: true
+                            startDate:
+                              type: string
+                              nullable: true
+                            endDate:
+                              type: string
+                              nullable: true
+                          required:
+                          - projectNum
+                          - title
+                          - fiscalYear
+                          - awardAmount
+                          - piName
+                          - organization
+                          - orgCity
+                          - orgState
+                          - orgCountry
+                          - department
+                          - agency
+                          - agencyName
+                          - startDate
+                          - endDate
+                          additionalProperties: false
+                      sources:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Source'
+                    required:
+                    - query
+                    - total
+                    - count
+                    - awards
+                    - sources
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: research.funding
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.0045
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: legacy
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.004500'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: term
+        in: query
+        required: false
+        description: Term.
+        schema:
+          type: string
+          minLength: 2
+          maxLength: 200
+      - name: org
+        in: query
+        required: false
+        description: Org.
+        schema:
+          type: string
+          minLength: 2
+          maxLength: 200
+      - name: pi
+        in: query
+        required: false
+        description: Pi.
+        schema:
+          type: string
+          minLength: 2
+          maxLength: 120
+      - name: fiscalYear
+        in: query
+        required: false
+        description: Fiscal year.
+        schema:
+          type: integer
+          minimum: 1985
+          maximum: 2100
+      - name: limit
+        in: query
+        required: false
+        description: Maximum number of results to return.
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 50
+          default: 10
+      - name: offset
+        in: query
+        required: false
+        description: Number of results to skip before returning (pagination offset).
+        schema:
+          type: integer
+          minimum: 0
+          maximum: 14000
+          default: 0
+      - $ref: '#/components/parameters/TrialMode'
+  /api/research/org:
+    get:
+      tags:
+      - Research
+      summary: Resolve a research organization via the Research
+      description: 'Resolve a research organization via the Research Organization Registry (ROR). Pass id (a ROR id like 056y0v115 or its full URL) to fetch one org, or name to search by free text. Returns the canonical ROR id and name, organization type, status, founding year, location (city, country, GeoNames coordinates), website, Wikipedia link, external identifiers (GRID, ISNI, Wikidata, Crossref Funder), parent/child relationships, and aliases/acronyms. Data: ROR, free and CC0. The canonical institution key in scholarly metadata — pair with /api/papers/search and /api/paper/doi-lookup (author affiliations) and /api/research/author (ORCID). Use to disambiguate an institution name to a stable id before joining datasets.'
+      operationId: research_org
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      query:
+                        type: object
+                        properties:
+                          id:
+                            type: string
+                            nullable: true
+                          name:
+                            type: string
+                            nullable: true
+                        required:
+                        - id
+                        - name
+                        additionalProperties: false
+                      total:
+                        type: number
+                        nullable: true
+                      count:
+                        type: number
+                      organizations:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            id:
+                              type: string
+                            name:
+                              type: string
+                            established:
+                              type: number
+                              nullable: true
+                            status:
+                              type: string
+                              nullable: true
+                            types:
+                              type: array
+                              items:
+                                type: string
+                            location:
+                              type: object
+                              properties:
+                                city:
+                                  type: string
+                                  nullable: true
+                                countryCode:
+                                  type: string
+                                  nullable: true
+                                countryName:
+                                  type: string
+                                  nullable: true
+                                subdivision:
+                                  type: string
+                                  nullable: true
+                                lat:
+                                  type: number
+                                  nullable: true
+                                lng:
+                                  type: number
+                                  nullable: true
+                                geonamesId:
+                                  type: number
+                                  nullable: true
+                              required:
+                              - city
+                              - countryCode
+                              - countryName
+                              - subdivision
+                              - lat
+                              - lng
+                              - geonamesId
+                              additionalProperties: false
+                              nullable: true
+                            website:
+                              type: string
+                              nullable: true
+                            wikipedia:
+                              type: string
+                              nullable: true
+                            externalIds:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  type:
+                                    type: string
+                                  preferred:
+                                    type: string
+                                    nullable: true
+                                  all:
+                                    type: array
+                                    items:
+                                      type: string
+                                required:
+                                - type
+                                - preferred
+                                - all
+                                additionalProperties: false
+                            relationships:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  type:
+                                    type: string
+                                  id:
+                                    type: string
+                                  label:
+                                    type: string
+                                    nullable: true
+                                required:
+                                - type
+                                - id
+                                - label
+                                additionalProperties: false
+                            aliases:
+                              type: array
+                              items:
+                                type: string
+                          required:
+                          - id
+                          - name
+                          - established
+                          - status
+                          - types
+                          - location
+                          - website
+                          - wikipedia
+                          - externalIds
+                          - relationships
+                          - aliases
+                          additionalProperties: false
+                      sources:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Source'
+                    required:
+                    - query
+                    - total
+                    - count
+                    - organizations
+                    - sources
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: research.org
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.003
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: legacy
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.003000'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: id
+        in: query
+        required: false
+        description: Unique identifier of the record to fetch.
+        schema:
+          type: string
+          minLength: 2
+          maxLength: 120
+      - name: name
+        in: query
+        required: false
+        description: Name to search for.
+        schema:
+          type: string
+          minLength: 2
+          maxLength: 200
+      - name: limit
+        in: query
+        required: false
+        description: Maximum number of results to return.
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 20
+          default: 5
+      - $ref: '#/components/parameters/TrialMode'
+components:
+  responses:
+    MethodNotAllowed:
+      description: Method not allowed — see `Allow` header for the supported method.
+    UpstreamError:
+      description: Upstream provider error.
+    ServerError:
+      description: Internal server error.
+    PaymentRequired:
+      description: Payment required. Body contains the x402 PaymentRequirements envelope with a multi-network accepts array; the per-call price is in accepts[].amount (and on the operation as x-2s-price). Sign for whichever rail you hold USDC on (EIP-3009 for Base, partial SPL transfer for Solana) and retry with the PAYMENT-SIGNATURE header (X-PAYMENT also accepted for v1 clients).
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/X402PaymentRequiredV2'
+    BadRequest:
+      description: Bad request — invalid parameters.
+  parameters:
+    TrialMode:
+      name: trial
+      in: query
+      required: false
+      description: 'Try before you buy. Set to 1 for one free real call per endpoint per hour — no wallet or payment needed — to verify the endpoint before paying. Equivalent to sending the "X-2s-Trial: 1" request header. Works on every endpoint.'
+      schema:
+        type: integer
+        enum:
+        - 1
+  schemas:
+    CallMeta:
+      type: object
+      description: Per-call meta envelope — endpoint id, cost, caller kind, settlement details.
+    Source:
+      type: object
+      description: 'Provenance of the data: upstream provider, source URL, and license.'
+      properties:
+        provider:
+          type: string
+          description: Upstream data provider.
+        url:
+          type: string
+          description: Source URL or documentation link.
+        license:
+          type: string
+          description: License / usage terms for the data.
+    X402PaymentRequiredV2:
+      type: object
+      description: x402 v2 PaymentRequired envelope. Pick any entry from accepts[], sign for that rail, retry with the PAYMENT-SIGNATURE header.
+      required:
+      - x402Version
+      - accepts
+      properties:
+        x402Version:
+          type: integer
+          const: 2
+        error:
+          type: string
+          description: Human-readable reason payment is required.
+        resource:
+          type: string
+          description: The resource URL being purchased.
+        accepts:
+          type: array
+          description: Payment requirement options, one per supported network (Base USDC, Solana USDC).
+          items:
+            type: object
+            required:
+            - scheme
+            - network
+            - amount
+            - asset
+            - payTo
+            - maxTimeoutSeconds
+            properties:
+              scheme:
+                type: string
+                enum:
+                - exact
+              network:
+                type: string
+                description: CAIP-2 network id, e.g. "eip155:8453" (Base) or "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp".
+              amount:
+                type: string
+                description: Price in atomic asset units (USDC has 6 decimals).
+              asset:
+                type: string
+                description: Asset contract address / mint.
+              payTo:
+                type: string
+                description: Treasury address to pay.
+              maxTimeoutSeconds:
+                type: integer
+              extra:
+                type: object
+                description: 'Rail-specific extras (EVM: EIP-712 domain name/version; Solana: feePayer).'
+                additionalProperties: true
+        extensions:
+          type: object
+          description: Optional discovery metadata (e.g. bazaar input/output schemas).
+          additionalProperties: true
+  securitySchemes:
+    x402Payment:
+      type: apiKey
+      in: header
+      name: PAYMENT-SIGNATURE
+      description: 'x402 protocol v2: base64-encoded PaymentPayload. Call any paid endpoint without auth to receive a 402 with a multi-network PaymentRequirements envelope. Sign for either rail: EIP-3009 transferWithAuthorization (Base USDC) OR a partial SPL token transfer (Solana USDC). Retry with PAYMENT-SIGNATURE header. X-PAYMENT is also accepted for v1 buyer clients. See https://x402.org.'

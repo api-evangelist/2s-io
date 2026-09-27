@@ -1,0 +1,2835 @@
+openapi: 3.2.0
+info:
+  title: 2s — the (most) everything Medical API
+  version: '1'
+  summary: The (most) everything API.
+  description: 'The (most) everything API for AI agents: 575+ pay-per-call endpoints on one origin.'
+  contact:
+    name: 2s
+    url: https://2s.io
+    email: alley@2s.io
+  x-logo:
+    url: https://2s.io/icon-512.png
+    altText: 2s
+  x-guidance: 'Pay-per-call REST API for AI agents — hundreds of endpoints returning ground-truth data (US public records, company & legal identifiers, finance/SEC, crypto/web3, security & CVEs, medical codes, weather & geocoding, agriculture, energy, maritime, music, and more). Every endpoint is paid per call in USDC via x402 (Base or Solana) — no API key, no signup. Call any endpoint with no auth to get a 402 PaymentRequirements envelope, sign it (EIP-3009 on Base, partial SPL transfer on Solana), and retry with the PAYMENT-SIGNATURE header. Add ?trial=1 for one free real call per endpoint per hour to test before paying. To discover the right endpoint: GET https://2s.io/api/directory for the full catalog, or GET https://2s.io/api/search/endpoints?q=<natural-language task> for a ranked match. Per-call price is on each operation as x-payment-info (from $0.001). Batch up to 50 calls behind one payment via POST https://2s.io/api/batch/run.'
+servers:
+- url: https://2s.io
+tags:
+- name: medical
+paths:
+  /api/medical/device-510k:
+    get:
+      tags:
+      - medical
+      summary: FDA 510(k) premarket clearances - the record of medical
+      description: FDA 510(k) premarket clearances — the record of medical devices cleared for US marketing by demonstrating substantial equivalence to a predicate device. Search by device name, applicant (manufacturer), or FDA product code, and get back each clearance with its K-number, device name, applicant, decision date and decision description, clearance type (traditional/special/abbreviated), product code, advisory committee, and date received — newest decision first. Free, public-domain US government data. Authoritative regulatory-status data for medical-device diligence; point-in-time public records, not regulatory advice.
+      operationId: medical_device-510k
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      query:
+                        type: object
+                        properties:
+                          device:
+                            type: string
+                            nullable: true
+                          applicant:
+                            type: string
+                            nullable: true
+                          productCode:
+                            type: string
+                            nullable: true
+                          limit:
+                            type: number
+                        required:
+                        - device
+                        - applicant
+                        - productCode
+                        - limit
+                        additionalProperties: false
+                      totalCount:
+                        type: number
+                      returned:
+                        type: number
+                      clearances:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            kNumber:
+                              type: string
+                              nullable: true
+                            deviceName:
+                              type: string
+                              nullable: true
+                            applicant:
+                              type: string
+                              nullable: true
+                            decisionDate:
+                              type: string
+                              nullable: true
+                            decisionDescription:
+                              type: string
+                              nullable: true
+                            clearanceType:
+                              type: string
+                              nullable: true
+                            productCode:
+                              type: string
+                              nullable: true
+                            advisoryCommittee:
+                              type: string
+                              nullable: true
+                            dateReceived:
+                              type: string
+                              nullable: true
+                            state:
+                              type: string
+                              nullable: true
+                            country:
+                              type: string
+                              nullable: true
+                          required:
+                          - kNumber
+                          - deviceName
+                          - applicant
+                          - decisionDate
+                          - decisionDescription
+                          - clearanceType
+                          - productCode
+                          - advisoryCommittee
+                          - dateReceived
+                          - state
+                          - country
+                          additionalProperties: false
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - query
+                    - totalCount
+                    - returned
+                    - clearances
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: medical.device-510k
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.0045
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: legacy
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.004500'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: device
+        in: query
+        required: false
+        description: Device.
+        schema:
+          type: string
+          minLength: 2
+          maxLength: 120
+      - name: applicant
+        in: query
+        required: false
+        description: Applicant.
+        schema:
+          type: string
+          minLength: 2
+          maxLength: 120
+      - name: productCode
+        in: query
+        required: false
+        description: Product code.
+        schema:
+          type: string
+          minLength: 2
+          maxLength: 10
+      - name: limit
+        in: query
+        required: false
+        description: Maximum number of results to return.
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 50
+          default: 10
+      - $ref: '#/components/parameters/TrialMode'
+  /api/medical/device-classification:
+    get:
+      tags:
+      - medical
+      summary: FDA medical device classification - the regulatory class
+      description: FDA medical device classification — the regulatory class and controls for a device type. Search by device name or FDA product code and get back the device class (I/II/III, mapping to regulatory risk and controls), CFR regulation number, medical specialty/review panel, the official definition, and flags for life-sustaining/supporting, implant, GMP-exempt, and third-party-review eligibility. Free, public-domain US government data. The authoritative answer to "what FDA class is this device and what regulation governs it" — for regulatory and medical-device diligence; point-in-time public records, not regulatory advice.
+      operationId: medical_device-classification
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      query:
+                        type: object
+                        properties:
+                          device:
+                            type: string
+                            nullable: true
+                          productCode:
+                            type: string
+                            nullable: true
+                          limit:
+                            type: number
+                        required:
+                        - device
+                        - productCode
+                        - limit
+                        additionalProperties: false
+                      totalCount:
+                        type: number
+                      returned:
+                        type: number
+                      classifications:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            deviceName:
+                              type: string
+                              nullable: true
+                            productCode:
+                              type: string
+                              nullable: true
+                            deviceClass:
+                              type: string
+                              nullable: true
+                            regulationNumber:
+                              type: string
+                              nullable: true
+                            medicalSpecialty:
+                              type: string
+                              nullable: true
+                            definition:
+                              type: string
+                              nullable: true
+                            reviewPanel:
+                              type: string
+                              nullable: true
+                            lifeSustainSupport:
+                              type: boolean
+                              nullable: true
+                            implant:
+                              type: boolean
+                              nullable: true
+                            gmpExempt:
+                              type: boolean
+                              nullable: true
+                            thirdPartyReview:
+                              type: boolean
+                              nullable: true
+                            submissionType:
+                              type: string
+                              nullable: true
+                          required:
+                          - deviceName
+                          - productCode
+                          - deviceClass
+                          - regulationNumber
+                          - medicalSpecialty
+                          - definition
+                          - reviewPanel
+                          - lifeSustainSupport
+                          - implant
+                          - gmpExempt
+                          - thirdPartyReview
+                          - submissionType
+                          additionalProperties: false
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - query
+                    - totalCount
+                    - returned
+                    - classifications
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: medical.device-classification
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.0045
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: legacy
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.004500'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: device
+        in: query
+        required: false
+        description: Device.
+        schema:
+          type: string
+          minLength: 2
+          maxLength: 120
+      - name: productCode
+        in: query
+        required: false
+        description: Product code.
+        schema:
+          type: string
+          minLength: 2
+          maxLength: 10
+      - name: limit
+        in: query
+        required: false
+        description: Maximum number of results to return.
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 50
+          default: 10
+      - $ref: '#/components/parameters/TrialMode'
+  /api/medical/device-recall:
+    get:
+      tags:
+      - medical
+      summary: FDA medical-device recalls - the enforcement record of
+      description: FDA medical-device recalls — the enforcement record of devices removed or corrected in the US market because they could pose a health risk. Search by device name (product description), recalling firm (manufacturer), recall classification (I = most serious / reasonable probability of serious health consequences, II, or III), status (Ongoing, Completed, Terminated, Pending), or state of the recalling firm — or omit all filters for the most recent recalls nationwide. Each record returns the FDA recall number, classification, status, product description and quantity, the reason for the recall, code/lot information, the recalling firm and location, distribution pattern, whether it was voluntary or FDA-mandated, and the recall-initiation, classification, and report dates — newest report first, with the total matching count. Free, public-domain US government data. Which devices are under recall right now is fresh post-training data with real patient-safety stakes; distinct from medical.device-510k (clearances), medical.device-classification (risk class), medical.device-udi (device identifiers), and medical.device-event (adverse-event reports). Point-in-time public records, not medical or regulatory advice.
+      operationId: medical_device-recall
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      query:
+                        type: object
+                        properties:
+                          device:
+                            type: string
+                            nullable: true
+                          firm:
+                            type: string
+                            nullable: true
+                          classification:
+                            type: string
+                            nullable: true
+                          status:
+                            type: string
+                            nullable: true
+                          state:
+                            type: string
+                            nullable: true
+                          limit:
+                            type: number
+                        required:
+                        - device
+                        - firm
+                        - classification
+                        - status
+                        - state
+                        - limit
+                        additionalProperties: false
+                      totalCount:
+                        type: number
+                      returned:
+                        type: number
+                      recalls:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            recallNumber:
+                              type: string
+                            status:
+                              type: string
+                              nullable: true
+                            classification:
+                              type: string
+                              nullable: true
+                            productType:
+                              type: string
+                              nullable: true
+                            productDescription:
+                              type: string
+                              nullable: true
+                            productQuantity:
+                              type: string
+                              nullable: true
+                            codeInfo:
+                              type: string
+                              nullable: true
+                            reasonForRecall:
+                              type: string
+                              nullable: true
+                            initialNotification:
+                              type: string
+                              nullable: true
+                            voluntaryMandated:
+                              type: string
+                              nullable: true
+                            recallingFirm:
+                              type: string
+                              nullable: true
+                            city:
+                              type: string
+                              nullable: true
+                            state:
+                              type: string
+                              nullable: true
+                            country:
+                              type: string
+                              nullable: true
+                            distributionPattern:
+                              type: string
+                              nullable: true
+                            recallInitiationDate:
+                              type: string
+                              nullable: true
+                            centerClassificationDate:
+                              type: string
+                              nullable: true
+                            reportDate:
+                              type: string
+                              nullable: true
+                          required:
+                          - recallNumber
+                          - status
+                          - classification
+                          - productType
+                          - productDescription
+                          - productQuantity
+                          - codeInfo
+                          - reasonForRecall
+                          - initialNotification
+                          - voluntaryMandated
+                          - recallingFirm
+                          - city
+                          - state
+                          - country
+                          - distributionPattern
+                          - recallInitiationDate
+                          - centerClassificationDate
+                          - reportDate
+                          additionalProperties: false
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - query
+                    - totalCount
+                    - returned
+                    - recalls
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: medical.device-recall
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.0045
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: legacy
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.004500'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: device
+        in: query
+        required: false
+        description: Device name / product-description substring.
+        schema:
+          type: string
+          minLength: 2
+          maxLength: 120
+      - name: firm
+        in: query
+        required: false
+        description: Recalling firm (manufacturer) name substring.
+        schema:
+          type: string
+          minLength: 2
+          maxLength: 120
+      - name: classification
+        in: query
+        required: false
+        description: 'Recall classification: I, II, or III.'
+        schema:
+          type: string
+          enum:
+          - I
+          - II
+          - III
+      - name: status
+        in: query
+        required: false
+        description: Recall status.
+        schema:
+          type: string
+          enum:
+          - Ongoing
+          - Completed
+          - Terminated
+          - Pending
+      - name: state
+        in: query
+        required: false
+        description: 2-letter state of the recalling firm.
+        schema:
+          type: string
+          minLength: 2
+          maxLength: 2
+      - name: limit
+        in: query
+        required: false
+        description: Maximum number of results to return.
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 10
+      - $ref: '#/components/parameters/TrialMode'
+  /api/medical/device-udi:
+    get:
+      tags:
+      - medical
+      summary: FDA GUDID (Global Unique Device Identification Database)
+      description: FDA GUDID (Global Unique Device Identification Database) lookup — identify a marketed medical device from its UDI or by brand/company. Search by UDI/device identifier, brand name, or company name and get back the device description, version/model number, prescription vs OTC, single-use/kit/combination-product flags, MRI safety, sterilization, commercial-distribution status, publish date, the device identifiers (with issuing agency — GS1/HIBCC/ICCBBA), FDA product codes, and GMDN terms. Free, public-domain US government data. The canonical "what device is this UDI" lookup for supply-chain, clinical, and recall-matching agents; point-in-time public records.
+      operationId: medical_device-udi
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      query:
+                        type: object
+                        properties:
+                          device:
+                            type: string
+                            nullable: true
+                          company:
+                            type: string
+                            nullable: true
+                          udi:
+                            type: string
+                            nullable: true
+                          limit:
+                            type: number
+                        required:
+                        - device
+                        - company
+                        - udi
+                        - limit
+                        additionalProperties: false
+                      totalCount:
+                        type: number
+                      returned:
+                        type: number
+                      devices:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            brandName:
+                              type: string
+                              nullable: true
+                            companyName:
+                              type: string
+                              nullable: true
+                            versionModelNumber:
+                              type: string
+                              nullable: true
+                            deviceDescription:
+                              type: string
+                              nullable: true
+                            isRx:
+                              type: boolean
+                              nullable: true
+                            isOtc:
+                              type: boolean
+                              nullable: true
+                            isSingleUse:
+                              type: boolean
+                              nullable: true
+                            isKit:
+                              type: boolean
+                              nullable: true
+                            isCombinationProduct:
+                              type: boolean
+                              nullable: true
+                            mriSafety:
+                              type: string
+                              nullable: true
+                            commercialDistributionStatus:
+                              type: string
+                              nullable: true
+                            publishDate:
+                              type: string
+                              nullable: true
+                            identifiers:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  id:
+                                    type: string
+                                    nullable: true
+                                  type:
+                                    type: string
+                                    nullable: true
+                                  issuingAgency:
+                                    type: string
+                                    nullable: true
+                                required:
+                                - id
+                                - type
+                                - issuingAgency
+                                additionalProperties: false
+                            productCodes:
+                              type: array
+                              items:
+                                type: string
+                            gmdnTerms:
+                              type: array
+                              items:
+                                type: string
+                          required:
+                          - brandName
+                          - companyName
+                          - versionModelNumber
+                          - deviceDescription
+                          - isRx
+                          - isOtc
+                          - isSingleUse
+                          - isKit
+                          - isCombinationProduct
+                          - mriSafety
+                          - commercialDistributionStatus
+                          - publishDate
+                          - identifiers
+                          - productCodes
+                          - gmdnTerms
+                          additionalProperties: false
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - query
+                    - totalCount
+                    - returned
+                    - devices
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: medical.device-udi
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.0045
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: legacy
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.004500'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: device
+        in: query
+        required: false
+        description: Device.
+        schema:
+          type: string
+          minLength: 2
+          maxLength: 120
+      - name: company
+        in: query
+        required: false
+        description: Company.
+        schema:
+          type: string
+          minLength: 2
+          maxLength: 120
+      - name: udi
+        in: query
+        required: false
+        description: Udi.
+        schema:
+          type: string
+          minLength: 4
+          maxLength: 80
+      - name: limit
+        in: query
+        required: false
+        description: Maximum number of results to return.
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 50
+          default: 10
+      - $ref: '#/components/parameters/TrialMode'
+  /api/medical/drug-approval:
+    get:
+      tags:
+      - medical
+      summary: FDA drug approval history from Drugs@FDA - the official
+      description: FDA drug approval history from Drugs@FDA — the official record of FDA-approved drug applications. Give a drug name (brand or generic), an FDA application number (e.g. NDA021436), or a sponsor name, and get back each application with its products (brand name, active ingredients + strengths, dosage form, route, marketing status, therapeutic-equivalence code, reference-drug flag) and its full submission history (original approvals, supplements, status + status date, review priority). Free, public-domain US government data. The authoritative "is this drug FDA-approved, by whom, when, and in what formulations" record — point-in-time public records, not medical advice.
+      operationId: medical_drug-approval
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      query:
+                        type: object
+                        properties:
+                          drug:
+                            type: string
+                            nullable: true
+                          applicationNumber:
+                            type: string
+                            nullable: true
+                          sponsor:
+                            type: string
+                            nullable: true
+                          limit:
+                            type: number
+                        required:
+                        - drug
+                        - applicationNumber
+                        - sponsor
+                        - limit
+                        additionalProperties: false
+                      totalCount:
+                        type: number
+                      returned:
+                        type: number
+                      applications:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            applicationNumber:
+                              type: string
+                              nullable: true
+                            sponsorName:
+                              type: string
+                              nullable: true
+                            products:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  productNumber:
+                                    type: string
+                                    nullable: true
+                                  brandName:
+                                    type: string
+                                    nullable: true
+                                  activeIngredients:
+                                    type: array
+                                    items:
+                                      type: object
+                                      properties:
+                                        name:
+                                          type: string
+                                        strength:
+                                          type: string
+                                          nullable: true
+                                      required:
+                                      - name
+                                      - strength
+                                      additionalProperties: false
+                                  dosageForm:
+                                    type: string
+                                    nullable: true
+                                  route:
+                                    type: string
+                                    nullable: true
+                                  marketingStatus:
+                                    type: string
+                                    nullable: true
+                                  referenceDrug:
+                                    type: string
+                                    nullable: true
+                                  teCode:
+                                    type: string
+                                    nullable: true
+                                required:
+                                - productNumber
+                                - brandName
+                                - activeIngredients
+                                - dosageForm
+                                - route
+                                - marketingStatus
+                                - referenceDrug
+                                - teCode
+                                additionalProperties: false
+                            submissions:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  type:
+                                    type: string
+                                    nullable: true
+                                  number:
+                                    type: string
+                                    nullable: true
+                                  status:
+                                    type: string
+                                    nullable: true
+                                  statusDate:
+                                    type: string
+                                    nullable: true
+                                  reviewPriority:
+                                    type: string
+                                    nullable: true
+                                  classCode:
+                                    type: string
+                                    nullable: true
+                                required:
+                                - type
+                                - number
+                                - status
+                                - statusDate
+                                - reviewPriority
+                                - classCode
+                                additionalProperties: false
+                            brandNames:
+                              type: array
+                              items:
+                                type: string
+                            genericNames:
+                              type: array
+                              items:
+                                type: string
+                            manufacturerNames:
+                              type: array
+                              items:
+                                type: string
+                          required:
+                          - applicationNumber
+                          - sponsorName
+                          - products
+                          - submissions
+                          - brandNames
+                          - genericNames
+                          - manufacturerNames
+                          additionalProperties: false
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - query
+                    - totalCount
+                    - returned
+                    - applications
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: medical.drug-approval
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.0045
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: legacy
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.004500'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: drug
+        in: query
+        required: false
+        description: Drug.
+        schema:
+          type: string
+          minLength: 2
+          maxLength: 120
+      - name: applicationNumber
+        in: query
+        required: false
+        description: Application number.
+        schema:
+          type: string
+          minLength: 3
+          maxLength: 20
+      - name: sponsor
+        in: query
+        required: false
+        description: Sponsor.
+        schema:
+          type: string
+          minLength: 2
+          maxLength: 120
+      - name: limit
+        in: query
+        required: false
+        description: Maximum number of results to return.
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 50
+          default: 5
+      - $ref: '#/components/parameters/TrialMode'
+  /api/medical/drug-label:
+    get:
+      tags:
+      - medical
+      summary: Authoritative FDA drug label (Structured Product Labeling)
+      description: 'Authoritative FDA drug label (Structured Product Labeling). Give a drug name (brand, generic, or substance), or an exact NDC, RxCUI, or SPL set_id, and get back the FDA-approved label split into the sections agents need: boxed warning, indications and usage, dosage and administration, contraindications, warnings, adverse reactions, drug interactions, use in specific populations, pregnancy, mechanism of action, and active/inactive ingredients. Each record also carries identity metadata (brand/generic names, manufacturer, NDCs, RxCUIs, route, DEA schedule, OTC vs prescription) plus a hasBoxedWarning flag. Free, public-domain US government data. Point-in-time public records, not medical advice. Use for prescribing-support, pharmacy, and clinical agents that must read the real label rather than guess it.'
+      operationId: medical_drug-label
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      query:
+                        type: object
+                        properties:
+                          drug:
+                            type: string
+                            nullable: true
+                          ndc:
+                            type: string
+                            nullable: true
+                          rxcui:
+                            type: string
+                            nullable: true
+                          setId:
+                            type: string
+                            nullable: true
+                          limit:
+                            type: number
+                        required:
+                        - drug
+                        - ndc
+                        - rxcui
+                        - setId
+                        - limit
+                        additionalProperties: false
+                      totalCount:
+                        type: number
+                      returned:
+                        type: number
+                      hasBoxedWarning:
+                        type: boolean
+                      labels:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            setId:
+                              type: string
+                              nullable: true
+                            splId:
+                              type: string
+                              nullable: true
+                            effectiveTime:
+                              type: string
+                              nullable: true
+                            brandNames:
+                              type: array
+                              items:
+                                type: string
+                            genericNames:
+                              type: array
+                              items:
+                                type: string
+                            substanceNames:
+                              type: array
+                              items:
+                                type: string
+                            manufacturerNames:
+                              type: array
+                              items:
+                                type: string
+                            productNdc:
+                              type: array
+                              items:
+                                type: string
+                            routes:
+                              type: array
+                              items:
+                                type: string
+                            productType:
+                              type: string
+                              nullable: true
+                            rxcui:
+                              type: array
+                              items:
+                                type: string
+                            deaSchedule:
+                              type: string
+                              nullable: true
+                            isOtc:
+                              type: boolean
+                              nullable: true
+                            boxedWarning:
+                              type: string
+                              nullable: true
+                            indicationsAndUsage:
+                              type: string
+                              nullable: true
+                            dosageAndAdministration:
+                              type: string
+                              nullable: true
+                            contraindications:
+                              type: string
+                              nullable: true
+                            warnings:
+                              type: string
+                              nullable: true
+                            adverseReactions:
+                              type: string
+                              nullable: true
+                            drugInteractions:
+                              type: string
+                              nullable: true
+                            useInSpecificPopulations:
+                              type: string
+                              nullable: true
+                            pregnancy:
+                              type: string
+                              nullable: true
+                            mechanismOfAction:
+                              type: string
+                              nullable: true
+                            activeIngredient:
+                              type: string
+                              nullable: true
+                            inactiveIngredient:
+                              type: string
+                              nullable: true
+                            purpose:
+                              type: string
+                              nullable: true
+                            doNotUse:
+                              type: string
+                              nullable: true
+                            whenUsing:
+                              type: string
+                              nullable: true
+                            stopUse:
+                              type: string
+                              nullable: true
+                            description:
+                              type: string
+                              nullable: true
+                          required:
+                          - setId
+                          - splId
+                          - effectiveTime
+                          - brandNames
+                          - genericNames
+                          - substanceNames
+                          - manufacturerNames
+                          - productNdc
+                          - routes
+                          - productType
+                          - rxcui
+                          - deaSchedule
+                          - isOtc
+                          - boxedWarning
+                          - indicationsAndUsage
+                          - dosageAndAdministration
+                          - contraindications
+                          - warnings
+                          - adverseReactions
+                          - drugInteractions
+                          - useInSpecificPopulations
+                          - pregnancy
+                          - mechanismOfAction
+                          - activeIngredient
+                          - inactiveIngredient
+                          - purpose
+                          - doNotUse
+                          - whenUsing
+                          - stopUse
+                          - description
+                          additionalProperties: false
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - query
+                    - totalCount
+                    - returned
+                    - hasBoxedWarning
+                    - labels
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: medical.drug-label
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.0045
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: legacy
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.004500'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: drug
+        in: query
+        required: false
+        description: Drug name — brand, generic, or substance.
+        schema:
+          type: string
+          minLength: 2
+          maxLength: 120
+      - name: ndc
+        in: query
+        required: false
+        description: Exact product NDC.
+        schema:
+          type: string
+          minLength: 3
+          maxLength: 20
+      - name: rxcui
+        in: query
+        required: false
+        description: Exact RxNorm RxCUI.
+        schema:
+          type: string
+          pattern: ^\d{1,9}$
+      - name: setId
+        in: query
+        required: false
+        description: Exact SPL set_id.
+        schema:
+          type: string
+          minLength: 8
+          maxLength: 80
+      - name: limit
+        in: query
+        required: false
+        description: Max labels returned.
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 25
+          default: 1
+      - $ref: '#/components/parameters/TrialMode'
+  /api/medical/drug-price:
+    get:
+      tags:
+      - medical
+      summary: Look up US drug pricing from CMS NADAC (National Average
+      description: Look up US drug pricing from CMS NADAC (National Average Drug Acquisition Cost) — the benchmark per-unit acquisition cost CMS surveys from retail pharmacies and publishes weekly. Pass ndc (11-digit National Drug Code) for an exact product, or name (drug name/description keyword, e.g. 'atorvastatin 10 mg') to search. Returns rows with the NDC, description, nadacPerUnit (USD per pricing unit), pricingUnit (EA/ML/GM), effectiveDate, OTC flag, and brand/generic classification — most recent effective date first. Real surveyed acquisition costs instead of model-guessed prices. Public domain; the current-year dataset is resolved automatically. NADAC is an acquisition-cost benchmark, not a retail or insured price.
+      operationId: medical_drug-price
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized envelope: items = NADAC price rows (newest effective date first); meta = query + dataset year + total matches.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            ndc:
+                              type: string
+                            description:
+                              type: string
+                            nadacPerUnit:
+                              type: number
+                              nullable: true
+                            pricingUnit:
+                              type: string
+                              nullable: true
+                            effectiveDate:
+                              type: string
+                              nullable: true
+                            otc:
+                              type: boolean
+                              nullable: true
+                            classification:
+                              type: string
+                              nullable: true
+                              description: G = generic, B = brand
+                            asOfDate:
+                              type: string
+                              nullable: true
+                          required:
+                          - ndc
+                          - description
+                          - nadacPerUnit
+                          - pricingUnit
+                          - effectiveDate
+                          - otc
+                          - classification
+                          - asOfDate
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                      meta:
+                        type: object
+                        properties:
+                          query:
+                            type: object
+                            properties:
+                              ndc:
+                                type: string
+                                nullable: true
+                              name:
+                                type: string
+                                nullable: true
+                            required:
+                            - ndc
+                            - name
+                            additionalProperties: false
+                          datasetYear:
+                            type: string
+                          total:
+                            type: integer
+                        required:
+                        - query
+                        - datasetYear
+                        - total
+                        additionalProperties: false
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: medical.drug-price
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.0036
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.003600'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: ndc
+        in: query
+        required: false
+        description: NDC.
+        schema:
+          type: string
+          minLength: 3
+          maxLength: 20
+      - name: name
+        in: query
+        required: false
+        description: Name to search for.
+        schema:
+          type: string
+          minLength: 2
+          maxLength: 80
+      - name: limit
+        in: query
+        required: false
+        description: Maximum number of results to return.
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+      - $ref: '#/components/parameters/TrialMode'
+  /api/medical/drug-status:
+    get:
+      tags:
+      - medical
+      summary: One-call drug situational awareness
+      description: 'One-call drug situational awareness. Give a drug name (resolved to a canonical RxCUI via NIH RxNorm), or an exact rxcui or ndc you already hold, and get back: whether it is currently in FDA shortage, any open or recent FDA recalls, and FDA NDC-directory metadata (labeler, DEA schedule, pharmaceutical class, marketing status). Returns a resolved identity block plus hasCurrentShortage / hasOpenRecall booleans and one found/error block per source (shortages, ndc, recalls). Composition of NIH RxNorm + OpenFDA drug-shortages, NDC directory, and recall enforcement — all free, public-domain US government data; each source degrades independently. Point-in-time public records, not medical advice. Use for pharmacy/supply-chain triage, prescribing-support agents, and verifying a drug is real, scheduled, and available before acting.'
+      operationId: medical_drug-status
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      query:
+                        type: object
+                        properties:
+                          drug:
+                            type: string
+                            nullable: true
+                          rxcui:
+                            type: string
+                            nullable: true
+                          ndc:
+                            type: string
+                            nullable: true
+                        required:
+                        - drug
+                        - rxcui
+                        - ndc
+                        additionalProperties: false
+                      resolved:
+                        type: object
+                        properties:
+                          rxcui:
+                            type: string
+                            nullable: true
+                          name:
+                            type: string
+                            nullable: true
+                          termType:
+                            type: string
+                            nullable: true
+                          matchScore:
+                            type: number
+                            nullable: true
+                        required:
+                        - rxcui
+                        - name
+                        - termType
+                        - matchScore
+                        additionalProperties: false
+                      hasCurrentShortage:
+                        type: boolean
+                        nullable: true
+                      hasOpenRecall:
+                        type: boolean
+                        nullable: true
+                      shortages:
+                        type: object
+                        properties:
+                          found:
+                            type: boolean
+                          error:
+                            type: string
+                            nullable: true
+                          data:
+                            type: object
+                            additionalProperties: {}
+                            nullable: true
+                        required:
+                        - found
+                        - error
+                        - data
+                        additionalProperties: false
+                      ndc:
+                        type: object
+                        properties:
+                          found:
+                            type: boolean
+                          error:
+                            type: string
+                            nullable: true
+                          data:
+                            type: object
+                            additionalProperties: {}
+                            nullable: true
+                        required:
+                        - found
+                        - error
+                        - data
+                        additionalProperties: false
+                      recalls:
+                        type: object
+                        properties:
+                          found:
+                            type: boolean
+                          error:
+                            type: string
+                            nullable: true
+                          data:
+                            type: object
+                            additionalProperties: {}
+                            nullable: true
+                        required:
+                        - found
+                        - error
+                        - data
+                        additionalProperties: false
+                      sources:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Source'
+                      note:
+                        type: string
+                    required:
+                    - query
+                    - resolved
+                    - hasCurrentShortage
+                    - hasOpenRecall
+                    - shortages
+                    - ndc
+                    - recalls
+                    - sources
+                    - note
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: medical.drug-status
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.015
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: legacy
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.015000'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: drug
+        in: query
+        required: false
+        description: Drug.
+        schema:
+          type: string
+          minLength: 2
+          maxLength: 120
+      - name: rxcui
+        in: query
+        required: false
+        description: RXCUI.
+        schema:
+          type: string
+          pattern: ^\d{1,9}$
+      - name: ndc
+        in: query
+        required: false
+        description: NDC.
+        schema:
+          type: string
+          minLength: 3
+          maxLength: 20
+      - name: limit
+        in: query
+        required: false
+        description: Maximum number of results to return.
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 50
+          default: 10
+      - $ref: '#/components/parameters/TrialMode'
+  /api/medical/genetics:
+    get:
+      tags:
+      - medical
+      summary: MedlinePlus Genetics (US National Library of Medicine)
+      description: 'MedlinePlus Genetics (US National Library of Medicine) reference on a genetic condition or gene. Give a term (e.g. "cystic fibrosis", "BRCA1", "sickle cell") and get back the authoritative NLM record: the condition/gene name, a plain-language summary, the full set of sections (description, causes, frequency, inheritance, treatment), the inheritance pattern(s), related genes (with links), synonyms, and cross-references to other databases (OMIM, GTR, ICD-10-CM, …). Free, public-domain (NLM). Authoritative genetics reference an LLM cannot recite reliably — for clinical, patient-education, and research agents. Educational reference, not medical advice.'
+      operationId: medical_genetics
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized envelope: items = [one genetics record]; total = 1 (or 0 if no match).'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            query:
+                              type: object
+                              properties:
+                                term:
+                                  type: string
+                                type:
+                                  type: string
+                                  enum:
+                                  - condition
+                                  - gene
+                                  nullable: true
+                                slug:
+                                  type: string
+                                  nullable: true
+                              required:
+                              - term
+                              - type
+                              - slug
+                              additionalProperties: false
+                            type:
+                              type: string
+                              enum:
+                              - condition
+                              - gene
+                              nullable: true
+                            name:
+                              type: string
+                              nullable: true
+                            summary:
+                              type: string
+                              nullable: true
+                            sections:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  role:
+                                    type: string
+                                    nullable: true
+                                  text:
+                                    type: string
+                                required:
+                                - role
+                                - text
+                                additionalProperties: false
+                            inheritancePatterns:
+                              type: array
+                              items:
+                                type: string
+                            relatedGenes:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  symbol:
+                                    type: string
+                                  url:
+                                    type: string
+                                    nullable: true
+                                required:
+                                - symbol
+                                - url
+                                additionalProperties: false
+                            synonyms:
+                              type: array
+                              items:
+                                type: string
+                            crossReferences:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  db:
+                                    type: string
+                                  key:
+                                    type: string
+                                required:
+                                - db
+                                - key
+                                additionalProperties: false
+                            url:
+                              type: string
+                              nullable: true
+                          required:
+                          - query
+                          - type
+                          - name
+                          - summary
+                          - sections
+                          - inheritancePatterns
+                          - relatedGenes
+                          - synonyms
+                          - crossReferences
+                          - url
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: medical.genetics
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.0027
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.002700'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: term
+        in: query
+        required: true
+        description: Condition or gene name.
+        schema:
+          type: string
+          minLength: 2
+          maxLength: 100
+      - $ref: '#/components/parameters/TrialMode'
+  /api/medical/icd10:
+    get:
+      tags:
+      - medical
+      summary: Verify and search ICD-10-CM diagnosis codes against the
+      description: 'Verify and search ICD-10-CM diagnosis codes against the official US code set (FY2026, ~98k entries). Pass code (with or without the dot, e.g. E11.9 or E119) to confirm the code exists and list its more-specific child codes, or q to keyword-search code descriptions (e.g. "type 2 diabetes neuropathy"). Optional billable_only=true restricts results to codes valid for claim submission; limit caps results (1-50, default 10). Returns a verified flag, the exact match if any, and matched codes with billable status plus short and long descriptions. Data: CMS/NCHS ICD-10-CM (public domain), refreshed each US fiscal year. Use to confirm diagnosis codes are real and current before placing them in claims, prior authorizations, or clinical documents.'
+      operationId: medical_icd10
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized envelope: items = matched ICD-10-CM codes (verify mode: the exact code + child codes; keyword mode: billable matches first); total = 1 when an exact code is verified, else null. meta.mode flags verify vs keyword and carries verified/exactMatch.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            code:
+                              type: string
+                              description: Storage form without the dot, e.g. E119.
+                            codeDotted:
+                              type: string
+                              description: Conventional display form, e.g. E11.9.
+                            billable:
+                              type: boolean
+                              description: True when valid for claim submission (leaf code); false for category headers.
+                            shortDescription:
+                              type: string
+                            longDescription:
+                              type: string
+                          required:
+                          - code
+                          - codeDotted
+                          - billable
+                          - shortDescription
+                          - longDescription
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                      meta:
+                        type: object
+                        properties:
+                          mode:
+                            type: string
+                            enum:
+                            - verify
+                            - keyword
+                            description: verify = code lookup; keyword = q search.
+                          query:
+                            type: object
+                            properties:
+                              code:
+                                type: string
+                                nullable: true
+                              q:
+                                type: string
+                                nullable: true
+                              billableOnly:
+                                type: boolean
+                              limit:
+                                type: integer
+                            required:
+                            - code
+                            - q
+                            - billableOnly
+                            - limit
+                            additionalProperties: false
+                          verified:
+                            type: boolean
+                            nullable: true
+                            description: 'Verify mode: true iff the exact code exists in the official set. null in keyword mode.'
+                          exactMatch:
+                            type: object
+                            properties:
+                              code:
+                                type: string
+                                description: Storage form without the dot, e.g. E119.
+                              codeDotted:
+                                type: string
+                                description: Conventional display form, e.g. E11.9.
+                              billable:
+                                type: boolean
+                                description: True when valid for claim submission (leaf code); false for category headers.
+                              shortDescription:
+                                type: string
+                              longDescription:
+                                type: string
+                            required:
+                            - code
+                            - codeDotted
+                            - billable
+                            - shortDescription
+                            - longDescription
+                            additionalProperties: false
+                            nullable: true
+                            description: The exact code when verified, else null.
+                          fiscalYear:
+                            type: integer
+                            description: US fiscal year of the loaded code set.
+                        required:
+                        - mode
+                        - query
+                        - verified
+                        - exactMatch
+                        - fiscalYear
+                        additionalProperties: false
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: medical.icd10
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.0025
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.002500'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: code
+        in: query
+        required: false
+        description: ICD-10-CM code to verify, with or without the dot (e.g. E11.9 or E119). Returns the exact match plus more-specific child codes. Provide either code or q, not both.
+        schema:
+          type: string
+          minLength: 3
+          maxLength: 9
+          pattern: ^[A-Za-z][0-9][0-9A-Za-z](\.?[0-9A-Za-z]{0,4})$
+      - name: q
+        in: query
+        required: false
+        description: Keyword search over official code descriptions (e.g. "type 2 diabetes neuropathy"). Every word must match. Provide either code or q, not both.
+        schema:
+          type: string
+          minLength: 3
+          maxLength: 120
+      - name: billable_only
+        in: query
+        required: false
+        description: When true, only return codes valid for claim submission (excludes category headers).
+        schema:
+          type: boolean
+      - name: limit
+        in: query
+        required: false
+        description: Maximum codes returned (1-50, default 10).
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 50
+      - $ref: '#/components/parameters/TrialMode'
+  /api/medical/npi:
+    get:
+      tags:
+      - medical
+      summary: Look up US healthcare providers in the CMS NPPES registry
+      description: Look up US healthcare providers in the CMS NPPES registry — the authoritative directory of National Provider Identifiers (NPIs). Give an exact 10-digit NPI, or search by provider last name (+ optional first name), or organization name, optionally narrowed by state and taxonomy/specialty. Returns each provider with NPI, entity type (individual vs organization), status, name/credential/gender or organization name, sole-proprietor flag, enumeration + last-updated dates, primary taxonomy, the full taxonomy list (code, description, primary flag, state license), and practice/mailing addresses with phone. Free, public-domain (CMS). The canonical "who is this NPI / find this provider" lookup for healthcare, claims, and credentialing agents.
+      operationId: medical_npi
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized envelope: items = matching providers; total = NPPES match count.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            npi:
+                              type: string
+                              nullable: true
+                            enumerationType:
+                              type: string
+                              nullable: true
+                            entityType:
+                              type: string
+                              enum:
+                              - Individual
+                              - Organization
+                              nullable: true
+                            status:
+                              type: string
+                              nullable: true
+                            firstName:
+                              type: string
+                              nullable: true
+                            lastName:
+                              type: string
+                              nullable: true
+                            credential:
+                              type: string
+                              nullable: true
+                            gender:
+                              type: string
+                              nullable: true
+                            organizationName:
+                              type: string
+                              nullable: true
+                            soleProprietor:
+                              type: string
+                              nullable: true
+                            enumerationDate:
+                              type: string
+                              nullable: true
+                            lastUpdated:
+                              type: string
+                              nullable: true
+                            primaryTaxonomy:
+                              type: string
+                              nullable: true
+                            taxonomies:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  code:
+                                    type: string
+                                    nullable: true
+                                  description:
+                                    type: string
+                                    nullable: true
+                                  primary:
+                                    type: boolean
+                                  state:
+                                    type: string
+                                    nullable: true
+                                  license:
+                                    type: string
+                                    nullable: true
+                                required:
+                                - code
+                                - description
+                                - primary
+                                - state
+                                - license
+                                additionalProperties: false
+                            addresses:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  purpose:
+                                    type: string
+                                    nullable: true
+                                  address1:
+                                    type: string
+                                    nullable: true
+                                  address2:
+                                    type: string
+                                    nullable: true
+                                  city:
+                                    type: string
+                                    nullable: true
+                                  state:
+                                    type: string
+                                    nullable: true
+                                  postalCode:
+                                    type: string
+                                    nullable: true
+                                  countryCode:
+                                    type: string
+                                    nullable: true
+                                  telephone:
+                                    type: string
+                                    nullable: true
+                                  fax:
+                                    type: string
+                                    nullable: true
+                                required:
+                                - purpose
+                                - address1
+                                - address2
+                                - city
+                                - state
+                                - postalCode
+                                - countryCode
+                                - telephone
+                                - fax
+                                additionalProperties: false
+                          required:
+                          - npi
+                          - enumerationType
+                          - entityType
+                          - status
+                          - firstName
+                          - lastName
+                          - credential
+                          - gender
+                          - organizationName
+                          - soleProprietor
+                          - enumerationDate
+                          - lastUpdated
+                          - primaryTaxonomy
+                          - taxonomies
+                          - addresses
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: medical.npi
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.0027
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.002700'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: npi
+        in: query
+        required: false
+        description: NPI.
+        schema:
+          type: string
+          pattern: ^\d{10}$
+      - name: firstName
+        in: query
+        required: false
+        description: First name to filter by.
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 60
+      - name: lastName
+        in: query
+        required: false
+        description: Last name to filter by.
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 60
+      - name: organization
+        in: query
+        required: false
+        description: Organization.
+        schema:
+          type: string
+          minLength: 2
+          maxLength: 120
+      - name: state
+        in: query
+        required: false
+        description: US state — two-letter postal abbreviation (e.g. CA) or full name.
+        schema:
+          type: string
+          minLength: 2
+          maxLength: 2
+      - name: taxonomy
+        in: query
+        required: false
+        description: Taxonomy.
+        schema:
+          type: string
+          minLength: 2
+          maxLength: 80
+      - name: limit
+        in: query
+        required: false
+        description: Maximum number of results to return.
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 50
+      - $ref: '#/components/parameters/TrialMode'
+  /api/medical/provider-id-resolve:
+    get:
+      tags:
+      - medical
+      summary: Resolve a 10-digit NPI to the provider identity plus a
+      description: 'Resolve a 10-digit NPI to the provider identity plus a fully decoded specialty profile in one call: entity type, name/organization, status, the primary specialty (NUCC grouping + classification + display name), and every taxonomy on the record decoded the same way -- with primary flag, practice state, and license. Combines the NPPES lookup (medical.npi) with the NUCC specialty decode (medical.taxonomy-specialty) so a claims, credentialing, or referral agent gets "who is this NPI and what do they actually do" without a second call. Data: CMS NPPES + NUCC (US public domain). Note: the facility CCN (CMS Certification Number) requires a separate CMS enrollment crosswalk and is returned null (DEFERRED) rather than guessed.'
+      operationId: medical_provider-id-resolve
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized envelope: items = [one provider with decoded specialties]; total = 1.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            npi:
+                              type: string
+                            entityType:
+                              type: string
+                              nullable: true
+                            name:
+                              type: string
+                              nullable: true
+                            organizationName:
+                              type: string
+                              nullable: true
+                            status:
+                              type: string
+                              nullable: true
+                            primarySpecialty:
+                              type: object
+                              properties:
+                                code:
+                                  type: string
+                                  nullable: true
+                                grouping:
+                                  type: string
+                                  nullable: true
+                                classification:
+                                  type: string
+                                  nullable: true
+                                displayName:
+                                  type: string
+                                  nullable: true
+                              required:
+                              - code
+                              - grouping
+                              - classification
+                              - displayName
+                              additionalProperties: false
+                              nullable: true
+                            taxonomies:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  code:
+                                    type: string
+                                    nullable: true
+                                  primary:
+                                    type: boolean
+                                  state:
+                                    type: string
+                                    nullable: true
+                                  license:
+                                    type: string
+                                    nullable: true
+                                  grouping:
+                                    type: string
+                                    nullable: true
+                                  classification:
+                                    type: string
+                                    nullable: true
+                                  specialization:
+                                    type: string
+                                    nullable: true
+                                  displayName:
+                                    type: string
+                                    nullable: true
+                                required:
+                                - code
+                                - primary
+                                - state
+                                - license
+                                - grouping
+                                - classification
+                                - specialization
+                                - displayName
+                                additionalProperties: false
+                            ccn:
+                              enum:
+                              - 'null'
+                              nullable: true
+                              description: 'DEFERRED: NPI<->CCN crosswalk needs a CMS enrollment ingest.'
+                          required:
+                          - npi
+                          - entityType
+                          - name
+                          - organizationName
+                          - status
+                          - primarySpecialty
+                          - taxonomies
+                          - ccn
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: medical.provider-id-resolve
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.009
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.009000'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: npi
+        in: query
+        required: true
+        description: 10-digit National Provider Identifier.
+        schema:
+          type: string
+          pattern: ^\d{10}$
+      - $ref: '#/components/parameters/TrialMode'
+  /api/medical/rxnorm:
+    get:
+      tags:
+      - medical
+      summary: Normalize and verify drug names against RxNorm, the
+      description: 'Normalize and verify drug names against RxNorm, the canonical US drug vocabulary from the NIH. Two modes: term ("tylenol 500mg", brand or generic, typos tolerated) returns ranked RxCUI candidates with normalized names and match scores; rxcui returns the canonical concept (name, term type like IN=ingredient / SBD=branded drug / SCD=clinical drug, suppression flag) plus related concepts — active ingredients, brand names, and available dose forms. Use before writing prescriptions data, drug interactions queries, or pharmacy integrations: verify the drug exists and get its stable identifier instead of trusting model memory. Sibling: /api/medical/icd10 (diagnosis codes). Public-domain NIH data.'
+      operationId: medical_rxnorm
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized envelope: items = ranked RxCUI candidates (term/search mode) or [the one canonical concept] (rxcui/detail mode); total = null in search mode, 1 or 0 in detail mode. meta.mode flags search vs detail; meta.concept + meta.related carry detail-mode extras.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          anyOf:
+                          - type: object
+                            properties:
+                              rxcui:
+                                type: string
+                              name:
+                                type: string
+                                description: Normalized RxNorm name.
+                              score:
+                                type: number
+                                description: RxNav approximate-match score (higher = closer).
+                              rank:
+                                type: number
+                                description: 1 = best match.
+                            required:
+                            - rxcui
+                            - name
+                            - score
+                            - rank
+                            additionalProperties: false
+                            description: Search-mode candidate (term).
+                          - type: object
+                            properties:
+                              rxcui:
+                                type: string
+                              name:
+                                type: string
+                              synonym:
+                                type: string
+                                nullable: true
+                              termType:
+                                type: string
+                                nullable: true
+                                description: IN=ingredient, BN=brand, SBD=branded drug, SCD=clinical drug, …
+                              suppressed:
+                                type: boolean
+                            required:
+                            - rxcui
+                            - name
+                            - synonym
+                            - termType
+                            - suppressed
+                            additionalProperties: false
+                            description: Detail-mode canonical concept (rxcui).
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                      meta:
+                        type: object
+                        properties:
+                          mode:
+                            type: string
+                            enum:
+                            - search
+                            - detail
+                          concept:
+                            type: object
+                            properties:
+                              rxcui:
+                                type: string
+                              name:
+                                type: string
+                              synonym:
+                                type: string
+                                nullable: true
+                              termType:
+                                type: string
+                                nullable: true
+                                description: IN=ingredient, BN=brand, SBD=branded drug, SCD=clinical drug, …
+                              suppressed:
+                                type: boolean
+                            required:
+                            - rxcui
+                            - name
+                            - synonym
+                            - termType
+                            - suppressed
+                            additionalProperties: false
+                            nullable: true
+                            description: Canonical concept (detail mode). Null when the rxcui does not exist.
+                          related:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                termType:
+                                  type: string
+                                concepts:
+                                  type: array
+                                  items:
+                                    type: object
+                                    properties:
+                                      rxcui:
+                                        type: string
+                                      name:
+                                        type: string
+                                    required:
+                                    - rxcui
+                                    - name
+                                    additionalProperties: false
+                              required:
+                              - termType
+                              - concepts
+                              additionalProperties: false
+                            nullable: true
+                            description: 'Related concepts by term type: IN (ingredients), BN (brands), DF (dose forms). Detail mode only.'
+                        required:
+                        - mode
+                        - concept
+                        - related
+                        additionalProperties: false
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: medical.rxnorm
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.003
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.003000'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: term
+        in: query
+        required: false
+        description: Free-text drug name. Provide term or rxcui, not both.
+        schema:
+          type: string
+          minLength: 2
+          maxLength: 200
+      - name: rxcui
+        in: query
+        required: false
+        description: RXCUI.
+        schema:
+          type: string
+          pattern: ^\d{1,8}$
+      - name: limit
+        in: query
+        required: false
+        description: Maximum number of results to return.
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 20
+          default: 5
+      - $ref: '#/components/parameters/TrialMode'
+  /api/medical/taxonomy-specialty:
+    get:
+      tags:
+      - medical
+      summary: Resolve a NUCC Health Care Provider Taxonomy code -- the
+      description: 'Resolve a NUCC Health Care Provider Taxonomy code -- the specialty code returned by medical.npi and printed on every NPPES record -- into its human specialty: grouping (top level, e.g. "Allopathic & Osteopathic Physicians"), classification (e.g. "Anesthesiology"), specialization, the official display name, and the section (Individual vs Non-Individual). The decode step every claims, credentialing, and provider-directory agent needs to turn an opaque 10-char taxonomy code into a readable specialty. Data: NUCC code set (public domain), bundled and version-pinned. Note: the CMS Medicare 2-char physician-specialty crosswalk is published only as a PDF, so medicareSpecialty is returned null (DEFERRED) rather than guessed.'
+      operationId: medical_taxonomy-specialty
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized envelope: items = [one resolved taxonomy code with specialty grouping/classification/specialization/displayName]; total = 1.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            code:
+                              type: string
+                            grouping:
+                              type: string
+                              nullable: true
+                            classification:
+                              type: string
+                              nullable: true
+                            specialization:
+                              type: string
+                              nullable: true
+                            displayName:
+                              type: string
+                              nullable: true
+                            section:
+                              type: string
+                              nullable: true
+                            medicareSpecialty:
+                              enum:
+                              - 'null'
+                              nullable: true
+                              description: 'DEFERRED: CMS Medicare specialty crosswalk is PDF-only; not bundled.'
+                          required:
+                          - code
+                          - grouping
+                          - classification
+                          - specialization
+                          - displayName
+                          - section
+                          - medicareSpecialty
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: medical.taxonomy-specialty
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.009
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.009000'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: code
+        in: query
+        required: true
+        description: NUCC taxonomy code, e.g. 207L00000X.
+        schema:
+          type: string
+          pattern: ^[0-9A-Za-z]{10}$
+      - $ref: '#/components/parameters/TrialMode'
+components:
+  responses:
+    MethodNotAllowed:
+      description: Method not allowed — see `Allow` header for the supported method.
+    UpstreamError:
+      description: Upstream provider error.
+    ServerError:
+      description: Internal server error.
+    PaymentRequired:
+      description: Payment required. Body contains the x402 PaymentRequirements envelope with a multi-network accepts array; the per-call price is in accepts[].amount (and on the operation as x-2s-price). Sign for whichever rail you hold USDC on (EIP-3009 for Base, partial SPL transfer for Solana) and retry with the PAYMENT-SIGNATURE header (X-PAYMENT also accepted for v1 clients).
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/X402PaymentRequiredV2'
+    BadRequest:
+      description: Bad request — invalid parameters.
+  parameters:
+    TrialMode:
+      name: trial
+      in: query
+      required: false
+      description: 'Try before you buy. Set to 1 for one free real call per endpoint per hour — no wallet or payment needed — to verify the endpoint before paying. Equivalent to sending the "X-2s-Trial: 1" request header. Works on every endpoint.'
+      schema:
+        type: integer
+        enum:
+        - 1
+  schemas:
+    CallMeta:
+      type: object
+      description: Per-call meta envelope — endpoint id, cost, caller kind, settlement details.
+    Source:
+      type: object
+      description: 'Provenance of the data: upstream provider, source URL, and license.'
+      properties:
+        provider:
+          type: string
+          description: Upstream data provider.
+        url:
+          type: string
+          description: Source URL or documentation link.
+        license:
+          type: string
+          description: License / usage terms for the data.
+    X402PaymentRequiredV2:
+      type: object
+      description: x402 v2 PaymentRequired envelope. Pick any entry from accepts[], sign for that rail, retry with the PAYMENT-SIGNATURE header.
+      required:
+      - x402Version
+      - accepts
+      properties:
+        x402Version:
+          type: integer
+          const: 2
+        error:
+          type: string
+          description: Human-readable reason payment is required.
+        resource:
+          type: string
+          description: The resource URL being purchased.
+        accepts:
+          type: array
+          description: Payment requirement options, one per supported network (Base USDC, Solana USDC).
+          items:
+            type: object
+            required:
+            - scheme
+            - network
+            - amount
+            - asset
+            - payTo
+            - maxTimeoutSeconds
+            properties:
+              scheme:
+                type: string
+                enum:
+                - exact
+              network:
+                type: string
+                description: CAIP-2 network id, e.g. "eip155:8453" (Base) or "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp".
+              amount:
+                type: string
+                description: Price in atomic asset units (USDC has 6 decimals).
+              asset:
+                type: string
+                description: Asset contract address / mint.
+              payTo:
+                type: string
+                description: Treasury address to pay.
+              maxTimeoutSeconds:
+                type: integer
+              extra:
+                type: object
+                description: 'Rail-specific extras (EVM: EIP-712 domain name/version; Solana: feePayer).'
+                additionalProperties: true
+        extensions:
+          type: object
+          description: Optional discovery metadata (e.g. bazaar input/output schemas).
+          additionalProperties: true
+  securitySchemes:
+    x402Payment:
+      type: apiKey
+      in: header
+      name: PAYMENT-SIGNATURE
+      description: 'x402 protocol v2: base64-encoded PaymentPayload. Call any paid endpoint without auth to receive a 402 with a multi-network PaymentRequirements envelope. Sign for either rail: EIP-3009 transferWithAuthorization (Base USDC) OR a partial SPL token transfer (Solana USDC). Retry with PAYMENT-SIGNATURE header. X-PAYMENT is also accepted for v1 buyer clients. See https://x402.org.'

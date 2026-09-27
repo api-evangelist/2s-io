@@ -40,7 +40,7 @@ tags:
 - AI Gateway
 - Agent Infrastructure
 - Webhook
-- agent-native
+- Agent-Native
 tags_raw:
 - Agents
 - Agent commerce
@@ -61,57 +61,26 @@ tags_raw:
 - Webhooks
 - Agent-native
 - Agent Commerce
+- agent-native
 apis:
-- aid: 2s-io:2s-api
-  name: 2s API
-  description: >-
-    The full 2s REST catalog: 575 operations (470 GET, 105 POST) in one OpenAPI 3.1.0 document with servers[]
-    https://2s.io, one tag per operation across 112 groups, a unique operationId (group_name) and an x-2s-id
-    (group.name) on every operation, a per-call price in x-2s-price / x-payment-info, and a single x402Payment
-    security scheme (PAYMENT-SIGNATURE header) applied everywhere. Responses use a normalized {data {ok, items,
-    total, source, meta}, meta} envelope with per-response provenance, or raw bytes on ten media endpoints.
-    Stateful groups (store, lock, queue, pubsub, schedule, watchers) are scoped to the paying wallet. Every
-    endpoint accepts ?trial=1 for one free real call per hour; batch_run runs up to 50 calls behind one payment.
-  humanURL: https://2s.io/discover
-  baseURL: https://2s.io
-  tags:
-  - Agents
-  - x402
-  - Public Records
-  - Finance
-  - Crypto
-  - Security
-  - EDI
-  - AI Gateway
-  - Agent Infrastructure
-  properties:
-  - type: OpenAPI
-    url: openapi/2s-io-openapi.json
-  - type: OpenAPI
-    name: 2s OpenAPI 3.1 (provider-hosted)
-    url: https://2s.io/openapi.json
-  - type: Overlay
-    url: overlays/2s-io-openapi-overlay.yaml
-  - type: Documentation
-    url: https://2s.io/llms.txt
-  - type: APIReference
-    url: https://2s.io/discover
-  - type: Webhooks
-    url: asyncapi/2s-io-watchers-webhooks.yml
 - aid: 2s-io:2s-mcp-server
   name: 2s MCP Server
   description: >-
     Remote Model Context Protocol server at https://2s.io/mcp (Streamable HTTP, POST only, protocol version
-    2025-06-18, serverInfo 2s.io 1.0.0). initialize and tools/list answer anonymously with 575 tools — one per
-    REST operation, named by the spec's x-2s-id, each carrying a real inputSchema; resources/list and
-    prompts/list are not implemented. Paid tool calls are settled through x402 by a hosted signer that takes
-    the caller's EVM private key in an X-EVM-Private-Key header, which the provider's own docs recommend
-    against in favour of the local stdio server, npx -y @2sio/mcp (npm @2sio/mcp 1.82.0), that keeps the key
-    on the caller's machine. Both accept a trial mode. A SEP-1649 server card is published at
-    /.well-known/mcp/server-card.json.
+    2025-06-18, serverInfo 2s.io 1.0.0). initialize and tools/list answer anonymously with 575 tools —
+    one per REST operation, named by the spec's x-2s-id, each carrying a real inputSchema; resources/list
+    and prompts/list are not implemented. Paid tool calls are settled through x402 by a hosted signer
+    that takes the caller's EVM private key in an X-EVM-Private-Key header, which the provider's own docs
+    recommend against in favour of the local stdio server, npx -y @2sio/mcp (npm @2sio/mcp 1.82.0), that
+    keeps the key on the caller's machine. Both accept a trial mode. A SEP-1649 server card is published
+    at /.well-known/mcp/server-card.json.
   humanURL: https://2s.io/learn/x402/mcp
   baseURL: https://2s.io/mcp
   tags:
+  - MCP
+  - Agent-Native
+  - x402
+  tags_raw:
   - MCP
   - agent-native
   - x402
@@ -130,14 +99,18 @@ apis:
   description: >-
     Agent2Agent (A2A) protocol surface: an agent card served from https://2s.io/.well-known/agent-card.json
     (protocolVersion 0.3.0, JSONRPC transport, version 1.0.0, provider 2s) advertising a single skill,
-    discover-endpoints — send a natural-language task as text/plain to the JSON-RPC endpoint at
-    https://2s.io/a2a and receive the best-matching 2s endpoints (id, path, method, group, description,
-    per-call price) as application/json, ranked deterministically over the live catalog. Discovery is free; the
-    endpoints it returns are x402-paid. The endpoint implements only message/send (tasks/get and the extended
-    card return -32601); streaming, push notifications and state history are declared unsupported.
+    discover-endpoints — send a natural-language task as text/plain to the JSON-RPC endpoint at https://2s.io/a2a
+    and receive the best-matching 2s endpoints (id, path, method, group, description, per-call price)
+    as application/json, ranked deterministically over the live catalog. Discovery is free; the endpoints
+    it returns are x402-paid. The endpoint implements only message/send (tasks/get and the extended card
+    return -32601); streaming, push notifications and state history are declared unsupported.
   humanURL: https://2s.io/llms.txt
   baseURL: https://2s.io/a2a
   tags:
+  - A2A
+  - Agent-Native
+  - x402
+  tags_raw:
   - A2A
   - agent-native
   - x402
@@ -147,12 +120,1806 @@ apis:
   - type: AgentCard
     name: A2A Agent Card (provider-hosted)
     url: https://2s.io/.well-known/agent-card.json
+- aid: 2s-io:2s-io-agent-api
+  name: 2s Agent API
+  description: The agent API from 2s — 1 operation(s) for agent.
+  humanURL: https://2s.io/discover
+  baseURL: https://2s.io/mcp
+  tags:
+  - agent
+  properties:
+  - type: OpenAPI
+    url: openapi/2s-io-agent-api-openapi.yml
+  - type: Documentation
+    url: https://2s.io/llms.txt
+  - type: APIReference
+    url: https://2s.io/discover
+  - type: Webhooks
+    url: asyncapi/2s-io-watchers-webhooks.yml
+- aid: 2s-io:2s-io-agriculture-api
+  name: 2s Agriculture API
+  description: The agriculture API from 2s — 2 operation(s) for agriculture.
+  humanURL: https://2s.io/discover
+  baseURL: https://2s.io/mcp
+  tags:
+  - agriculture
+  properties:
+  - type: OpenAPI
+    url: openapi/2s-io-agriculture-api-openapi.yml
+  - type: Documentation
+    url: https://2s.io/llms.txt
+  - type: APIReference
+    url: https://2s.io/discover
+  - type: Webhooks
+    url: asyncapi/2s-io-watchers-webhooks.yml
+- aid: 2s-io:2s-io-ai-api
+  name: 2s AI API
+  description: The ai API from 2s — 16 operation(s) for ai.
+  humanURL: https://2s.io/discover
+  baseURL: https://2s.io/mcp
+  tags:
+  - ai
+  properties:
+  - type: OpenAPI
+    url: openapi/2s-io-ai-api-openapi.yml
+  - type: Documentation
+    url: https://2s.io/llms.txt
+  - type: APIReference
+    url: https://2s.io/discover
+  - type: Webhooks
+    url: asyncapi/2s-io-watchers-webhooks.yml
+- aid: 2s-io:2s-io-airport-api
+  name: 2s Airport API
+  description: The airport API from 2s — 2 operation(s) for airport.
+  humanURL: https://2s.io/discover
+  baseURL: https://2s.io/mcp
+  tags:
+  - airport
+  properties:
+  - type: OpenAPI
+    url: openapi/2s-io-airport-api-openapi.yml
+  - type: Documentation
+    url: https://2s.io/llms.txt
+  - type: APIReference
+    url: https://2s.io/discover
+  - type: Webhooks
+    url: asyncapi/2s-io-watchers-webhooks.yml
+- aid: 2s-io:2s-io-aviation-api
+  name: 2s Aviation API
+  description: The aviation API from 2s — 4 operation(s) for aviation.
+  humanURL: https://2s.io/discover
+  baseURL: https://2s.io/mcp
+  tags:
+  - aviation
+  properties:
+  - type: OpenAPI
+    url: openapi/2s-io-aviation-api-openapi.yml
+  - type: Documentation
+    url: https://2s.io/llms.txt
+  - type: APIReference
+    url: https://2s.io/discover
+  - type: Webhooks
+    url: asyncapi/2s-io-watchers-webhooks.yml
+- aid: 2s-io:2s-io-bank-api
+  name: 2s Bank API
+  description: The bank API from 2s — 1 operation(s) for bank.
+  humanURL: https://2s.io/discover
+  baseURL: https://2s.io/mcp
+  tags:
+  - bank
+  properties:
+  - type: OpenAPI
+    url: openapi/2s-io-bank-api-openapi.yml
+  - type: Documentation
+    url: https://2s.io/llms.txt
+  - type: APIReference
+    url: https://2s.io/discover
+  - type: Webhooks
+    url: asyncapi/2s-io-watchers-webhooks.yml
+- aid: 2s-io:2s-io-barcode-api
+  name: 2s Barcode API
+  description: The barcode API from 2s — 1 operation(s) for barcode.
+  humanURL: https://2s.io/discover
+  baseURL: https://2s.io/mcp
+  tags:
+  - barcode
+  properties:
+  - type: OpenAPI
+    url: openapi/2s-io-barcode-api-openapi.yml
+  - type: Documentation
+    url: https://2s.io/llms.txt
+  - type: APIReference
+    url: https://2s.io/discover
+  - type: Webhooks
+    url: asyncapi/2s-io-watchers-webhooks.yml
+- aid: 2s-io:2s-io-batch-api
+  name: 2s Batch API
+  description: The batch API from 2s — 1 operation(s) for batch.
+  humanURL: https://2s.io/discover
+  baseURL: https://2s.io/mcp
+  tags:
+  - batch
+  properties:
+  - type: OpenAPI
+    url: openapi/2s-io-batch-api-openapi.yml
+  - type: Documentation
+    url: https://2s.io/llms.txt
+  - type: APIReference
+    url: https://2s.io/discover
+  - type: Webhooks
+    url: asyncapi/2s-io-watchers-webhooks.yml
+- aid: 2s-io:2s-io-bio-api
+  name: 2s Bio API
+  description: The bio API from 2s — 3 operation(s) for bio.
+  humanURL: https://2s.io/discover
+  baseURL: https://2s.io/mcp
+  tags:
+  - bio
+  properties:
+  - type: OpenAPI
+    url: openapi/2s-io-bio-api-openapi.yml
+  - type: Documentation
+    url: https://2s.io/llms.txt
+  - type: APIReference
+    url: https://2s.io/discover
+  - type: Webhooks
+    url: asyncapi/2s-io-watchers-webhooks.yml
+- aid: 2s-io:2s-io-bls-api
+  name: 2s Bls API
+  description: The bls API from 2s — 1 operation(s) for bls.
+  humanURL: https://2s.io/discover
+  baseURL: https://2s.io/mcp
+  tags:
+  - bls
+  properties:
+  - type: OpenAPI
+    url: openapi/2s-io-bls-api-openapi.yml
+  - type: Documentation
+    url: https://2s.io/llms.txt
+  - type: APIReference
+    url: https://2s.io/discover
+  - type: Webhooks
+    url: asyncapi/2s-io-watchers-webhooks.yml
+- aid: 2s-io:2s-io-book-api
+  name: 2s Book API
+  description: The book API from 2s — 1 operation(s) for book.
+  humanURL: https://2s.io/discover
+  baseURL: https://2s.io/mcp
+  tags:
+  - book
+  properties:
+  - type: OpenAPI
+    url: openapi/2s-io-book-api-openapi.yml
+  - type: Documentation
+    url: https://2s.io/llms.txt
+  - type: APIReference
+    url: https://2s.io/discover
+  - type: Webhooks
+    url: asyncapi/2s-io-watchers-webhooks.yml
+- aid: 2s-io:2s-io-business-api
+  name: 2s Business API
+  description: The business API from 2s — 16 operation(s) for business.
+  humanURL: https://2s.io/discover
+  baseURL: https://2s.io/mcp
+  tags:
+  - business
+  properties:
+  - type: OpenAPI
+    url: openapi/2s-io-business-api-openapi.yml
+  - type: Documentation
+    url: https://2s.io/llms.txt
+  - type: APIReference
+    url: https://2s.io/discover
+  - type: Webhooks
+    url: asyncapi/2s-io-watchers-webhooks.yml
+- aid: 2s-io:2s-io-calendar-api
+  name: 2s Calendar API
+  description: The calendar API from 2s — 4 operation(s) for calendar.
+  humanURL: https://2s.io/discover
+  baseURL: https://2s.io/mcp
+  tags:
+  - calendar
+  properties:
+  - type: OpenAPI
+    url: openapi/2s-io-calendar-api-openapi.yml
+  - type: Documentation
+    url: https://2s.io/llms.txt
+  - type: APIReference
+    url: https://2s.io/discover
+  - type: Webhooks
+    url: asyncapi/2s-io-watchers-webhooks.yml
+- aid: 2s-io:2s-io-census-api
+  name: 2s Census API
+  description: The census API from 2s — 2 operation(s) for census.
+  humanURL: https://2s.io/discover
+  baseURL: https://2s.io/mcp
+  tags:
+  - census
+  properties:
+  - type: OpenAPI
+    url: openapi/2s-io-census-api-openapi.yml
+  - type: Documentation
+    url: https://2s.io/llms.txt
+  - type: APIReference
+    url: https://2s.io/discover
+  - type: Webhooks
+    url: asyncapi/2s-io-watchers-webhooks.yml
+- aid: 2s-io:2s-io-chem-api
+  name: 2s Chem API
+  description: The chem API from 2s — 1 operation(s) for chem.
+  humanURL: https://2s.io/discover
+  baseURL: https://2s.io/mcp
+  tags:
+  - chem
+  properties:
+  - type: OpenAPI
+    url: openapi/2s-io-chem-api-openapi.yml
+  - type: Documentation
+    url: https://2s.io/llms.txt
+  - type: APIReference
+    url: https://2s.io/discover
+  - type: Webhooks
+    url: asyncapi/2s-io-watchers-webhooks.yml
+- aid: 2s-io:2s-io-chinese-api
+  name: 2s Chinese API
+  description: The chinese API from 2s — 3 operation(s) for chinese.
+  humanURL: https://2s.io/discover
+  baseURL: https://2s.io/mcp
+  tags:
+  - chinese
+  properties:
+  - type: OpenAPI
+    url: openapi/2s-io-chinese-api-openapi.yml
+  - type: Documentation
+    url: https://2s.io/llms.txt
+  - type: APIReference
+    url: https://2s.io/discover
+  - type: Webhooks
+    url: asyncapi/2s-io-watchers-webhooks.yml
+- aid: 2s-io:2s-io-class-api
+  name: 2s Class API
+  description: The class API from 2s — 1 operation(s) for class.
+  humanURL: https://2s.io/discover
+  baseURL: https://2s.io/mcp
+  tags:
+  - class
+  properties:
+  - type: OpenAPI
+    url: openapi/2s-io-class-api-openapi.yml
+  - type: Documentation
+    url: https://2s.io/llms.txt
+  - type: APIReference
+    url: https://2s.io/discover
+  - type: Webhooks
+    url: asyncapi/2s-io-watchers-webhooks.yml
+- aid: 2s-io:2s-io-climate-api
+  name: 2s Climate API
+  description: The climate API from 2s — 2 operation(s) for climate.
+  humanURL: https://2s.io/discover
+  baseURL: https://2s.io/mcp
+  tags:
+  - climate
+  properties:
+  - type: OpenAPI
+    url: openapi/2s-io-climate-api-openapi.yml
+  - type: Documentation
+    url: https://2s.io/llms.txt
+  - type: APIReference
+    url: https://2s.io/discover
+  - type: Webhooks
+    url: asyncapi/2s-io-watchers-webhooks.yml
+- aid: 2s-io:2s-io-clinical-api
+  name: 2s Clinical API
+  description: The clinical API from 2s — 2 operation(s) for clinical.
+  humanURL: https://2s.io/discover
+  baseURL: https://2s.io/mcp
+  tags:
+  - clinical
+  properties:
+  - type: OpenAPI
+    url: openapi/2s-io-clinical-api-openapi.yml
+  - type: Documentation
+    url: https://2s.io/llms.txt
+  - type: APIReference
+    url: https://2s.io/discover
+  - type: Webhooks
+    url: asyncapi/2s-io-watchers-webhooks.yml
+- aid: 2s-io:2s-io-code-api
+  name: 2s Code API
+  description: The code API from 2s — 1 operation(s) for code.
+  humanURL: https://2s.io/discover
+  baseURL: https://2s.io/mcp
+  tags:
+  - code
+  properties:
+  - type: OpenAPI
+    url: openapi/2s-io-code-api-openapi.yml
+  - type: Documentation
+    url: https://2s.io/llms.txt
+  - type: APIReference
+    url: https://2s.io/discover
+  - type: Webhooks
+    url: asyncapi/2s-io-watchers-webhooks.yml
+- aid: 2s-io:2s-io-convert-api
+  name: 2s Convert API
+  description: The convert API from 2s — 2 operation(s) for convert.
+  humanURL: https://2s.io/discover
+  baseURL: https://2s.io/mcp
+  tags:
+  - convert
+  properties:
+  - type: OpenAPI
+    url: openapi/2s-io-convert-api-openapi.yml
+  - type: Documentation
+    url: https://2s.io/llms.txt
+  - type: APIReference
+    url: https://2s.io/discover
+  - type: Webhooks
+    url: asyncapi/2s-io-watchers-webhooks.yml
+- aid: 2s-io:2s-io-countdown-api
+  name: 2s Countdown API
+  description: The countdown API from 2s — 1 operation(s) for countdown.
+  humanURL: https://2s.io/discover
+  baseURL: https://2s.io/mcp
+  tags:
+  - countdown
+  properties:
+  - type: OpenAPI
+    url: openapi/2s-io-countdown-api-openapi.yml
+  - type: Documentation
+    url: https://2s.io/llms.txt
+  - type: APIReference
+    url: https://2s.io/discover
+  - type: Webhooks
+    url: asyncapi/2s-io-watchers-webhooks.yml
+- aid: 2s-io:2s-io-country-api
+  name: 2s Country API
+  description: The country API from 2s — 2 operation(s) for country.
+  humanURL: https://2s.io/discover
+  baseURL: https://2s.io/mcp
+  tags:
+  - country
+  properties:
+  - type: OpenAPI
+    url: openapi/2s-io-country-api-openapi.yml
+  - type: Documentation
+    url: https://2s.io/llms.txt
+  - type: APIReference
+    url: https://2s.io/discover
+  - type: Webhooks
+    url: asyncapi/2s-io-watchers-webhooks.yml
+- aid: 2s-io:2s-io-crypto-api
+  name: 2s Crypto API
+  description: The crypto API from 2s — 46 operation(s) for crypto.
+  humanURL: https://2s.io/discover
+  baseURL: https://2s.io/mcp
+  tags:
+  - crypto
+  properties:
+  - type: OpenAPI
+    url: openapi/2s-io-crypto-api-openapi.yml
+  - type: Documentation
+    url: https://2s.io/llms.txt
+  - type: APIReference
+    url: https://2s.io/discover
+  - type: Webhooks
+    url: asyncapi/2s-io-watchers-webhooks.yml
+- aid: 2s-io:2s-io-dev-api
+  name: 2s Dev API
+  description: The dev API from 2s — 15 operation(s) for dev.
+  humanURL: https://2s.io/discover
+  baseURL: https://2s.io/mcp
+  tags:
+  - dev
+  properties:
+  - type: OpenAPI
+    url: openapi/2s-io-dev-api-openapi.yml
+  - type: Documentation
+    url: https://2s.io/llms.txt
+  - type: APIReference
+    url: https://2s.io/discover
+  - type: Webhooks
+    url: asyncapi/2s-io-watchers-webhooks.yml
+- aid: 2s-io:2s-io-dns-api
+  name: 2s Dns API
+  description: The dns API from 2s — 1 operation(s) for dns.
+  humanURL: https://2s.io/discover
+  baseURL: https://2s.io/mcp
+  tags:
+  - dns
+  properties:
+  - type: OpenAPI
+    url: openapi/2s-io-dns-api-openapi.yml
+  - type: Documentation
+    url: https://2s.io/llms.txt
+  - type: APIReference
+    url: https://2s.io/discover
+  - type: Webhooks
+    url: asyncapi/2s-io-watchers-webhooks.yml
+- aid: 2s-io:2s-io-domain-api
+  name: 2s Domain API
+  description: The domain API from 2s — 4 operation(s) for domain.
+  humanURL: https://2s.io/discover
+  baseURL: https://2s.io/mcp
+  tags:
+  - domain
+  properties:
+  - type: OpenAPI
+    url: openapi/2s-io-domain-api-openapi.yml
+  - type: Documentation
+    url: https://2s.io/llms.txt
+  - type: APIReference
+    url: https://2s.io/discover
+  - type: Webhooks
+    url: asyncapi/2s-io-watchers-webhooks.yml
+- aid: 2s-io:2s-io-earth-api
+  name: 2s Earth API
+  description: The earth API from 2s — 2 operation(s) for earth.
+  humanURL: https://2s.io/discover
+  baseURL: https://2s.io/mcp
+  tags:
+  - earth
+  properties:
+  - type: OpenAPI
+    url: openapi/2s-io-earth-api-openapi.yml
+  - type: Documentation
+    url: https://2s.io/llms.txt
+  - type: APIReference
+    url: https://2s.io/discover
+  - type: Webhooks
+    url: asyncapi/2s-io-watchers-webhooks.yml
+- aid: 2s-io:2s-io-econ-api
+  name: 2s Econ API
+  description: The econ API from 2s — 10 operation(s) for econ.
+  humanURL: https://2s.io/discover
+  baseURL: https://2s.io/mcp
+  tags:
+  - econ
+  properties:
+  - type: OpenAPI
+    url: openapi/2s-io-econ-api-openapi.yml
+  - type: Documentation
+    url: https://2s.io/llms.txt
+  - type: APIReference
+    url: https://2s.io/discover
+  - type: Webhooks
+    url: asyncapi/2s-io-watchers-webhooks.yml
+- aid: 2s-io:2s-io-edi-api
+  name: 2s Edi API
+  description: The edi API from 2s — 5 operation(s) for edi.
+  humanURL: https://2s.io/discover
+  baseURL: https://2s.io/mcp
+  tags:
+  - edi
+  properties:
+  - type: OpenAPI
+    url: openapi/2s-io-edi-api-openapi.yml
+  - type: Documentation
+    url: https://2s.io/llms.txt
+  - type: APIReference
+    url: https://2s.io/discover
+  - type: Webhooks
+    url: asyncapi/2s-io-watchers-webhooks.yml
+- aid: 2s-io:2s-io-edu-api
+  name: 2s Edu API
+  description: The edu API from 2s — 2 operation(s) for edu.
+  humanURL: https://2s.io/discover
+  baseURL: https://2s.io/mcp
+  tags:
+  - edu
+  properties:
+  - type: OpenAPI
+    url: openapi/2s-io-edu-api-openapi.yml
+  - type: Documentation
+    url: https://2s.io/llms.txt
+  - type: APIReference
+    url: https://2s.io/discover
+  - type: Webhooks
+    url: asyncapi/2s-io-watchers-webhooks.yml
+- aid: 2s-io:2s-io-email-api
+  name: 2s Email API
+  description: The email API from 2s — 1 operation(s) for email.
+  humanURL: https://2s.io/discover
+  baseURL: https://2s.io/mcp
+  tags:
+  - email
+  properties:
+  - type: OpenAPI
+    url: openapi/2s-io-email-api-openapi.yml
+  - type: Documentation
+    url: https://2s.io/llms.txt
+  - type: APIReference
+    url: https://2s.io/discover
+  - type: Webhooks
+    url: asyncapi/2s-io-watchers-webhooks.yml
+- aid: 2s-io:2s-io-energy-api
+  name: 2s Energy API
+  description: The energy API from 2s — 8 operation(s) for energy.
+  humanURL: https://2s.io/discover
+  baseURL: https://2s.io/mcp
+  tags:
+  - energy
+  properties:
+  - type: OpenAPI
+    url: openapi/2s-io-energy-api-openapi.yml
+  - type: Documentation
+    url: https://2s.io/llms.txt
+  - type: APIReference
+    url: https://2s.io/discover
+  - type: Webhooks
+    url: asyncapi/2s-io-watchers-webhooks.yml
+- aid: 2s-io:2s-io-factcheck-api
+  name: 2s Factcheck API
+  description: The factcheck API from 2s — 1 operation(s) for factcheck.
+  humanURL: https://2s.io/discover
+  baseURL: https://2s.io/mcp
+  tags:
+  - factcheck
+  properties:
+  - type: OpenAPI
+    url: openapi/2s-io-factcheck-api-openapi.yml
+  - type: Documentation
+    url: https://2s.io/llms.txt
+  - type: APIReference
+    url: https://2s.io/discover
+  - type: Webhooks
+    url: asyncapi/2s-io-watchers-webhooks.yml
+- aid: 2s-io:2s-io-feedback-api
+  name: 2s Feedback API
+  description: The feedback API from 2s — 1 operation(s) for feedback.
+  humanURL: https://2s.io/discover
+  baseURL: https://2s.io/mcp
+  tags:
+  - feedback
+  properties:
+  - type: OpenAPI
+    url: openapi/2s-io-feedback-api-openapi.yml
+  - type: Documentation
+    url: https://2s.io/llms.txt
+  - type: APIReference
+    url: https://2s.io/discover
+  - type: Webhooks
+    url: asyncapi/2s-io-watchers-webhooks.yml
+- aid: 2s-io:2s-io-finance-api
+  name: 2s Finance API
+  description: The finance API from 2s — 17 operation(s) for finance.
+  humanURL: https://2s.io/discover
+  baseURL: https://2s.io/mcp
+  tags:
+  - finance
+  properties:
+  - type: OpenAPI
+    url: openapi/2s-io-finance-api-openapi.yml
+  - type: Documentation
+    url: https://2s.io/llms.txt
+  - type: APIReference
+    url: https://2s.io/discover
+  - type: Webhooks
+    url: asyncapi/2s-io-watchers-webhooks.yml
+- aid: 2s-io:2s-io-flight-api
+  name: 2s Flight API
+  description: The flight API from 2s — 3 operation(s) for flight.
+  humanURL: https://2s.io/discover
+  baseURL: https://2s.io/mcp
+  tags:
+  - flight
+  properties:
+  - type: OpenAPI
+    url: openapi/2s-io-flight-api-openapi.yml
+  - type: Documentation
+    url: https://2s.io/llms.txt
+  - type: APIReference
+    url: https://2s.io/discover
+  - type: Webhooks
+    url: asyncapi/2s-io-watchers-webhooks.yml
+- aid: 2s-io:2s-io-food-api
+  name: 2s Food API
+  description: The food API from 2s — 2 operation(s) for food.
+  humanURL: https://2s.io/discover
+  baseURL: https://2s.io/mcp
+  tags:
+  - food
+  properties:
+  - type: OpenAPI
+    url: openapi/2s-io-food-api-openapi.yml
+  - type: Documentation
+    url: https://2s.io/llms.txt
+  - type: APIReference
+    url: https://2s.io/discover
+  - type: Webhooks
+    url: asyncapi/2s-io-watchers-webhooks.yml
+- aid: 2s-io:2s-io-fx-api
+  name: 2s Fx API
+  description: The fx API from 2s — 2 operation(s) for fx.
+  humanURL: https://2s.io/discover
+  baseURL: https://2s.io/mcp
+  tags:
+  - fx
+  properties:
+  - type: OpenAPI
+    url: openapi/2s-io-fx-api-openapi.yml
+  - type: Documentation
+    url: https://2s.io/llms.txt
+  - type: APIReference
+    url: https://2s.io/discover
+  - type: Webhooks
+    url: asyncapi/2s-io-watchers-webhooks.yml
+- aid: 2s-io:2s-io-geo-api
+  name: 2s Geo API
+  description: The geo API from 2s — 7 operation(s) for geo.
+  humanURL: https://2s.io/discover
+  baseURL: https://2s.io/mcp
+  tags:
+  - geo
+  properties:
+  - type: OpenAPI
+    url: openapi/2s-io-geo-api-openapi.yml
+  - type: Documentation
+    url: https://2s.io/llms.txt
+  - type: APIReference
+    url: https://2s.io/discover
+  - type: Webhooks
+    url: asyncapi/2s-io-watchers-webhooks.yml
+- aid: 2s-io:2s-io-geocode-api
+  name: 2s Geocode API
+  description: The geocode API from 2s — 2 operation(s) for geocode.
+  humanURL: https://2s.io/discover
+  baseURL: https://2s.io/mcp
+  tags:
+  - geocode
+  properties:
+  - type: OpenAPI
+    url: openapi/2s-io-geocode-api-openapi.yml
+  - type: Documentation
+    url: https://2s.io/llms.txt
+  - type: APIReference
+    url: https://2s.io/discover
+  - type: Webhooks
+    url: asyncapi/2s-io-watchers-webhooks.yml
+- aid: 2s-io:2s-io-github-api
+  name: 2s GitHub API
+  description: The github API from 2s — 14 operation(s) for github.
+  humanURL: https://2s.io/discover
+  baseURL: https://2s.io/mcp
+  tags:
+  - github
+  properties:
+  - type: OpenAPI
+    url: openapi/2s-io-github-api-openapi.yml
+  - type: Documentation
+    url: https://2s.io/llms.txt
+  - type: APIReference
+    url: https://2s.io/discover
+  - type: Webhooks
+    url: asyncapi/2s-io-watchers-webhooks.yml
+- aid: 2s-io:2s-io-gov-api
+  name: 2s Gov API
+  description: The gov API from 2s — 56 operation(s) for gov.
+  humanURL: https://2s.io/discover
+  baseURL: https://2s.io/mcp
+  tags:
+  - gov
+  properties:
+  - type: OpenAPI
+    url: openapi/2s-io-gov-api-openapi.yml
+  - type: Documentation
+    url: https://2s.io/llms.txt
+  - type: APIReference
+    url: https://2s.io/discover
+  - type: Webhooks
+    url: asyncapi/2s-io-watchers-webhooks.yml
+- aid: 2s-io:2s-io-hash-api
+  name: 2s Hash API
+  description: The hash API from 2s — 1 operation(s) for hash.
+  humanURL: https://2s.io/discover
+  baseURL: https://2s.io/mcp
+  tags:
+  - hash
+  properties:
+  - type: OpenAPI
+    url: openapi/2s-io-hash-api-openapi.yml
+  - type: Documentation
+    url: https://2s.io/llms.txt
+  - type: APIReference
+    url: https://2s.io/discover
+  - type: Webhooks
+    url: asyncapi/2s-io-watchers-webhooks.yml
+- aid: 2s-io:2s-io-health-api
+  name: 2s Health API
+  description: The health API from 2s — 7 operation(s) for health.
+  humanURL: https://2s.io/discover
+  baseURL: https://2s.io/mcp
+  tags:
+  - health
+  properties:
+  - type: OpenAPI
+    url: openapi/2s-io-health-api-openapi.yml
+  - type: Documentation
+    url: https://2s.io/llms.txt
+  - type: APIReference
+    url: https://2s.io/discover
+  - type: Webhooks
+    url: asyncapi/2s-io-watchers-webhooks.yml
+- aid: 2s-io:2s-io-html-api
+  name: 2s Html API
+  description: The html API from 2s — 1 operation(s) for html.
+  humanURL: https://2s.io/discover
+  baseURL: https://2s.io/mcp
+  tags:
+  - html
+  properties:
+  - type: OpenAPI
+    url: openapi/2s-io-html-api-openapi.yml
+  - type: Documentation
+    url: https://2s.io/llms.txt
+  - type: APIReference
+    url: https://2s.io/discover
+  - type: Webhooks
+    url: asyncapi/2s-io-watchers-webhooks.yml
+- aid: 2s-io:2s-io-image-api
+  name: 2s Image API
+  description: The image API from 2s — 1 operation(s) for image.
+  humanURL: https://2s.io/discover
+  baseURL: https://2s.io/mcp
+  tags:
+  - image
+  properties:
+  - type: OpenAPI
+    url: openapi/2s-io-image-api-openapi.yml
+  - type: Documentation
+    url: https://2s.io/llms.txt
+  - type: APIReference
+    url: https://2s.io/discover
+  - type: Webhooks
+    url: asyncapi/2s-io-watchers-webhooks.yml
+- aid: 2s-io:2s-io-inflation-api
+  name: 2s Inflation API
+  description: The inflation API from 2s — 4 operation(s) for inflation.
+  humanURL: https://2s.io/discover
+  baseURL: https://2s.io/mcp
+  tags:
+  - inflation
+  properties:
+  - type: OpenAPI
+    url: openapi/2s-io-inflation-api-openapi.yml
+  - type: Documentation
+    url: https://2s.io/llms.txt
+  - type: APIReference
+    url: https://2s.io/discover
+  - type: Webhooks
+    url: asyncapi/2s-io-watchers-webhooks.yml
+- aid: 2s-io:2s-io-ipinfo-api
+  name: 2s Ipinfo API
+  description: The ipinfo API from 2s — 1 operation(s) for ipinfo.
+  humanURL: https://2s.io/discover
+  baseURL: https://2s.io/mcp
+  tags:
+  - ipinfo
+  properties:
+  - type: OpenAPI
+    url: openapi/2s-io-ipinfo-api-openapi.yml
+  - type: Documentation
+    url: https://2s.io/llms.txt
+  - type: APIReference
+    url: https://2s.io/discover
+  - type: Webhooks
+    url: asyncapi/2s-io-watchers-webhooks.yml
+- aid: 2s-io:2s-io-iso-api
+  name: 2s Iso API
+  description: The iso API from 2s — 3 operation(s) for iso.
+  humanURL: https://2s.io/discover
+  baseURL: https://2s.io/mcp
+  tags:
+  - iso
+  properties:
+  - type: OpenAPI
+    url: openapi/2s-io-iso-api-openapi.yml
+  - type: Documentation
+    url: https://2s.io/llms.txt
+  - type: APIReference
+    url: https://2s.io/discover
+  - type: Webhooks
+    url: asyncapi/2s-io-watchers-webhooks.yml
+- aid: 2s-io:2s-io-job-api
+  name: 2s Job API
+  description: The job API from 2s — 2 operation(s) for job.
+  humanURL: https://2s.io/discover
+  baseURL: https://2s.io/mcp
+  tags:
+  - job
+  properties:
+  - type: OpenAPI
+    url: openapi/2s-io-job-api-openapi.yml
+  - type: Documentation
+    url: https://2s.io/llms.txt
+  - type: APIReference
+    url: https://2s.io/discover
+  - type: Webhooks
+    url: asyncapi/2s-io-watchers-webhooks.yml
+- aid: 2s-io:2s-io-labor-api
+  name: 2s Labor API
+  description: The labor API from 2s — 3 operation(s) for labor.
+  humanURL: https://2s.io/discover
+  baseURL: https://2s.io/mcp
+  tags:
+  - labor
+  properties:
+  - type: OpenAPI
+    url: openapi/2s-io-labor-api-openapi.yml
+  - type: Documentation
+    url: https://2s.io/llms.txt
+  - type: APIReference
+    url: https://2s.io/discover
+  - type: Webhooks
+    url: asyncapi/2s-io-watchers-webhooks.yml
+- aid: 2s-io:2s-io-law-api
+  name: 2s Law API
+  description: The law API from 2s — 12 operation(s) for law.
+  humanURL: https://2s.io/discover
+  baseURL: https://2s.io/mcp
+  tags:
+  - law
+  properties:
+  - type: OpenAPI
+    url: openapi/2s-io-law-api-openapi.yml
+  - type: Documentation
+    url: https://2s.io/llms.txt
+  - type: APIReference
+    url: https://2s.io/discover
+  - type: Webhooks
+    url: asyncapi/2s-io-watchers-webhooks.yml
+- aid: 2s-io:2s-io-license-api
+  name: 2s License API
+  description: The license API from 2s — 4 operation(s) for license.
+  humanURL: https://2s.io/discover
+  baseURL: https://2s.io/mcp
+  tags:
+  - license
+  properties:
+  - type: OpenAPI
+    url: openapi/2s-io-license-api-openapi.yml
+  - type: Documentation
+    url: https://2s.io/llms.txt
+  - type: APIReference
+    url: https://2s.io/discover
+  - type: Webhooks
+    url: asyncapi/2s-io-watchers-webhooks.yml
+- aid: 2s-io:2s-io-lock-api
+  name: 2s Lock API
+  description: The lock API from 2s — 3 operation(s) for lock.
+  humanURL: https://2s.io/discover
+  baseURL: https://2s.io/mcp
+  tags:
+  - lock
+  properties:
+  - type: OpenAPI
+    url: openapi/2s-io-lock-api-openapi.yml
+  - type: Documentation
+    url: https://2s.io/llms.txt
+  - type: APIReference
+    url: https://2s.io/discover
+  - type: Webhooks
+    url: asyncapi/2s-io-watchers-webhooks.yml
+- aid: 2s-io:2s-io-maritime-api
+  name: 2s Maritime API
+  description: The maritime API from 2s — 3 operation(s) for maritime.
+  humanURL: https://2s.io/discover
+  baseURL: https://2s.io/mcp
+  tags:
+  - maritime
+  properties:
+  - type: OpenAPI
+    url: openapi/2s-io-maritime-api-openapi.yml
+  - type: Documentation
+    url: https://2s.io/llms.txt
+  - type: APIReference
+    url: https://2s.io/discover
+  - type: Webhooks
+    url: asyncapi/2s-io-watchers-webhooks.yml
+- aid: 2s-io:2s-io-markets-api
+  name: 2s Markets API
+  description: The markets API from 2s — 2 operation(s) for markets.
+  humanURL: https://2s.io/discover
+  baseURL: https://2s.io/mcp
+  tags:
+  - markets
+  properties:
+  - type: OpenAPI
+    url: openapi/2s-io-markets-api-openapi.yml
+  - type: Documentation
+    url: https://2s.io/llms.txt
+  - type: APIReference
+    url: https://2s.io/discover
+  - type: Webhooks
+    url: asyncapi/2s-io-watchers-webhooks.yml
+- aid: 2s-io:2s-io-medical-api
+  name: 2s Medical API
+  description: The medical API from 2s — 14 operation(s) for medical.
+  humanURL: https://2s.io/discover
+  baseURL: https://2s.io/mcp
+  tags:
+  - medical
+  properties:
+  - type: OpenAPI
+    url: openapi/2s-io-medical-api-openapi.yml
+  - type: Documentation
+    url: https://2s.io/llms.txt
+  - type: APIReference
+    url: https://2s.io/discover
+  - type: Webhooks
+    url: asyncapi/2s-io-watchers-webhooks.yml
+- aid: 2s-io:2s-io-music-api
+  name: 2s Music API
+  description: The music API from 2s — 3 operation(s) for music.
+  humanURL: https://2s.io/discover
+  baseURL: https://2s.io/mcp
+  tags:
+  - music
+  properties:
+  - type: OpenAPI
+    url: openapi/2s-io-music-api-openapi.yml
+  - type: Documentation
+    url: https://2s.io/llms.txt
+  - type: APIReference
+    url: https://2s.io/discover
+  - type: Webhooks
+    url: asyncapi/2s-io-watchers-webhooks.yml
+- aid: 2s-io:2s-io-net-api
+  name: 2s Net API
+  description: The net API from 2s — 4 operation(s) for net.
+  humanURL: https://2s.io/discover
+  baseURL: https://2s.io/mcp
+  tags:
+  - net
+  properties:
+  - type: OpenAPI
+    url: openapi/2s-io-net-api-openapi.yml
+  - type: Documentation
+    url: https://2s.io/llms.txt
+  - type: APIReference
+    url: https://2s.io/discover
+  - type: Webhooks
+    url: asyncapi/2s-io-watchers-webhooks.yml
+- aid: 2s-io:2s-io-news-api
+  name: 2s News API
+  description: The news API from 2s — 5 operation(s) for news.
+  humanURL: https://2s.io/discover
+  baseURL: https://2s.io/mcp
+  tags:
+  - news
+  properties:
+  - type: OpenAPI
+    url: openapi/2s-io-news-api-openapi.yml
+  - type: Documentation
+    url: https://2s.io/llms.txt
+  - type: APIReference
+    url: https://2s.io/discover
+  - type: Webhooks
+    url: asyncapi/2s-io-watchers-webhooks.yml
+- aid: 2s-io:2s-io-nonprofit-api
+  name: 2s Nonprofit API
+  description: The nonprofit API from 2s — 2 operation(s) for nonprofit.
+  humanURL: https://2s.io/discover
+  baseURL: https://2s.io/mcp
+  tags:
+  - nonprofit
+  properties:
+  - type: OpenAPI
+    url: openapi/2s-io-nonprofit-api-openapi.yml
+  - type: Documentation
+    url: https://2s.io/llms.txt
+  - type: APIReference
+    url: https://2s.io/discover
+  - type: Webhooks
+    url: asyncapi/2s-io-watchers-webhooks.yml
+- aid: 2s-io:2s-io-nutrition-api
+  name: 2s Nutrition API
+  description: The nutrition API from 2s — 1 operation(s) for nutrition.
+  humanURL: https://2s.io/discover
+  baseURL: https://2s.io/mcp
+  tags:
+  - nutrition
+  properties:
+  - type: OpenAPI
+    url: openapi/2s-io-nutrition-api-openapi.yml
+  - type: Documentation
+    url: https://2s.io/llms.txt
+  - type: APIReference
+    url: https://2s.io/discover
+  - type: Webhooks
+    url: asyncapi/2s-io-watchers-webhooks.yml
+- aid: 2s-io:2s-io-occupation-api
+  name: 2s Occupation API
+  description: The occupation API from 2s — 3 operation(s) for occupation.
+  humanURL: https://2s.io/discover
+  baseURL: https://2s.io/mcp
+  tags:
+  - occupation
+  properties:
+  - type: OpenAPI
+    url: openapi/2s-io-occupation-api-openapi.yml
+  - type: Documentation
+    url: https://2s.io/llms.txt
+  - type: APIReference
+    url: https://2s.io/discover
+  - type: Webhooks
+    url: asyncapi/2s-io-watchers-webhooks.yml
+- aid: 2s-io:2s-io-paper-api
+  name: 2s Paper API
+  description: The paper API from 2s — 1 operation(s) for paper.
+  humanURL: https://2s.io/discover
+  baseURL: https://2s.io/mcp
+  tags:
+  - paper
+  properties:
+  - type: OpenAPI
+    url: openapi/2s-io-paper-api-openapi.yml
+  - type: Documentation
+    url: https://2s.io/llms.txt
+  - type: APIReference
+    url: https://2s.io/discover
+  - type: Webhooks
+    url: asyncapi/2s-io-watchers-webhooks.yml
+- aid: 2s-io:2s-io-papers-api
+  name: 2s Papers API
+  description: The papers API from 2s — 2 operation(s) for papers.
+  humanURL: https://2s.io/discover
+  baseURL: https://2s.io/mcp
+  tags:
+  - papers
+  properties:
+  - type: OpenAPI
+    url: openapi/2s-io-papers-api-openapi.yml
+  - type: Documentation
+    url: https://2s.io/llms.txt
+  - type: APIReference
+    url: https://2s.io/discover
+  - type: Webhooks
+    url: asyncapi/2s-io-watchers-webhooks.yml
+- aid: 2s-io:2s-io-park-api
+  name: 2s Park API
+  description: The park API from 2s — 1 operation(s) for park.
+  humanURL: https://2s.io/discover
+  baseURL: https://2s.io/mcp
+  tags:
+  - park
+  properties:
+  - type: OpenAPI
+    url: openapi/2s-io-park-api-openapi.yml
+  - type: Documentation
+    url: https://2s.io/llms.txt
+  - type: APIReference
+    url: https://2s.io/discover
+  - type: Webhooks
+    url: asyncapi/2s-io-watchers-webhooks.yml
+- aid: 2s-io:2s-io-patents-api
+  name: 2s Patents API
+  description: The patents API from 2s — 7 operation(s) for patents.
+  humanURL: https://2s.io/discover
+  baseURL: https://2s.io/mcp
+  tags:
+  - patents
+  properties:
+  - type: OpenAPI
+    url: openapi/2s-io-patents-api-openapi.yml
+  - type: Documentation
+    url: https://2s.io/llms.txt
+  - type: APIReference
+    url: https://2s.io/discover
+  - type: Webhooks
+    url: asyncapi/2s-io-watchers-webhooks.yml
+- aid: 2s-io:2s-io-person-api
+  name: 2s Person API
+  description: The person API from 2s — 1 operation(s) for person.
+  humanURL: https://2s.io/discover
+  baseURL: https://2s.io/mcp
+  tags:
+  - person
+  properties:
+  - type: OpenAPI
+    url: openapi/2s-io-person-api-openapi.yml
+  - type: Documentation
+    url: https://2s.io/llms.txt
+  - type: APIReference
+    url: https://2s.io/discover
+  - type: Webhooks
+    url: asyncapi/2s-io-watchers-webhooks.yml
+- aid: 2s-io:2s-io-phone-api
+  name: 2s Phone API
+  description: The phone API from 2s — 1 operation(s) for phone.
+  humanURL: https://2s.io/discover
+  baseURL: https://2s.io/mcp
+  tags:
+  - phone
+  properties:
+  - type: OpenAPI
+    url: openapi/2s-io-phone-api-openapi.yml
+  - type: Documentation
+    url: https://2s.io/llms.txt
+  - type: APIReference
+    url: https://2s.io/discover
+  - type: Webhooks
+    url: asyncapi/2s-io-watchers-webhooks.yml
+- aid: 2s-io:2s-io-poi-api
+  name: 2s Poi API
+  description: The poi API from 2s — 1 operation(s) for poi.
+  humanURL: https://2s.io/discover
+  baseURL: https://2s.io/mcp
+  tags:
+  - poi
+  properties:
+  - type: OpenAPI
+    url: openapi/2s-io-poi-api-openapi.yml
+  - type: Documentation
+    url: https://2s.io/llms.txt
+  - type: APIReference
+    url: https://2s.io/discover
+  - type: Webhooks
+    url: asyncapi/2s-io-watchers-webhooks.yml
+- aid: 2s-io:2s-io-predict-api
+  name: 2s Predict API
+  description: The predict API from 2s — 23 operation(s) for predict.
+  humanURL: https://2s.io/discover
+  baseURL: https://2s.io/mcp
+  tags:
+  - predict
+  properties:
+  - type: OpenAPI
+    url: openapi/2s-io-predict-api-openapi.yml
+  - type: Documentation
+    url: https://2s.io/llms.txt
+  - type: APIReference
+    url: https://2s.io/discover
+  - type: Webhooks
+    url: asyncapi/2s-io-watchers-webhooks.yml
+- aid: 2s-io:2s-io-product-api
+  name: 2s Product API
+  description: The product API from 2s — 1 operation(s) for product.
+  humanURL: https://2s.io/discover
+  baseURL: https://2s.io/mcp
+  tags:
+  - product
+  properties:
+  - type: OpenAPI
+    url: openapi/2s-io-product-api-openapi.yml
+  - type: Documentation
+    url: https://2s.io/llms.txt
+  - type: APIReference
+    url: https://2s.io/discover
+  - type: Webhooks
+    url: asyncapi/2s-io-watchers-webhooks.yml
+- aid: 2s-io:2s-io-property-api
+  name: 2s Property API
+  description: The property API from 2s — 4 operation(s) for property.
+  humanURL: https://2s.io/discover
+  baseURL: https://2s.io/mcp
+  tags:
+  - property
+  properties:
+  - type: OpenAPI
+    url: openapi/2s-io-property-api-openapi.yml
+  - type: Documentation
+    url: https://2s.io/llms.txt
+  - type: APIReference
+    url: https://2s.io/discover
+  - type: Webhooks
+    url: asyncapi/2s-io-watchers-webhooks.yml
+- aid: 2s-io:2s-io-pubsub-api
+  name: 2s Pubsub API
+  description: The pubsub API from 2s — 4 operation(s) for pubsub.
+  humanURL: https://2s.io/discover
+  baseURL: https://2s.io/mcp
+  tags:
+  - pubsub
+  properties:
+  - type: OpenAPI
+    url: openapi/2s-io-pubsub-api-openapi.yml
+  - type: Documentation
+    url: https://2s.io/llms.txt
+  - type: APIReference
+    url: https://2s.io/discover
+  - type: Webhooks
+    url: asyncapi/2s-io-watchers-webhooks.yml
+- aid: 2s-io:2s-io-quakes-api
+  name: 2s Quakes API
+  description: The quakes API from 2s — 1 operation(s) for quakes.
+  humanURL: https://2s.io/discover
+  baseURL: https://2s.io/mcp
+  tags:
+  - quakes
+  properties:
+  - type: OpenAPI
+    url: openapi/2s-io-quakes-api-openapi.yml
+  - type: Documentation
+    url: https://2s.io/llms.txt
+  - type: APIReference
+    url: https://2s.io/discover
+  - type: Webhooks
+    url: asyncapi/2s-io-watchers-webhooks.yml
+- aid: 2s-io:2s-io-queue-api
+  name: 2s Queue API
+  description: The queue API from 2s — 4 operation(s) for queue.
+  humanURL: https://2s.io/discover
+  baseURL: https://2s.io/mcp
+  tags:
+  - queue
+  properties:
+  - type: OpenAPI
+    url: openapi/2s-io-queue-api-openapi.yml
+  - type: Documentation
+    url: https://2s.io/llms.txt
+  - type: APIReference
+    url: https://2s.io/discover
+  - type: Webhooks
+    url: asyncapi/2s-io-watchers-webhooks.yml
+- aid: 2s-io:2s-io-recreation-api
+  name: 2s Recreation API
+  description: The recreation API from 2s — 1 operation(s) for recreation.
+  humanURL: https://2s.io/discover
+  baseURL: https://2s.io/mcp
+  tags:
+  - recreation
+  properties:
+  - type: OpenAPI
+    url: openapi/2s-io-recreation-api-openapi.yml
+  - type: Documentation
+    url: https://2s.io/llms.txt
+  - type: APIReference
+    url: https://2s.io/discover
+  - type: Webhooks
+    url: asyncapi/2s-io-watchers-webhooks.yml
+- aid: 2s-io:2s-io-registry-api
+  name: 2s Registry API
+  description: The registry API from 2s — 2 operation(s) for registry.
+  humanURL: https://2s.io/discover
+  baseURL: https://2s.io/mcp
+  tags:
+  - registry
+  properties:
+  - type: OpenAPI
+    url: openapi/2s-io-registry-api-openapi.yml
+  - type: Documentation
+    url: https://2s.io/llms.txt
+  - type: APIReference
+    url: https://2s.io/discover
+  - type: Webhooks
+    url: asyncapi/2s-io-watchers-webhooks.yml
+- aid: 2s-io:2s-io-research-api
+  name: 2s Research API
+  description: The research API from 2s — 3 operation(s) for research.
+  humanURL: https://2s.io/discover
+  baseURL: https://2s.io/mcp
+  tags:
+  - research
+  properties:
+  - type: OpenAPI
+    url: openapi/2s-io-research-api-openapi.yml
+  - type: Documentation
+    url: https://2s.io/llms.txt
+  - type: APIReference
+    url: https://2s.io/discover
+  - type: Webhooks
+    url: asyncapi/2s-io-watchers-webhooks.yml
+- aid: 2s-io:2s-io-schedule-api
+  name: 2s Schedule API
+  description: The schedule API from 2s — 3 operation(s) for schedule.
+  humanURL: https://2s.io/discover
+  baseURL: https://2s.io/mcp
+  tags:
+  - schedule
+  properties:
+  - type: OpenAPI
+    url: openapi/2s-io-schedule-api-openapi.yml
+  - type: Documentation
+    url: https://2s.io/llms.txt
+  - type: APIReference
+    url: https://2s.io/discover
+  - type: Webhooks
+    url: asyncapi/2s-io-watchers-webhooks.yml
+- aid: 2s-io:2s-io-search-api
+  name: 2s Search API
+  description: The search API from 2s — 5 operation(s) for search.
+  humanURL: https://2s.io/discover
+  baseURL: https://2s.io/mcp
+  tags:
+  - search
+  properties:
+  - type: OpenAPI
+    url: openapi/2s-io-search-api-openapi.yml
+  - type: Documentation
+    url: https://2s.io/llms.txt
+  - type: APIReference
+    url: https://2s.io/discover
+  - type: Webhooks
+    url: asyncapi/2s-io-watchers-webhooks.yml
+- aid: 2s-io:2s-io-security-api
+  name: 2s Security API
+  description: The security API from 2s — 16 operation(s) for security.
+  humanURL: https://2s.io/discover
+  baseURL: https://2s.io/mcp
+  tags:
+  - security
+  properties:
+  - type: OpenAPI
+    url: openapi/2s-io-security-api-openapi.yml
+  - type: Documentation
+    url: https://2s.io/llms.txt
+  - type: APIReference
+    url: https://2s.io/discover
+  - type: Webhooks
+    url: asyncapi/2s-io-watchers-webhooks.yml
+- aid: 2s-io:2s-io-soil-api
+  name: 2s Soil API
+  description: The soil API from 2s — 2 operation(s) for soil.
+  humanURL: https://2s.io/discover
+  baseURL: https://2s.io/mcp
+  tags:
+  - soil
+  properties:
+  - type: OpenAPI
+    url: openapi/2s-io-soil-api-openapi.yml
+  - type: Documentation
+    url: https://2s.io/llms.txt
+  - type: APIReference
+    url: https://2s.io/discover
+  - type: Webhooks
+    url: asyncapi/2s-io-watchers-webhooks.yml
+- aid: 2s-io:2s-io-space-api
+  name: 2s Space API
+  description: The space API from 2s — 11 operation(s) for space.
+  humanURL: https://2s.io/discover
+  baseURL: https://2s.io/mcp
+  tags:
+  - space
+  properties:
+  - type: OpenAPI
+    url: openapi/2s-io-space-api-openapi.yml
+  - type: Documentation
+    url: https://2s.io/llms.txt
+  - type: APIReference
+    url: https://2s.io/discover
+  - type: Webhooks
+    url: asyncapi/2s-io-watchers-webhooks.yml
+- aid: 2s-io:2s-io-sports-api
+  name: 2s Sports API
+  description: The sports API from 2s — 11 operation(s) for sports.
+  humanURL: https://2s.io/discover
+  baseURL: https://2s.io/mcp
+  tags:
+  - sports
+  properties:
+  - type: OpenAPI
+    url: openapi/2s-io-sports-api-openapi.yml
+  - type: Documentation
+    url: https://2s.io/llms.txt
+  - type: APIReference
+    url: https://2s.io/discover
+  - type: Webhooks
+    url: asyncapi/2s-io-watchers-webhooks.yml
+- aid: 2s-io:2s-io-stocks-api
+  name: 2s Stocks API
+  description: The stocks API from 2s — 14 operation(s) for stocks.
+  humanURL: https://2s.io/discover
+  baseURL: https://2s.io/mcp
+  tags:
+  - stocks
+  properties:
+  - type: OpenAPI
+    url: openapi/2s-io-stocks-api-openapi.yml
+  - type: Documentation
+    url: https://2s.io/llms.txt
+  - type: APIReference
+    url: https://2s.io/discover
+  - type: Webhooks
+    url: asyncapi/2s-io-watchers-webhooks.yml
+- aid: 2s-io:2s-io-store-api
+  name: 2s Store API
+  description: The store API from 2s — 16 operation(s) for store.
+  humanURL: https://2s.io/discover
+  baseURL: https://2s.io/mcp
+  tags:
+  - store
+  properties:
+  - type: OpenAPI
+    url: openapi/2s-io-store-api-openapi.yml
+  - type: Documentation
+    url: https://2s.io/llms.txt
+  - type: APIReference
+    url: https://2s.io/discover
+  - type: Webhooks
+    url: asyncapi/2s-io-watchers-webhooks.yml
+- aid: 2s-io:2s-io-sunrise-api
+  name: 2s Sunrise API
+  description: The sunrise API from 2s — 1 operation(s) for sunrise.
+  humanURL: https://2s.io/discover
+  baseURL: https://2s.io/mcp
+  tags:
+  - sunrise
+  properties:
+  - type: OpenAPI
+    url: openapi/2s-io-sunrise-api-openapi.yml
+  - type: Documentation
+    url: https://2s.io/llms.txt
+  - type: APIReference
+    url: https://2s.io/discover
+  - type: Webhooks
+    url: asyncapi/2s-io-watchers-webhooks.yml
+- aid: 2s-io:2s-io-tax-api
+  name: 2s Tax API
+  description: The tax API from 2s — 2 operation(s) for tax.
+  humanURL: https://2s.io/discover
+  baseURL: https://2s.io/mcp
+  tags:
+  - tax
+  properties:
+  - type: OpenAPI
+    url: openapi/2s-io-tax-api-openapi.yml
+  - type: Documentation
+    url: https://2s.io/llms.txt
+  - type: APIReference
+    url: https://2s.io/discover
+  - type: Webhooks
+    url: asyncapi/2s-io-watchers-webhooks.yml
+- aid: 2s-io:2s-io-tcg-api
+  name: 2s Tcg API
+  description: The tcg API from 2s — 4 operation(s) for tcg.
+  humanURL: https://2s.io/discover
+  baseURL: https://2s.io/mcp
+  tags:
+  - tcg
+  properties:
+  - type: OpenAPI
+    url: openapi/2s-io-tcg-api-openapi.yml
+  - type: Documentation
+    url: https://2s.io/llms.txt
+  - type: APIReference
+    url: https://2s.io/discover
+  - type: Webhooks
+    url: asyncapi/2s-io-watchers-webhooks.yml
+- aid: 2s-io:2s-io-telecom-api
+  name: 2s Telecom API
+  description: The telecom API from 2s — 2 operation(s) for telecom.
+  humanURL: https://2s.io/discover
+  baseURL: https://2s.io/mcp
+  tags:
+  - telecom
+  properties:
+  - type: OpenAPI
+    url: openapi/2s-io-telecom-api-openapi.yml
+  - type: Documentation
+    url: https://2s.io/llms.txt
+  - type: APIReference
+    url: https://2s.io/discover
+  - type: Webhooks
+    url: asyncapi/2s-io-watchers-webhooks.yml
+- aid: 2s-io:2s-io-text-api
+  name: 2s Text API
+  description: The text API from 2s — 1 operation(s) for text.
+  humanURL: https://2s.io/discover
+  baseURL: https://2s.io/mcp
+  tags:
+  - text
+  properties:
+  - type: OpenAPI
+    url: openapi/2s-io-text-api-openapi.yml
+  - type: Documentation
+    url: https://2s.io/llms.txt
+  - type: APIReference
+    url: https://2s.io/discover
+  - type: Webhooks
+    url: asyncapi/2s-io-watchers-webhooks.yml
+- aid: 2s-io:2s-io-tides-api
+  name: 2s Tides API
+  description: The tides API from 2s — 1 operation(s) for tides.
+  humanURL: https://2s.io/discover
+  baseURL: https://2s.io/mcp
+  tags:
+  - tides
+  properties:
+  - type: OpenAPI
+    url: openapi/2s-io-tides-api-openapi.yml
+  - type: Documentation
+    url: https://2s.io/llms.txt
+  - type: APIReference
+    url: https://2s.io/discover
+  - type: Webhooks
+    url: asyncapi/2s-io-watchers-webhooks.yml
+- aid: 2s-io:2s-io-time-api
+  name: 2s Time API
+  description: The time API from 2s — 1 operation(s) for time.
+  humanURL: https://2s.io/discover
+  baseURL: https://2s.io/mcp
+  tags:
+  - time
+  properties:
+  - type: OpenAPI
+    url: openapi/2s-io-time-api-openapi.yml
+  - type: Documentation
+    url: https://2s.io/llms.txt
+  - type: APIReference
+    url: https://2s.io/discover
+  - type: Webhooks
+    url: asyncapi/2s-io-watchers-webhooks.yml
+- aid: 2s-io:2s-io-timezone-api
+  name: 2s Timezone API
+  description: The timezone API from 2s — 1 operation(s) for timezone.
+  humanURL: https://2s.io/discover
+  baseURL: https://2s.io/mcp
+  tags:
+  - timezone
+  properties:
+  - type: OpenAPI
+    url: openapi/2s-io-timezone-api-openapi.yml
+  - type: Documentation
+    url: https://2s.io/llms.txt
+  - type: APIReference
+    url: https://2s.io/discover
+  - type: Webhooks
+    url: asyncapi/2s-io-watchers-webhooks.yml
+- aid: 2s-io:2s-io-tld-api
+  name: 2s Tld API
+  description: The tld API from 2s — 1 operation(s) for tld.
+  humanURL: https://2s.io/discover
+  baseURL: https://2s.io/mcp
+  tags:
+  - tld
+  properties:
+  - type: OpenAPI
+    url: openapi/2s-io-tld-api-openapi.yml
+  - type: Documentation
+    url: https://2s.io/llms.txt
+  - type: APIReference
+    url: https://2s.io/discover
+  - type: Webhooks
+    url: asyncapi/2s-io-watchers-webhooks.yml
+- aid: 2s-io:2s-io-tls-api
+  name: 2s Tls API
+  description: The tls API from 2s — 1 operation(s) for tls.
+  humanURL: https://2s.io/discover
+  baseURL: https://2s.io/mcp
+  tags:
+  - tls
+  properties:
+  - type: OpenAPI
+    url: openapi/2s-io-tls-api-openapi.yml
+  - type: Documentation
+    url: https://2s.io/llms.txt
+  - type: APIReference
+    url: https://2s.io/discover
+  - type: Webhooks
+    url: asyncapi/2s-io-watchers-webhooks.yml
+- aid: 2s-io:2s-io-trade-api
+  name: 2s Trade API
+  description: The trade API from 2s — 4 operation(s) for trade.
+  humanURL: https://2s.io/discover
+  baseURL: https://2s.io/mcp
+  tags:
+  - trade
+  properties:
+  - type: OpenAPI
+    url: openapi/2s-io-trade-api-openapi.yml
+  - type: Documentation
+    url: https://2s.io/llms.txt
+  - type: APIReference
+    url: https://2s.io/discover
+  - type: Webhooks
+    url: asyncapi/2s-io-watchers-webhooks.yml
+- aid: 2s-io:2s-io-transcribe-api
+  name: 2s Transcribe API
+  description: The transcribe API from 2s — 1 operation(s) for transcribe.
+  humanURL: https://2s.io/discover
+  baseURL: https://2s.io/mcp
+  tags:
+  - transcribe
+  properties:
+  - type: OpenAPI
+    url: openapi/2s-io-transcribe-api-openapi.yml
+  - type: Documentation
+    url: https://2s.io/llms.txt
+  - type: APIReference
+    url: https://2s.io/discover
+  - type: Webhooks
+    url: asyncapi/2s-io-watchers-webhooks.yml
+- aid: 2s-io:2s-io-travel-api
+  name: 2s Travel API
+  description: The travel API from 2s — 2 operation(s) for travel.
+  humanURL: https://2s.io/discover
+  baseURL: https://2s.io/mcp
+  tags:
+  - travel
+  properties:
+  - type: OpenAPI
+    url: openapi/2s-io-travel-api-openapi.yml
+  - type: Documentation
+    url: https://2s.io/llms.txt
+  - type: APIReference
+    url: https://2s.io/discover
+  - type: Webhooks
+    url: asyncapi/2s-io-watchers-webhooks.yml
+- aid: 2s-io:2s-io-treasury-api
+  name: 2s Treasury API
+  description: The treasury API from 2s — 4 operation(s) for treasury.
+  humanURL: https://2s.io/discover
+  baseURL: https://2s.io/mcp
+  tags:
+  - treasury
+  properties:
+  - type: OpenAPI
+    url: openapi/2s-io-treasury-api-openapi.yml
+  - type: Documentation
+    url: https://2s.io/llms.txt
+  - type: APIReference
+    url: https://2s.io/discover
+  - type: Webhooks
+    url: asyncapi/2s-io-watchers-webhooks.yml
+- aid: 2s-io:2s-io-url-api
+  name: 2s URL API
+  description: The url API from 2s — 4 operation(s) for url.
+  humanURL: https://2s.io/discover
+  baseURL: https://2s.io/mcp
+  tags:
+  - url
+  properties:
+  - type: OpenAPI
+    url: openapi/2s-io-url-api-openapi.yml
+  - type: Documentation
+    url: https://2s.io/llms.txt
+  - type: APIReference
+    url: https://2s.io/discover
+  - type: Webhooks
+    url: asyncapi/2s-io-watchers-webhooks.yml
+- aid: 2s-io:2s-io-validate-api
+  name: 2s Validate API
+  description: The validate API from 2s — 10 operation(s) for validate.
+  humanURL: https://2s.io/discover
+  baseURL: https://2s.io/mcp
+  tags:
+  - validate
+  properties:
+  - type: OpenAPI
+    url: openapi/2s-io-validate-api-openapi.yml
+  - type: Documentation
+    url: https://2s.io/llms.txt
+  - type: APIReference
+    url: https://2s.io/discover
+  - type: Webhooks
+    url: asyncapi/2s-io-watchers-webhooks.yml
+- aid: 2s-io:2s-io-vehicle-api
+  name: 2s Vehicle API
+  description: The vehicle API from 2s — 11 operation(s) for vehicle.
+  humanURL: https://2s.io/discover
+  baseURL: https://2s.io/mcp
+  tags:
+  - vehicle
+  properties:
+  - type: OpenAPI
+    url: openapi/2s-io-vehicle-api-openapi.yml
+  - type: Documentation
+    url: https://2s.io/llms.txt
+  - type: APIReference
+    url: https://2s.io/discover
+  - type: Webhooks
+    url: asyncapi/2s-io-watchers-webhooks.yml
+- aid: 2s-io:2s-io-watchers-api
+  name: 2s Watchers API
+  description: The watchers API from 2s — 27 operation(s) for watchers.
+  humanURL: https://2s.io/discover
+  baseURL: https://2s.io/mcp
+  tags:
+  - watchers
+  properties:
+  - type: OpenAPI
+    url: openapi/2s-io-watchers-api-openapi.yml
+  - type: Documentation
+    url: https://2s.io/llms.txt
+  - type: APIReference
+    url: https://2s.io/discover
+  - type: Webhooks
+    url: asyncapi/2s-io-watchers-webhooks.yml
+- aid: 2s-io:2s-io-water-api
+  name: 2s Water API
+  description: The water API from 2s — 1 operation(s) for water.
+  humanURL: https://2s.io/discover
+  baseURL: https://2s.io/mcp
+  tags:
+  - water
+  properties:
+  - type: OpenAPI
+    url: openapi/2s-io-water-api-openapi.yml
+  - type: Documentation
+    url: https://2s.io/llms.txt
+  - type: APIReference
+    url: https://2s.io/discover
+  - type: Webhooks
+    url: asyncapi/2s-io-watchers-webhooks.yml
+- aid: 2s-io:2s-io-weather-api
+  name: 2s Weather API
+  description: The weather API from 2s — 8 operation(s) for weather.
+  humanURL: https://2s.io/discover
+  baseURL: https://2s.io/mcp
+  tags:
+  - weather
+  properties:
+  - type: OpenAPI
+    url: openapi/2s-io-weather-api-openapi.yml
+  - type: Documentation
+    url: https://2s.io/llms.txt
+  - type: APIReference
+    url: https://2s.io/discover
+  - type: Webhooks
+    url: asyncapi/2s-io-watchers-webhooks.yml
+- aid: 2s-io:2s-io-wikidata-api
+  name: 2s Wikidata API
+  description: The wikidata API from 2s — 1 operation(s) for wikidata.
+  humanURL: https://2s.io/discover
+  baseURL: https://2s.io/mcp
+  tags:
+  - wikidata
+  properties:
+  - type: OpenAPI
+    url: openapi/2s-io-wikidata-api-openapi.yml
+  - type: Documentation
+    url: https://2s.io/llms.txt
+  - type: APIReference
+    url: https://2s.io/discover
+  - type: Webhooks
+    url: asyncapi/2s-io-watchers-webhooks.yml
+- aid: 2s-io:2s-io-wikipedia-api
+  name: 2s Wikipedia API
+  description: The wikipedia API from 2s — 1 operation(s) for wikipedia.
+  humanURL: https://2s.io/discover
+  baseURL: https://2s.io/mcp
+  tags:
+  - wikipedia
+  properties:
+  - type: OpenAPI
+    url: openapi/2s-io-wikipedia-api-openapi.yml
+  - type: Documentation
+    url: https://2s.io/llms.txt
+  - type: APIReference
+    url: https://2s.io/discover
+  - type: Webhooks
+    url: asyncapi/2s-io-watchers-webhooks.yml
+- aid: 2s-io:2s-io-word-api
+  name: 2s Word API
+  description: The word API from 2s — 2 operation(s) for word.
+  humanURL: https://2s.io/discover
+  baseURL: https://2s.io/mcp
+  tags:
+  - word
+  properties:
+  - type: OpenAPI
+    url: openapi/2s-io-word-api-openapi.yml
+  - type: Documentation
+    url: https://2s.io/llms.txt
+  - type: APIReference
+    url: https://2s.io/discover
+  - type: Webhooks
+    url: asyncapi/2s-io-watchers-webhooks.yml
+- aid: 2s-io:2s-io-worldbank-api
+  name: 2s Worldbank API
+  description: The worldbank API from 2s — 1 operation(s) for worldbank.
+  humanURL: https://2s.io/discover
+  baseURL: https://2s.io/mcp
+  tags:
+  - worldbank
+  properties:
+  - type: OpenAPI
+    url: openapi/2s-io-worldbank-api-openapi.yml
+  - type: Documentation
+    url: https://2s.io/llms.txt
+  - type: APIReference
+    url: https://2s.io/discover
+  - type: Webhooks
+    url: asyncapi/2s-io-watchers-webhooks.yml
 maintainers:
 - FN: Kin Lane
   email: kin@apievangelist.com
 - FN: APIs.json
   email: info@apis.io
 common:
+- type: Overlay
+  url: overlays/2s-io-openapi-overlay.yaml
 - type: Website
   url: https://2s.io/
 - type: Documentation
@@ -225,3 +1992,10 @@ x-enrichment:
   status: enriched
   artifacts_added: 27
   pass: local-v3
+x-a2a:
+  verified: true
+  probed: '2026-09-26'
+  url: "https://2s.io/.well-known/agent-card.json"
+  grade: "conformant"
+  protocol_version: "0.3.0"
+  control: 404

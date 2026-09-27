@@ -1,0 +1,2157 @@
+openapi: 3.2.0
+info:
+  title: 2s — the (most) everything GitHub API
+  version: '1'
+  summary: The (most) everything API.
+  description: 'The (most) everything API for AI agents: 575+ pay-per-call endpoints on one origin.'
+  contact:
+    name: 2s
+    url: https://2s.io
+    email: alley@2s.io
+  x-logo:
+    url: https://2s.io/icon-512.png
+    altText: 2s
+  x-guidance: 'Pay-per-call REST API for AI agents — hundreds of endpoints returning ground-truth data (US public records, company & legal identifiers, finance/SEC, crypto/web3, security & CVEs, medical codes, weather & geocoding, agriculture, energy, maritime, music, and more). Every endpoint is paid per call in USDC via x402 (Base or Solana) — no API key, no signup. Call any endpoint with no auth to get a 402 PaymentRequirements envelope, sign it (EIP-3009 on Base, partial SPL transfer on Solana), and retry with the PAYMENT-SIGNATURE header. Add ?trial=1 for one free real call per endpoint per hour to test before paying. To discover the right endpoint: GET https://2s.io/api/directory for the full catalog, or GET https://2s.io/api/search/endpoints?q=<natural-language task> for a ranked match. Per-call price is on each operation as x-payment-info (from $0.001). Batch up to 50 calls behind one payment via POST https://2s.io/api/batch/run.'
+servers:
+- url: https://2s.io
+tags:
+- name: Github
+paths:
+  /api/github/branches:
+    get:
+      tags:
+      - Github
+      summary: 'Branches of a repository: name, head commit sha, and'
+      description: 'Branches of a repository: name, head commit sha, and protection flag. Read-only; no caller key needed.'
+      operationId: github_branches
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized: items = branches.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            name:
+                              nullable: true
+                            sha:
+                              nullable: true
+                            protected:
+                              nullable: true
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: github.branches
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.0025
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.002500'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: owner
+        in: query
+        required: true
+        description: Owner.
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 100
+      - name: repo
+        in: query
+        required: true
+        description: Repo.
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 120
+      - name: perPage
+        in: query
+        required: false
+        description: Number of results to return per page.
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+      - name: page
+        in: query
+        required: false
+        description: Page number (1-based) for paginated results.
+        schema:
+          type: integer
+          minimum: 1
+      - $ref: '#/components/parameters/TrialMode'
+  /api/github/commits:
+    get:
+      tags:
+      - Github
+      summary: 'Commit history for a repository: sha, message, author name'
+      description: 'Commit history for a repository: sha, message, author name + GitHub login, date, and URL. Optionally filter by branch/tag (sha), file path, or author. Paginate. Read-only; no caller key needed.'
+      operationId: github_commits
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized: items = commits (newest first).'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            sha:
+                              type: string
+                              nullable: true
+                            message:
+                              type: string
+                              nullable: true
+                            author:
+                              type: string
+                              nullable: true
+                              description: Commit author name.
+                            authorLogin:
+                              type: string
+                              nullable: true
+                              description: GitHub login of the author, when linked.
+                            date:
+                              type: string
+                              nullable: true
+                              description: Author date (ISO 8601).
+                            url:
+                              type: string
+                              nullable: true
+                              description: html_url of the commit.
+                          required:
+                          - sha
+                          - message
+                          - author
+                          - authorLogin
+                          - date
+                          - url
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: github.commits
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.0025
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.002500'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: owner
+        in: query
+        required: true
+        description: Owner.
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 100
+      - name: repo
+        in: query
+        required: true
+        description: Repo.
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 120
+      - name: sha
+        in: query
+        required: false
+        description: Branch, tag, or commit sha to start from.
+        schema:
+          type: string
+          maxLength: 120
+      - name: path
+        in: query
+        required: false
+        description: Path.
+        schema:
+          type: string
+          maxLength: 400
+      - name: author
+        in: query
+        required: false
+        description: Author.
+        schema:
+          type: string
+          maxLength: 100
+      - name: perPage
+        in: query
+        required: false
+        description: Number of results to return per page.
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+      - name: page
+        in: query
+        required: false
+        description: Page number (1-based) for paginated results.
+        schema:
+          type: integer
+          minimum: 1
+      - $ref: '#/components/parameters/TrialMode'
+  /api/github/contributors:
+    get:
+      tags:
+      - Github
+      summary: Top contributors to a repository, ranked by commit count
+      description: 'Top contributors to a repository, ranked by commit count: login, contributions, account type, and profile URL. Read-only; no caller key needed.'
+      operationId: github_contributors
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized: items = contributors.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            login:
+                              nullable: true
+                            contributions:
+                              nullable: true
+                            type:
+                              nullable: true
+                            url:
+                              nullable: true
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: github.contributors
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.0025
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.002500'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: owner
+        in: query
+        required: true
+        description: Owner.
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 100
+      - name: repo
+        in: query
+        required: true
+        description: Repo.
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 120
+      - name: perPage
+        in: query
+        required: false
+        description: Number of results to return per page.
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+      - name: page
+        in: query
+        required: false
+        description: Page number (1-based) for paginated results.
+        schema:
+          type: integer
+          minimum: 1
+      - $ref: '#/components/parameters/TrialMode'
+  /api/github/issues:
+    get:
+      tags:
+      - Github
+      summary: List issues for a repository (pull requests excluded)
+      description: 'List issues for a repository (pull requests excluded): number, title, state, author, labels, comment count, and created/updated times. Filter by state (open/closed/all) and labels; paginate. Read-only; no caller key needed.'
+      operationId: github_issues
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized: items = issues.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            number:
+                              type: number
+                              nullable: true
+                            title:
+                              type: string
+                              nullable: true
+                            state:
+                              type: string
+                              nullable: true
+                              description: open or closed.
+                            author:
+                              type: string
+                              nullable: true
+                              description: GitHub login of the issue author.
+                            labels:
+                              type: array
+                              items:
+                                type: string
+                              description: Label names.
+                            comments:
+                              type: number
+                              nullable: true
+                            createdAt:
+                              type: string
+                              nullable: true
+                            updatedAt:
+                              type: string
+                              nullable: true
+                            url:
+                              type: string
+                              nullable: true
+                              description: html_url of the issue.
+                          required:
+                          - number
+                          - title
+                          - state
+                          - author
+                          - labels
+                          - comments
+                          - createdAt
+                          - updatedAt
+                          - url
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: github.issues
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.0025
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.002500'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: owner
+        in: query
+        required: true
+        description: Owner.
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 100
+      - name: repo
+        in: query
+        required: true
+        description: Repo.
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 120
+      - name: state
+        in: query
+        required: false
+        description: US state — two-letter postal abbreviation (e.g. CA) or full name.
+        schema:
+          type: string
+          enum:
+          - open
+          - closed
+          - all
+      - name: labels
+        in: query
+        required: false
+        description: Labels.
+        schema:
+          type: string
+          maxLength: 200
+      - name: perPage
+        in: query
+        required: false
+        description: Number of results to return per page.
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+      - name: page
+        in: query
+        required: false
+        description: Page number (1-based) for paginated results.
+        schema:
+          type: integer
+          minimum: 1
+      - $ref: '#/components/parameters/TrialMode'
+  /api/github/languages:
+    get:
+      tags:
+      - Github
+      summary: 'Programming-language breakdown of a repository: each'
+      description: 'Programming-language breakdown of a repository: each language with its byte count and percentage of the codebase, sorted by size. Read-only; no caller key needed.'
+      operationId: github_languages
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized: items = languages by size desc.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            language:
+                              type: string
+                            bytes:
+                              type: number
+                            percent:
+                              type: number
+                          required:
+                          - language
+                          - bytes
+                          - percent
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: github.languages
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.0025
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.002500'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: owner
+        in: query
+        required: true
+        description: Owner.
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 100
+      - name: repo
+        in: query
+        required: true
+        description: Repo.
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 120
+      - $ref: '#/components/parameters/TrialMode'
+  /api/github/pulls:
+    get:
+      tags:
+      - Github
+      summary: 'List pull requests for a repository: number, title, state'
+      description: 'List pull requests for a repository: number, title, state, author, draft flag, merged status + time, head/base branch, and created time. Filter by state (open/closed/all); paginate. Read-only; no caller key needed.'
+      operationId: github_pulls
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized: items = pull requests.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            number:
+                              type: number
+                              nullable: true
+                            title:
+                              type: string
+                              nullable: true
+                            state:
+                              type: string
+                              nullable: true
+                              description: open or closed.
+                            author:
+                              type: string
+                              nullable: true
+                              description: GitHub login of the PR author.
+                            draft:
+                              type: boolean
+                              nullable: true
+                            merged:
+                              type: boolean
+                            mergedAt:
+                              type: string
+                              nullable: true
+                            createdAt:
+                              type: string
+                              nullable: true
+                            headRef:
+                              type: string
+                              nullable: true
+                              description: Source branch.
+                            baseRef:
+                              type: string
+                              nullable: true
+                              description: Target branch.
+                            url:
+                              type: string
+                              nullable: true
+                              description: html_url of the pull request.
+                          required:
+                          - number
+                          - title
+                          - state
+                          - author
+                          - draft
+                          - merged
+                          - mergedAt
+                          - createdAt
+                          - headRef
+                          - baseRef
+                          - url
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: github.pulls
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.0025
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.002500'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: owner
+        in: query
+        required: true
+        description: Owner.
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 100
+      - name: repo
+        in: query
+        required: true
+        description: Repo.
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 120
+      - name: state
+        in: query
+        required: false
+        description: US state — two-letter postal abbreviation (e.g. CA) or full name.
+        schema:
+          type: string
+          enum:
+          - open
+          - closed
+          - all
+      - name: perPage
+        in: query
+        required: false
+        description: Number of results to return per page.
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+      - name: page
+        in: query
+        required: false
+        description: Page number (1-based) for paginated results.
+        schema:
+          type: integer
+          minimum: 1
+      - $ref: '#/components/parameters/TrialMode'
+  /api/github/readme:
+    get:
+      tags:
+      - Github
+      summary: Fetch a repository's README, decoded to UTF-8 text (name
+      description: Fetch a repository's README, decoded to UTF-8 text (name, path, size, content, URL). Optionally pin to a branch/tag/sha via ref. Useful for summarizing or indexing a project. Read-only; no caller key needed.
+      operationId: github_readme
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized: items = [decoded README].'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            name:
+                              type: string
+                              nullable: true
+                            path:
+                              type: string
+                              nullable: true
+                            size:
+                              type: number
+                              nullable: true
+                              description: Size in bytes.
+                            content:
+                              type: string
+                              nullable: true
+                              description: README decoded to UTF-8 text.
+                            url:
+                              type: string
+                              nullable: true
+                              description: html_url of the README file.
+                          required:
+                          - name
+                          - path
+                          - size
+                          - content
+                          - url
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: github.readme
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.0025
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.002500'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: owner
+        in: query
+        required: true
+        description: Owner.
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 100
+      - name: repo
+        in: query
+        required: true
+        description: Repo.
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 120
+      - name: ref
+        in: query
+        required: false
+        description: Ref.
+        schema:
+          type: string
+          maxLength: 120
+      - $ref: '#/components/parameters/TrialMode'
+  /api/github/releases:
+    get:
+      tags:
+      - Github
+      summary: 'List a repository''s releases: tag, name, draft/prerelease'
+      description: 'List a repository''s releases: tag, name, draft/prerelease flags, author, published time, and release notes body. Paginate. Track a project''s version history. Read-only; no caller key needed.'
+      operationId: github_releases
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized: items = releases (newest first).'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            tag:
+                              type: string
+                              nullable: true
+                              description: Git tag name.
+                            name:
+                              type: string
+                              nullable: true
+                              description: Release title.
+                            draft:
+                              type: boolean
+                              nullable: true
+                            prerelease:
+                              type: boolean
+                              nullable: true
+                            author:
+                              type: string
+                              nullable: true
+                              description: GitHub login of the release author.
+                            publishedAt:
+                              type: string
+                              nullable: true
+                            body:
+                              type: string
+                              nullable: true
+                              description: Release notes (markdown).
+                            url:
+                              type: string
+                              nullable: true
+                              description: html_url of the release.
+                          required:
+                          - tag
+                          - name
+                          - draft
+                          - prerelease
+                          - author
+                          - publishedAt
+                          - body
+                          - url
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: github.releases
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.0025
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.002500'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: owner
+        in: query
+        required: true
+        description: Owner.
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 100
+      - name: repo
+        in: query
+        required: true
+        description: Repo.
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 120
+      - name: perPage
+        in: query
+        required: false
+        description: Number of results to return per page.
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+      - name: page
+        in: query
+        required: false
+        description: Page number (1-based) for paginated results.
+        schema:
+          type: integer
+          minimum: 1
+      - $ref: '#/components/parameters/TrialMode'
+  /api/github/repo:
+    get:
+      tags:
+      - Github
+      summary: 'GitHub repository metadata: full name, owner, description'
+      description: 'GitHub repository metadata: full name, owner, description, stars, forks, watchers, open issues, primary language, topics, SPDX license, default branch, homepage, archived flag, and created/updated/pushed timestamps. Read-only; no GitHub key needed by the caller.'
+      operationId: github_repo
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized: items = [repo metadata].'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            fullName:
+                              type: string
+                              nullable: true
+                            name:
+                              type: string
+                              nullable: true
+                            owner:
+                              type: string
+                              nullable: true
+                              description: Owner login.
+                            description:
+                              type: string
+                              nullable: true
+                            private:
+                              type: boolean
+                              nullable: true
+                            fork:
+                              type: boolean
+                              nullable: true
+                            stars:
+                              type: number
+                              nullable: true
+                            forks:
+                              type: number
+                              nullable: true
+                            watchers:
+                              type: number
+                              nullable: true
+                            openIssues:
+                              type: number
+                              nullable: true
+                            language:
+                              type: string
+                              nullable: true
+                            topics:
+                              type: array
+                              items:
+                                type: string
+                              nullable: true
+                            license:
+                              type: string
+                              nullable: true
+                              description: SPDX id, e.g. MIT.
+                            defaultBranch:
+                              type: string
+                              nullable: true
+                            homepage:
+                              type: string
+                              nullable: true
+                            archived:
+                              type: boolean
+                              nullable: true
+                            createdAt:
+                              type: string
+                              nullable: true
+                            updatedAt:
+                              type: string
+                              nullable: true
+                            pushedAt:
+                              type: string
+                              nullable: true
+                            url:
+                              type: string
+                              nullable: true
+                              description: html_url of the repository.
+                          required:
+                          - fullName
+                          - name
+                          - owner
+                          - description
+                          - private
+                          - fork
+                          - stars
+                          - forks
+                          - watchers
+                          - openIssues
+                          - language
+                          - topics
+                          - license
+                          - defaultBranch
+                          - homepage
+                          - archived
+                          - createdAt
+                          - updatedAt
+                          - pushedAt
+                          - url
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: github.repo
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.0025
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.002500'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: owner
+        in: query
+        required: true
+        description: Owner.
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 100
+      - name: repo
+        in: query
+        required: true
+        description: Repo.
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 120
+      - $ref: '#/components/parameters/TrialMode'
+  /api/github/repos:
+    get:
+      tags:
+      - Github
+      summary: List a user or organization's repositories (each with
+      description: List a user or organization's repositories (each with stars, forks, language, topics, license, timestamps). Sort by updated/created/pushed/full_name; filter type owner/member; paginate. Read-only; no caller key needed.
+      operationId: github_repos
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized: items = repos.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            fullName:
+                              type: string
+                              nullable: true
+                            name:
+                              type: string
+                              nullable: true
+                            owner:
+                              type: string
+                              nullable: true
+                              description: Owner login.
+                            description:
+                              type: string
+                              nullable: true
+                            private:
+                              type: boolean
+                              nullable: true
+                            fork:
+                              type: boolean
+                              nullable: true
+                            stars:
+                              type: number
+                              nullable: true
+                            forks:
+                              type: number
+                              nullable: true
+                            watchers:
+                              type: number
+                              nullable: true
+                            openIssues:
+                              type: number
+                              nullable: true
+                            language:
+                              type: string
+                              nullable: true
+                            topics:
+                              type: array
+                              items:
+                                type: string
+                              nullable: true
+                            license:
+                              type: string
+                              nullable: true
+                              description: SPDX id, e.g. MIT.
+                            defaultBranch:
+                              type: string
+                              nullable: true
+                            homepage:
+                              type: string
+                              nullable: true
+                            archived:
+                              type: boolean
+                              nullable: true
+                            createdAt:
+                              type: string
+                              nullable: true
+                            updatedAt:
+                              type: string
+                              nullable: true
+                            pushedAt:
+                              type: string
+                              nullable: true
+                            url:
+                              type: string
+                              nullable: true
+                              description: html_url of the repository.
+                          required:
+                          - fullName
+                          - name
+                          - owner
+                          - description
+                          - private
+                          - fork
+                          - stars
+                          - forks
+                          - watchers
+                          - openIssues
+                          - language
+                          - topics
+                          - license
+                          - defaultBranch
+                          - homepage
+                          - archived
+                          - createdAt
+                          - updatedAt
+                          - pushedAt
+                          - url
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: github.repos
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.0025
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.002500'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: owner
+        in: query
+        required: true
+        description: Owner.
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 100
+      - name: sort
+        in: query
+        required: false
+        description: Field to sort results by.
+        schema:
+          type: string
+          enum:
+          - updated
+          - created
+          - pushed
+          - full_name
+      - name: type
+        in: query
+        required: false
+        description: Filter results by type.
+        schema:
+          type: string
+          enum:
+          - owner
+          - member
+          - all
+      - name: perPage
+        in: query
+        required: false
+        description: Number of results to return per page.
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+      - name: page
+        in: query
+        required: false
+        description: Page number (1-based) for paginated results.
+        schema:
+          type: integer
+          minimum: 1
+      - $ref: '#/components/parameters/TrialMode'
+  /api/github/search-code:
+    get:
+      tags:
+      - Github
+      summary: Search code across GitHub with the code-search syntax (e.g
+      description: Search code across GitHub with the code-search syntax (e.g. 'defineEndpoint repo:AlleyFord/2s' or 'addEventListener language:js'). Returns total match count + file name, path, repository, and URL for each hit. Read-only; no caller key needed.
+      operationId: github_search-code
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized: items = code hits; meta.totalCount = upstream total.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            name:
+                              type: string
+                              nullable: true
+                              description: File name.
+                            path:
+                              type: string
+                              nullable: true
+                              description: Path within the repository.
+                            repo:
+                              type: string
+                              nullable: true
+                              description: Repository full name (owner/repo).
+                            url:
+                              type: string
+                              nullable: true
+                              description: html_url of the file.
+                          required:
+                          - name
+                          - path
+                          - repo
+                          - url
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                      meta:
+                        type: object
+                        properties:
+                          totalCount:
+                            type: number
+                        required:
+                        - totalCount
+                        additionalProperties: false
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: github.search-code
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.0025
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.002500'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: q
+        in: query
+        required: true
+        description: Free-text search query.
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 400
+      - name: perPage
+        in: query
+        required: false
+        description: Number of results to return per page.
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 50
+      - name: page
+        in: query
+        required: false
+        description: Page number (1-based) for paginated results.
+        schema:
+          type: integer
+          minimum: 1
+      - $ref: '#/components/parameters/TrialMode'
+  /api/github/search-repos:
+    get:
+      tags:
+      - Github
+      summary: Search GitHub repositories with the full query syntax (e.g
+      description: Search GitHub repositories with the full query syntax (e.g. 'x402 language:typescript stars:>100'). Sort by stars/forks/updated. Returns total match count + repos with stars, language, topics, license, timestamps. Read-only; no caller key needed.
+      operationId: github_search-repos
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized: items = repos; meta.totalCount = upstream total.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            fullName:
+                              type: string
+                              nullable: true
+                            name:
+                              type: string
+                              nullable: true
+                            owner:
+                              type: string
+                              nullable: true
+                              description: Owner login.
+                            description:
+                              type: string
+                              nullable: true
+                            private:
+                              type: boolean
+                              nullable: true
+                            fork:
+                              type: boolean
+                              nullable: true
+                            stars:
+                              type: number
+                              nullable: true
+                            forks:
+                              type: number
+                              nullable: true
+                            watchers:
+                              type: number
+                              nullable: true
+                            openIssues:
+                              type: number
+                              nullable: true
+                            language:
+                              type: string
+                              nullable: true
+                            topics:
+                              type: array
+                              items:
+                                type: string
+                              nullable: true
+                            license:
+                              type: string
+                              nullable: true
+                              description: SPDX id, e.g. MIT.
+                            defaultBranch:
+                              type: string
+                              nullable: true
+                            homepage:
+                              type: string
+                              nullable: true
+                            archived:
+                              type: boolean
+                              nullable: true
+                            createdAt:
+                              type: string
+                              nullable: true
+                            updatedAt:
+                              type: string
+                              nullable: true
+                            pushedAt:
+                              type: string
+                              nullable: true
+                            url:
+                              type: string
+                              nullable: true
+                              description: html_url of the repository.
+                          required:
+                          - fullName
+                          - name
+                          - owner
+                          - description
+                          - private
+                          - fork
+                          - stars
+                          - forks
+                          - watchers
+                          - openIssues
+                          - language
+                          - topics
+                          - license
+                          - defaultBranch
+                          - homepage
+                          - archived
+                          - createdAt
+                          - updatedAt
+                          - pushedAt
+                          - url
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                      meta:
+                        type: object
+                        properties:
+                          totalCount:
+                            type: number
+                        required:
+                        - totalCount
+                        additionalProperties: false
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: github.search-repos
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.0025
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.002500'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: q
+        in: query
+        required: true
+        description: Free-text search query.
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 400
+      - name: sort
+        in: query
+        required: false
+        description: Field to sort results by.
+        schema:
+          type: string
+          enum:
+          - stars
+          - forks
+          - help-wanted-issues
+          - updated
+      - name: order
+        in: query
+        required: false
+        description: 'Sort direction: asc or desc.'
+        schema:
+          type: string
+          enum:
+          - asc
+          - desc
+      - name: perPage
+        in: query
+        required: false
+        description: Number of results to return per page.
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 50
+      - name: page
+        in: query
+        required: false
+        description: Page number (1-based) for paginated results.
+        schema:
+          type: integer
+          minimum: 1
+      - $ref: '#/components/parameters/TrialMode'
+  /api/github/tags:
+    get:
+      tags:
+      - Github
+      summary: Git tags of a repository (name + commit sha), most recent
+      description: Git tags of a repository (name + commit sha), most recent first. Pair with github.releases for published releases. Read-only; no caller key needed.
+      operationId: github_tags
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized: items = tags.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            name:
+                              nullable: true
+                            sha:
+                              nullable: true
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: github.tags
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.0025
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.002500'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: owner
+        in: query
+        required: true
+        description: Owner.
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 100
+      - name: repo
+        in: query
+        required: true
+        description: Repo.
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 120
+      - name: perPage
+        in: query
+        required: false
+        description: Number of results to return per page.
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+      - name: page
+        in: query
+        required: false
+        description: Page number (1-based) for paginated results.
+        schema:
+          type: integer
+          minimum: 1
+      - $ref: '#/components/parameters/TrialMode'
+  /api/github/user:
+    get:
+      tags:
+      - Github
+      summary: 'GitHub user or organization profile: login, name, company'
+      description: 'GitHub user or organization profile: login, name, company, blog, location, bio, type (User/Organization), followers, following, public repo + gist counts, and account creation date. Read-only; no caller key needed.'
+      operationId: github_user
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized: items = [user/org profile].'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            login:
+                              type: string
+                              nullable: true
+                            name:
+                              type: string
+                              nullable: true
+                            company:
+                              type: string
+                              nullable: true
+                            blog:
+                              type: string
+                              nullable: true
+                            location:
+                              type: string
+                              nullable: true
+                            bio:
+                              type: string
+                              nullable: true
+                            type:
+                              type: string
+                              nullable: true
+                              description: User or Organization.
+                            followers:
+                              type: number
+                              nullable: true
+                            following:
+                              type: number
+                              nullable: true
+                            publicRepos:
+                              type: number
+                              nullable: true
+                            publicGists:
+                              type: number
+                              nullable: true
+                            createdAt:
+                              type: string
+                              nullable: true
+                            url:
+                              type: string
+                              nullable: true
+                              description: html_url of the profile.
+                          required:
+                          - login
+                          - name
+                          - company
+                          - blog
+                          - location
+                          - bio
+                          - type
+                          - followers
+                          - following
+                          - publicRepos
+                          - publicGists
+                          - createdAt
+                          - url
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: github.user
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.0025
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.002500'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: username
+        in: query
+        required: true
+        description: Username.
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 100
+      - $ref: '#/components/parameters/TrialMode'
+components:
+  responses:
+    MethodNotAllowed:
+      description: Method not allowed — see `Allow` header for the supported method.
+    UpstreamError:
+      description: Upstream provider error.
+    ServerError:
+      description: Internal server error.
+    PaymentRequired:
+      description: Payment required. Body contains the x402 PaymentRequirements envelope with a multi-network accepts array; the per-call price is in accepts[].amount (and on the operation as x-2s-price). Sign for whichever rail you hold USDC on (EIP-3009 for Base, partial SPL transfer for Solana) and retry with the PAYMENT-SIGNATURE header (X-PAYMENT also accepted for v1 clients).
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/X402PaymentRequiredV2'
+    BadRequest:
+      description: Bad request — invalid parameters.
+  parameters:
+    TrialMode:
+      name: trial
+      in: query
+      required: false
+      description: 'Try before you buy. Set to 1 for one free real call per endpoint per hour — no wallet or payment needed — to verify the endpoint before paying. Equivalent to sending the "X-2s-Trial: 1" request header. Works on every endpoint.'
+      schema:
+        type: integer
+        enum:
+        - 1
+  schemas:
+    CallMeta:
+      type: object
+      description: Per-call meta envelope — endpoint id, cost, caller kind, settlement details.
+    Source:
+      type: object
+      description: 'Provenance of the data: upstream provider, source URL, and license.'
+      properties:
+        provider:
+          type: string
+          description: Upstream data provider.
+        url:
+          type: string
+          description: Source URL or documentation link.
+        license:
+          type: string
+          description: License / usage terms for the data.
+    X402PaymentRequiredV2:
+      type: object
+      description: x402 v2 PaymentRequired envelope. Pick any entry from accepts[], sign for that rail, retry with the PAYMENT-SIGNATURE header.
+      required:
+      - x402Version
+      - accepts
+      properties:
+        x402Version:
+          type: integer
+          const: 2
+        error:
+          type: string
+          description: Human-readable reason payment is required.
+        resource:
+          type: string
+          description: The resource URL being purchased.
+        accepts:
+          type: array
+          description: Payment requirement options, one per supported network (Base USDC, Solana USDC).
+          items:
+            type: object
+            required:
+            - scheme
+            - network
+            - amount
+            - asset
+            - payTo
+            - maxTimeoutSeconds
+            properties:
+              scheme:
+                type: string
+                enum:
+                - exact
+              network:
+                type: string
+                description: CAIP-2 network id, e.g. "eip155:8453" (Base) or "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp".
+              amount:
+                type: string
+                description: Price in atomic asset units (USDC has 6 decimals).
+              asset:
+                type: string
+                description: Asset contract address / mint.
+              payTo:
+                type: string
+                description: Treasury address to pay.
+              maxTimeoutSeconds:
+                type: integer
+              extra:
+                type: object
+                description: 'Rail-specific extras (EVM: EIP-712 domain name/version; Solana: feePayer).'
+                additionalProperties: true
+        extensions:
+          type: object
+          description: Optional discovery metadata (e.g. bazaar input/output schemas).
+          additionalProperties: true
+  securitySchemes:
+    x402Payment:
+      type: apiKey
+      in: header
+      name: PAYMENT-SIGNATURE
+      description: 'x402 protocol v2: base64-encoded PaymentPayload. Call any paid endpoint without auth to receive a 402 with a multi-network PaymentRequirements envelope. Sign for either rail: EIP-3009 transferWithAuthorization (Base USDC) OR a partial SPL token transfer (Solana USDC). Retry with PAYMENT-SIGNATURE header. X-PAYMENT is also accepted for v1 buyer clients. See https://x402.org.'

@@ -1,0 +1,494 @@
+openapi: 3.2.0
+info:
+  title: 2s — the (most) everything Airport API
+  version: '1'
+  summary: The (most) everything API.
+  description: 'The (most) everything API for AI agents: 575+ pay-per-call endpoints on one origin.'
+  contact:
+    name: 2s
+    url: https://2s.io
+    email: alley@2s.io
+  x-logo:
+    url: https://2s.io/icon-512.png
+    altText: 2s
+  x-guidance: 'Pay-per-call REST API for AI agents — hundreds of endpoints returning ground-truth data (US public records, company & legal identifiers, finance/SEC, crypto/web3, security & CVEs, medical codes, weather & geocoding, agriculture, energy, maritime, music, and more). Every endpoint is paid per call in USDC via x402 (Base or Solana) — no API key, no signup. Call any endpoint with no auth to get a 402 PaymentRequirements envelope, sign it (EIP-3009 on Base, partial SPL transfer on Solana), and retry with the PAYMENT-SIGNATURE header. Add ?trial=1 for one free real call per endpoint per hour to test before paying. To discover the right endpoint: GET https://2s.io/api/directory for the full catalog, or GET https://2s.io/api/search/endpoints?q=<natural-language task> for a ranked match. Per-call price is on each operation as x-payment-info (from $0.001). Batch up to 50 calls behind one payment via POST https://2s.io/api/batch/run.'
+servers:
+- url: https://2s.io
+tags:
+- name: airport
+paths:
+  /api/airport/lookup:
+    get:
+      tags:
+      - airport
+      summary: Look up an airport by 3-letter IATA (e.g
+      description: 'Look up an airport by 3-letter IATA (e.g. SFO) or 4-letter ICAO (e.g. KSFO) code. Query: code (3-5 chars, alphanumeric). Returns { airport: { id, ident, type, name, latitude, longitude, elevationFt, continent, isoCountry, isoRegion, municipality, scheduledService, icaoCode, iataCode, gpsCode, localCode, wikipediaLink } } or 404 NOT_FOUND.'
+      operationId: airport_lookup
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized envelope: items = [airport] (one OurAirports record); total = 1. 404 if no airport matches the code.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            id:
+                              type: integer
+                              description: OurAirports stable numeric id.
+                            ident:
+                              type: string
+                              description: Globally unique identifier (usually ICAO).
+                            type:
+                              type: string
+                              nullable: true
+                              description: large_airport | medium_airport | small_airport | heliport | seaplane_base | closed.
+                            name:
+                              type: string
+                              nullable: true
+                            latitude:
+                              type: number
+                            longitude:
+                              type: number
+                            elevationFt:
+                              type: integer
+                              nullable: true
+                            continent:
+                              type: string
+                              nullable: true
+                            isoCountry:
+                              type: string
+                              nullable: true
+                              description: ISO 3166-1 alpha-2 country code.
+                            isoRegion:
+                              type: string
+                              nullable: true
+                              description: ISO 3166-2 region code (e.g. US-CA).
+                            municipality:
+                              type: string
+                              nullable: true
+                            scheduledService:
+                              type: boolean
+                              nullable: true
+                            icaoCode:
+                              type: string
+                              nullable: true
+                            iataCode:
+                              type: string
+                              nullable: true
+                            gpsCode:
+                              type: string
+                              nullable: true
+                            localCode:
+                              type: string
+                              nullable: true
+                            wikipediaLink:
+                              type: string
+                              nullable: true
+                          required:
+                          - id
+                          - ident
+                          - type
+                          - name
+                          - latitude
+                          - longitude
+                          - elevationFt
+                          - continent
+                          - isoCountry
+                          - isoRegion
+                          - municipality
+                          - scheduledService
+                          - icaoCode
+                          - iataCode
+                          - gpsCode
+                          - localCode
+                          - wikipediaLink
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: airport.lookup
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.0025
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.002500'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: code
+        in: query
+        required: true
+        description: 3-letter IATA or 4-letter ICAO airport code (e.g. SFO, KSFO).
+        schema:
+          type: string
+          minLength: 3
+          maxLength: 5
+      - $ref: '#/components/parameters/TrialMode'
+  /api/airport/near:
+    get:
+      tags:
+      - airport
+      summary: Airports within a radius of a coordinate, sorted by distance
+      description: 'Airports within a radius of a coordinate, sorted by distance. Query: lat (-90..90), lon (-180..180), radius_km (1-2000, default 200), limit (1-100, default 20), type (optional: large_airport|medium_airport|small_airport|heliport|seaplane_base|balloonport|closed), country (optional 2-letter ISO 3166-1), scheduled_service (optional bool, true = commercial-service airports only). Returns { query, count, airports: [{ id, ident, name, iataCode, icaoCode, type, latitude, longitude, distanceKm, ... }] }.'
+      operationId: airport_near
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized envelope: items = airports within radius_km, sorted by ascending distance; total = null (no upstream total; query-bounded set); meta.query echoes the search.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            id:
+                              type: integer
+                            ident:
+                              type: string
+                            name:
+                              type: string
+                              nullable: true
+                            iataCode:
+                              type: string
+                              nullable: true
+                            icaoCode:
+                              type: string
+                              nullable: true
+                            type:
+                              type: string
+                              nullable: true
+                            latitude:
+                              type: number
+                            longitude:
+                              type: number
+                            distanceKm:
+                              type: number
+                              description: Great-circle distance to (lat, lon), kilometers.
+                            isoCountry:
+                              type: string
+                              nullable: true
+                            isoRegion:
+                              type: string
+                              nullable: true
+                            municipality:
+                              type: string
+                              nullable: true
+                            scheduledService:
+                              type: boolean
+                              nullable: true
+                          required:
+                          - id
+                          - ident
+                          - name
+                          - iataCode
+                          - icaoCode
+                          - type
+                          - latitude
+                          - longitude
+                          - distanceKm
+                          - isoCountry
+                          - isoRegion
+                          - municipality
+                          - scheduledService
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                      meta:
+                        type: object
+                        properties:
+                          query:
+                            type: object
+                            properties:
+                              latitude:
+                                type: number
+                              longitude:
+                                type: number
+                              radiusKm:
+                                type: number
+                              limit:
+                                type: integer
+                              type:
+                                type: string
+                                nullable: true
+                              country:
+                                type: string
+                                nullable: true
+                              scheduledServiceOnly:
+                                type: boolean
+                                nullable: true
+                            required:
+                            - latitude
+                            - longitude
+                            - radiusKm
+                            - limit
+                            - type
+                            - country
+                            - scheduledServiceOnly
+                            additionalProperties: false
+                        required:
+                        - query
+                        additionalProperties: false
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: airport.near
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.0025
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.002500'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: lat
+        in: query
+        required: true
+        description: Latitude in decimal degrees (-90 to 90).
+        schema:
+          type: number
+          minimum: -90
+          maximum: 90
+      - name: lon
+        in: query
+        required: true
+        description: Longitude in decimal degrees (-180 to 180).
+        schema:
+          type: number
+          minimum: -180
+          maximum: 180
+      - name: radius_km
+        in: query
+        required: false
+        description: Search radius in kilometers (1-2000). Default 200.
+        schema:
+          type: number
+          minimum: 1
+          maximum: 2000
+          default: 200
+      - name: limit
+        in: query
+        required: false
+        description: Max airports to return (1-100). Default 20.
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 20
+      - name: type
+        in: query
+        required: false
+        description: Filter by airport type.
+        schema:
+          type: string
+          enum:
+          - large_airport
+          - medium_airport
+          - small_airport
+          - heliport
+          - seaplane_base
+          - balloonport
+          - closed
+      - name: country
+        in: query
+        required: false
+        description: Filter by ISO 3166-1 alpha-2 country code (e.g. US).
+        schema:
+          type: string
+          pattern: ^[A-Z]{2}$
+      - name: scheduled_service
+        in: query
+        required: false
+        description: When true, only commercial-service airports.
+        schema:
+          type: boolean
+      - $ref: '#/components/parameters/TrialMode'
+components:
+  responses:
+    MethodNotAllowed:
+      description: Method not allowed — see `Allow` header for the supported method.
+    UpstreamError:
+      description: Upstream provider error.
+    ServerError:
+      description: Internal server error.
+    PaymentRequired:
+      description: Payment required. Body contains the x402 PaymentRequirements envelope with a multi-network accepts array; the per-call price is in accepts[].amount (and on the operation as x-2s-price). Sign for whichever rail you hold USDC on (EIP-3009 for Base, partial SPL transfer for Solana) and retry with the PAYMENT-SIGNATURE header (X-PAYMENT also accepted for v1 clients).
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/X402PaymentRequiredV2'
+    BadRequest:
+      description: Bad request — invalid parameters.
+  parameters:
+    TrialMode:
+      name: trial
+      in: query
+      required: false
+      description: 'Try before you buy. Set to 1 for one free real call per endpoint per hour — no wallet or payment needed — to verify the endpoint before paying. Equivalent to sending the "X-2s-Trial: 1" request header. Works on every endpoint.'
+      schema:
+        type: integer
+        enum:
+        - 1
+  schemas:
+    CallMeta:
+      type: object
+      description: Per-call meta envelope — endpoint id, cost, caller kind, settlement details.
+    Source:
+      type: object
+      description: 'Provenance of the data: upstream provider, source URL, and license.'
+      properties:
+        provider:
+          type: string
+          description: Upstream data provider.
+        url:
+          type: string
+          description: Source URL or documentation link.
+        license:
+          type: string
+          description: License / usage terms for the data.
+    X402PaymentRequiredV2:
+      type: object
+      description: x402 v2 PaymentRequired envelope. Pick any entry from accepts[], sign for that rail, retry with the PAYMENT-SIGNATURE header.
+      required:
+      - x402Version
+      - accepts
+      properties:
+        x402Version:
+          type: integer
+          const: 2
+        error:
+          type: string
+          description: Human-readable reason payment is required.
+        resource:
+          type: string
+          description: The resource URL being purchased.
+        accepts:
+          type: array
+          description: Payment requirement options, one per supported network (Base USDC, Solana USDC).
+          items:
+            type: object
+            required:
+            - scheme
+            - network
+            - amount
+            - asset
+            - payTo
+            - maxTimeoutSeconds
+            properties:
+              scheme:
+                type: string
+                enum:
+                - exact
+              network:
+                type: string
+                description: CAIP-2 network id, e.g. "eip155:8453" (Base) or "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp".
+              amount:
+                type: string
+                description: Price in atomic asset units (USDC has 6 decimals).
+              asset:
+                type: string
+                description: Asset contract address / mint.
+              payTo:
+                type: string
+                description: Treasury address to pay.
+              maxTimeoutSeconds:
+                type: integer
+              extra:
+                type: object
+                description: 'Rail-specific extras (EVM: EIP-712 domain name/version; Solana: feePayer).'
+                additionalProperties: true
+        extensions:
+          type: object
+          description: Optional discovery metadata (e.g. bazaar input/output schemas).
+          additionalProperties: true
+  securitySchemes:
+    x402Payment:
+      type: apiKey
+      in: header
+      name: PAYMENT-SIGNATURE
+      description: 'x402 protocol v2: base64-encoded PaymentPayload. Call any paid endpoint without auth to receive a 402 with a multi-network PaymentRequirements envelope. Sign for either rail: EIP-3009 transferWithAuthorization (Base USDC) OR a partial SPL token transfer (Solana USDC). Retry with PAYMENT-SIGNATURE header. X-PAYMENT is also accepted for v1 buyer clients. See https://x402.org.'

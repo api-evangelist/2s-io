@@ -1,0 +1,1236 @@
+openapi: 3.2.0
+info:
+  title: 2s — the (most) everything Patents API
+  version: '1'
+  summary: The (most) everything API.
+  description: 'The (most) everything API for AI agents: 575+ pay-per-call endpoints on one origin.'
+  contact:
+    name: 2s
+    url: https://2s.io
+    email: alley@2s.io
+  x-logo:
+    url: https://2s.io/icon-512.png
+    altText: 2s
+  x-guidance: 'Pay-per-call REST API for AI agents — hundreds of endpoints returning ground-truth data (US public records, company & legal identifiers, finance/SEC, crypto/web3, security & CVEs, medical codes, weather & geocoding, agriculture, energy, maritime, music, and more). Every endpoint is paid per call in USDC via x402 (Base or Solana) — no API key, no signup. Call any endpoint with no auth to get a 402 PaymentRequirements envelope, sign it (EIP-3009 on Base, partial SPL transfer on Solana), and retry with the PAYMENT-SIGNATURE header. Add ?trial=1 for one free real call per endpoint per hour to test before paying. To discover the right endpoint: GET https://2s.io/api/directory for the full catalog, or GET https://2s.io/api/search/endpoints?q=<natural-language task> for a ranked match. Per-call price is on each operation as x-payment-info (from $0.001). Batch up to 50 calls behind one payment via POST https://2s.io/api/batch/run.'
+servers:
+- url: https://2s.io
+tags:
+- name: patents
+paths:
+  /api/patents/detail:
+    get:
+      tags:
+      - patents
+      summary: Full US patent application file-wrapper detail by
+      description: 'Full US patent application file-wrapper detail by application number. Returns bibliographic data (title, inventors, applicants, dates, status, examiner, art unit, docket #, confirmation #) plus the file-wrapper event timeline (filing, IDS, Office Actions, allowance, abandonment, …), continuity chain (parent / continuation / divisional / national stage), recorded assignments (assignor → assignee with reel/frame + conveyance text), and foreign priority claims under 35 USC § 119. Application number is the 6-10 digit USPTO ID (e.g. 18566276).'
+      operationId: patents_detail
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized envelope: items = [the one patent application file-wrapper record] (bibliography, status timeline, continuity, assignments, foreign priority); total = 1.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            applicationNumber:
+                              type: string
+                              description: USPTO application number (e.g. "18566276").
+                            title:
+                              type: string
+                              nullable: true
+                            applicationType:
+                              type: string
+                              nullable: true
+                              description: Utility | Design | Plant | Reissue.
+                            firstInventor:
+                              type: string
+                              nullable: true
+                            inventors:
+                              type: array
+                              items:
+                                type: string
+                            applicants:
+                              type: array
+                              items:
+                                type: string
+                            filingDate:
+                              type: string
+                              nullable: true
+                            effectiveFilingDate:
+                              type: string
+                              nullable: true
+                            status:
+                              type: object
+                              properties:
+                                code:
+                                  type: number
+                                  nullable: true
+                                description:
+                                  type: string
+                                  nullable: true
+                                updatedAt:
+                                  type: string
+                                  nullable: true
+                              required:
+                              - code
+                              - description
+                              - updatedAt
+                              additionalProperties: false
+                              description: Latest application status code + plain-English description.
+                            cpcSymbols:
+                              type: array
+                              items:
+                                type: string
+                              description: CPC class symbols (e.g. "H04W 72/0446").
+                            uspcSymbol:
+                              type: string
+                              nullable: true
+                              description: Legacy USPC class.subclass.
+                            url:
+                              type: string
+                              description: Public USPTO Patent Center file-wrapper URL.
+                            examiner:
+                              type: string
+                              nullable: true
+                              description: Examiner of record.
+                            artUnit:
+                              type: string
+                              nullable: true
+                              description: USPTO group art unit.
+                            confirmationNumber:
+                              type: string
+                              nullable: true
+                            docketNumber:
+                              type: string
+                              nullable: true
+                              description: Docket number assigned by the filer / counsel.
+                            events:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  code:
+                                    type: string
+                                    nullable: true
+                                    description: USPTO event code, e.g. "CTNF", "PILS".
+                                  description:
+                                    type: string
+                                    nullable: true
+                                  date:
+                                    type: string
+                                    nullable: true
+                                required:
+                                - code
+                                - description
+                                - date
+                                additionalProperties: false
+                              description: File-wrapper event timeline (filing, IDS, Office Actions, allowance, …).
+                            parents:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  parentApplicationNumber:
+                                    type: string
+                                    nullable: true
+                                    description: May be PCT-shaped, not always pure digits.
+                                  parentFilingDate:
+                                    type: string
+                                    nullable: true
+                                  parentStatusDescription:
+                                    type: string
+                                    nullable: true
+                                  relationship:
+                                    type: string
+                                    nullable: true
+                                    description: e.g. "is a Continuation of", "is a National Stage Entry of".
+                                required:
+                                - parentApplicationNumber
+                                - parentFilingDate
+                                - parentStatusDescription
+                                - relationship
+                                additionalProperties: false
+                              description: Continuity chain (parent / continuation / divisional / national stage).
+                            assignments:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  reelFrame:
+                                    type: string
+                                    nullable: true
+                                    description: Reel-frame identifier ("12345-678").
+                                  conveyanceText:
+                                    type: string
+                                    nullable: true
+                                  recordedAt:
+                                    type: string
+                                    nullable: true
+                                  assignors:
+                                    type: array
+                                    items:
+                                      type: string
+                                  assignees:
+                                    type: array
+                                    items:
+                                      type: string
+                                required:
+                                - reelFrame
+                                - conveyanceText
+                                - recordedAt
+                                - assignors
+                                - assignees
+                                additionalProperties: false
+                              description: Recorded assignments (chain of ownership).
+                            foreignPriority:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  country:
+                                    type: string
+                                    nullable: true
+                                  applicationNumber:
+                                    type: string
+                                    nullable: true
+                                  filingDate:
+                                    type: string
+                                    nullable: true
+                                required:
+                                - country
+                                - applicationNumber
+                                - filingDate
+                                additionalProperties: false
+                              description: Foreign priority claims under 35 USC § 119.
+                          required:
+                          - applicationNumber
+                          - title
+                          - applicationType
+                          - firstInventor
+                          - inventors
+                          - applicants
+                          - filingDate
+                          - effectiveFilingDate
+                          - status
+                          - cpcSymbols
+                          - uspcSymbol
+                          - url
+                          - examiner
+                          - artUnit
+                          - confirmationNumber
+                          - docketNumber
+                          - events
+                          - parents
+                          - assignments
+                          - foreignPriority
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: patents.detail
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.0045
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.004500'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: applicationNumber
+        in: query
+        required: true
+        description: Application number.
+        schema:
+          type: string
+          pattern: ^[0-9]{6,10}$
+      - $ref: '#/components/parameters/TrialMode'
+  /api/patents/documents:
+    get:
+      tags:
+      - patents
+      summary: List every document in the file wrapper for a US patent
+      description: List every document in the file wrapper for a US patent application. Returns each document with its USPTO code (e.g. CTNF non-final OA, CTFR final OA, IDS, WCLM claims worksheet, NOA notice of allowance), human-readable description, official date, direction (INTERNAL/INCOMING/OUTGOING), and available formats with page counts. Includes patentCenterUrl pointing at the public USPTO Patent Center documents page for direct PDF download. Application number is the 6-10 digit USPTO ID.
+      operationId: patents_documents
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized envelope: items = file-wrapper documents (code, description, date, direction, formats); total = upstream document count; meta.applicationNumber + meta.patentCenterUrl identify the application.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            applicationNumber:
+                              type: string
+                            documentId:
+                              type: string
+                              description: Stable USPTO document identifier.
+                            code:
+                              type: string
+                              nullable: true
+                              description: USPTO document code, e.g. "CTNF", "IDS", "NOA".
+                            description:
+                              type: string
+                              nullable: true
+                            officialDate:
+                              type: string
+                              nullable: true
+                            direction:
+                              type: string
+                              nullable: true
+                              description: INTERNAL (USPTO-generated), INCOMING, or OUTGOING.
+                            formats:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  mimeType:
+                                    type: string
+                                  pageCount:
+                                    type: number
+                                    nullable: true
+                                required:
+                                - mimeType
+                                - pageCount
+                                additionalProperties: false
+                              description: Available formats with page counts (download via Patent Center, see meta.patentCenterUrl).
+                          required:
+                          - applicationNumber
+                          - documentId
+                          - code
+                          - description
+                          - officialDate
+                          - direction
+                          - formats
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                      meta:
+                        type: object
+                        properties:
+                          applicationNumber:
+                            type: string
+                          patentCenterUrl:
+                            type: string
+                            description: Public USPTO Patent Center documents page for direct PDF download.
+                        required:
+                        - applicationNumber
+                        - patentCenterUrl
+                        additionalProperties: false
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: patents.documents
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.0045
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.004500'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: applicationNumber
+        in: query
+        required: true
+        description: Application number.
+        schema:
+          type: string
+          pattern: ^[0-9]{6,10}$
+      - $ref: '#/components/parameters/TrialMode'
+  /api/patents/epo-biblio:
+    get:
+      tags:
+      - patents
+      summary: Bibliographic record for a patent publication via EPO OPS
+      description: 'Bibliographic record for a patent publication via EPO OPS: invention titles (multiple languages), applicants, inventors, IPC classifications, application number, and the abstract. Worldwide coverage by publication number (e.g. EP1000000, US6093011). Net-new vs US-only patents.detail.'
+      operationId: patents_epo-biblio
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized: items = [bibliographic record].'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            publicationNumber:
+                              type: string
+                              nullable: true
+                            country:
+                              type: string
+                              nullable: true
+                            kind:
+                              type: string
+                              nullable: true
+                            applicationNumber:
+                              type: string
+                              nullable: true
+                            titles:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  lang:
+                                    type: string
+                                    nullable: true
+                                  text:
+                                    type: string
+                                    nullable: true
+                                required:
+                                - lang
+                                - text
+                                additionalProperties: false
+                            applicants:
+                              type: array
+                              items:
+                                type: string
+                            inventors:
+                              type: array
+                              items:
+                                type: string
+                            ipcClasses:
+                              type: array
+                              items:
+                                type: string
+                            abstract:
+                              type: string
+                              nullable: true
+                          required:
+                          - publicationNumber
+                          - country
+                          - kind
+                          - applicationNumber
+                          - titles
+                          - applicants
+                          - inventors
+                          - ipcClasses
+                          - abstract
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: patents.epo-biblio
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.0045
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.004500'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: number
+        in: query
+        required: true
+        description: Publication number, e.g. EP1000000 or US6093011.
+        schema:
+          type: string
+          minLength: 2
+          maxLength: 40
+      - name: format
+        in: query
+        required: false
+        description: Number format (default epodoc, e.g. EP1000000 or US20260170385).
+        schema:
+          type: string
+          enum:
+          - epodoc
+          - docdb
+          - original
+      - $ref: '#/components/parameters/TrialMode'
+  /api/patents/epo-family:
+    get:
+      tags:
+      - patents
+      summary: INPADOC patent family for a publication via EPO OPS - every
+      description: INPADOC patent family for a publication via EPO OPS — every worldwide equivalent of the same invention (same priority), each with country, document number, kind code, and combined publication number. Use it to find where a patent was also filed/granted globally. Net-new (no US-only equivalent).
+      operationId: patents_epo-family
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized: items = family members (worldwide equivalents).'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            publicationNumber:
+                              type: string
+                              nullable: true
+                            country:
+                              type: string
+                              nullable: true
+                            docNumber:
+                              type: string
+                              nullable: true
+                            kind:
+                              type: string
+                              nullable: true
+                          required:
+                          - publicationNumber
+                          - country
+                          - docNumber
+                          - kind
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: patents.epo-family
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.0045
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.004500'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: number
+        in: query
+        required: true
+        description: Publication number, e.g. EP1000000.
+        schema:
+          type: string
+          minLength: 2
+          maxLength: 40
+      - name: format
+        in: query
+        required: false
+        description: Number format (default epodoc, e.g. EP1000000 or US20260170385).
+        schema:
+          type: string
+          enum:
+          - epodoc
+          - docdb
+          - original
+      - $ref: '#/components/parameters/TrialMode'
+  /api/patents/epo-legal:
+    get:
+      tags:
+      - patents
+      summary: INPADOC legal-status events for a patent publication via
+      description: 'INPADOC legal-status events for a patent publication via EPO OPS: the timeline of procedural events (examination, grant, designations, national-phase entries, lapses, withdrawals) each with an event code, description, and date. For tracking whether a patent is in force, granted, or lapsed. Net-new.'
+      operationId: patents_epo-legal
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized: items = legal-status events (chronological).'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            code:
+                              type: string
+                              nullable: true
+                            description:
+                              type: string
+                              nullable: true
+                            date:
+                              type: string
+                              nullable: true
+                          required:
+                          - code
+                          - description
+                          - date
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: patents.epo-legal
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.0045
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.004500'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: number
+        in: query
+        required: true
+        description: Publication number, e.g. EP1000000.
+        schema:
+          type: string
+          minLength: 2
+          maxLength: 40
+      - name: format
+        in: query
+        required: false
+        description: Number format (default epodoc, e.g. EP1000000 or US20260170385).
+        schema:
+          type: string
+          enum:
+          - epodoc
+          - docdb
+          - original
+      - $ref: '#/components/parameters/TrialMode'
+  /api/patents/epo-search:
+    get:
+      tags:
+      - patents
+      summary: Search worldwide patent publications via the European
+      description: Search worldwide patent publications via the European Patent Office's Open Patent Services (OPS). Pass a CQL query (e.g. ti=quantum computing, in=tesla, pa=siemens, cpc=H01M, pn=EP1000000) and get matching publications with country, document number, kind code, and a combined publication number, plus the total result count. Covers EP + 100+ patent authorities worldwide — net-new vs our US-only patents.search.
+      operationId: patents_epo-search
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized: items = publications; meta.total = upstream total result count.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            publicationNumber:
+                              type: string
+                              nullable: true
+                            country:
+                              type: string
+                              nullable: true
+                            docNumber:
+                              type: string
+                              nullable: true
+                            kind:
+                              type: string
+                              nullable: true
+                          required:
+                          - publicationNumber
+                          - country
+                          - docNumber
+                          - kind
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                      meta:
+                        type: object
+                        properties:
+                          total:
+                            type: number
+                        required:
+                        - total
+                        additionalProperties: false
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: patents.epo-search
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.0045
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.004500'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: q
+        in: query
+        required: true
+        description: CQL query, e.g. "ti=quantum computing" or "pa=siemens and cpc=H01M".
+        schema:
+          type: string
+          minLength: 2
+          maxLength: 400
+      - name: limit
+        in: query
+        required: false
+        description: Maximum number of results to return.
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+      - $ref: '#/components/parameters/TrialMode'
+  /api/patents/search:
+    get:
+      tags:
+      - patents
+      summary: Search US patent applications and grants via the USPTO Open
+      description: 'Search US patent applications and grants via the USPTO Open Data Portal. Query: q (required, 2+ chars), yearFrom / yearTo (optional filing-year bounds), applicationType (optional: Utility|Design|Plant|Reissue), limit (1-100, default 10), offset (0-based, default 0). Returns { total, returned, offset, limit, hits[{ applicationNumber, title, applicationType, firstInventor, inventors[], applicants[], filingDate, effectiveFilingDate, status:{ code, description, updatedAt }, cpcSymbols[], uspcSymbol, url }] }. URLs link to USPTO Patent Center for the public file wrapper.'
+      operationId: patents_search
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized envelope: items = matched patent applications/grants; total = upstream total hit count; meta echoes the query + returned (this page).'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            applicationNumber:
+                              type: string
+                              description: USPTO application number (e.g. "18566276").
+                            title:
+                              type: string
+                              nullable: true
+                            applicationType:
+                              type: string
+                              nullable: true
+                              description: Utility | Design | Plant | Reissue.
+                            firstInventor:
+                              type: string
+                              nullable: true
+                            inventors:
+                              type: array
+                              items:
+                                type: string
+                            applicants:
+                              type: array
+                              items:
+                                type: string
+                            filingDate:
+                              type: string
+                              nullable: true
+                            effectiveFilingDate:
+                              type: string
+                              nullable: true
+                            status:
+                              type: object
+                              properties:
+                                code:
+                                  type: number
+                                  nullable: true
+                                description:
+                                  type: string
+                                  nullable: true
+                                updatedAt:
+                                  type: string
+                                  nullable: true
+                              required:
+                              - code
+                              - description
+                              - updatedAt
+                              additionalProperties: false
+                              description: Latest application status code + plain-English description.
+                            cpcSymbols:
+                              type: array
+                              items:
+                                type: string
+                              description: CPC class symbols (e.g. "H04W 72/0446").
+                            uspcSymbol:
+                              type: string
+                              nullable: true
+                              description: Legacy USPC class.subclass.
+                            url:
+                              type: string
+                              description: Public USPTO Patent Center file-wrapper URL.
+                          required:
+                          - applicationNumber
+                          - title
+                          - applicationType
+                          - firstInventor
+                          - inventors
+                          - applicants
+                          - filingDate
+                          - effectiveFilingDate
+                          - status
+                          - cpcSymbols
+                          - uspcSymbol
+                          - url
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                      meta:
+                        type: object
+                        properties:
+                          query:
+                            type: object
+                            properties:
+                              q:
+                                type: string
+                              yearFrom:
+                                type: integer
+                                nullable: true
+                              yearTo:
+                                type: integer
+                                nullable: true
+                              applicationType:
+                                type: string
+                                nullable: true
+                              offset:
+                                type: integer
+                              limit:
+                                type: integer
+                            required:
+                            - q
+                            - yearFrom
+                            - yearTo
+                            - applicationType
+                            - offset
+                            - limit
+                            additionalProperties: false
+                          returned:
+                            type: integer
+                            description: Hits returned on this page.
+                        required:
+                        - query
+                        - returned
+                        additionalProperties: false
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: patents.search
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.0045
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.004500'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: q
+        in: query
+        required: true
+        description: Free-text search query.
+        schema:
+          type: string
+          minLength: 2
+          maxLength: 500
+      - name: yearFrom
+        in: query
+        required: false
+        description: Year from.
+        schema:
+          type: integer
+          minimum: 1790
+          maximum: 2100
+      - name: yearTo
+        in: query
+        required: false
+        description: Year to.
+        schema:
+          type: integer
+          minimum: 1790
+          maximum: 2100
+      - name: applicationType
+        in: query
+        required: false
+        description: Application type.
+        schema:
+          type: string
+          enum:
+          - Utility
+          - Design
+          - Plant
+          - Reissue
+      - name: limit
+        in: query
+        required: false
+        description: Maximum number of results to return.
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 10
+      - name: offset
+        in: query
+        required: false
+        description: Number of results to skip before returning (pagination offset).
+        schema:
+          type: integer
+          minimum: 0
+          maximum: 10000
+          default: 0
+      - $ref: '#/components/parameters/TrialMode'
+components:
+  responses:
+    MethodNotAllowed:
+      description: Method not allowed — see `Allow` header for the supported method.
+    UpstreamError:
+      description: Upstream provider error.
+    ServerError:
+      description: Internal server error.
+    PaymentRequired:
+      description: Payment required. Body contains the x402 PaymentRequirements envelope with a multi-network accepts array; the per-call price is in accepts[].amount (and on the operation as x-2s-price). Sign for whichever rail you hold USDC on (EIP-3009 for Base, partial SPL transfer for Solana) and retry with the PAYMENT-SIGNATURE header (X-PAYMENT also accepted for v1 clients).
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/X402PaymentRequiredV2'
+    BadRequest:
+      description: Bad request — invalid parameters.
+  parameters:
+    TrialMode:
+      name: trial
+      in: query
+      required: false
+      description: 'Try before you buy. Set to 1 for one free real call per endpoint per hour — no wallet or payment needed — to verify the endpoint before paying. Equivalent to sending the "X-2s-Trial: 1" request header. Works on every endpoint.'
+      schema:
+        type: integer
+        enum:
+        - 1
+  schemas:
+    CallMeta:
+      type: object
+      description: Per-call meta envelope — endpoint id, cost, caller kind, settlement details.
+    Source:
+      type: object
+      description: 'Provenance of the data: upstream provider, source URL, and license.'
+      properties:
+        provider:
+          type: string
+          description: Upstream data provider.
+        url:
+          type: string
+          description: Source URL or documentation link.
+        license:
+          type: string
+          description: License / usage terms for the data.
+    X402PaymentRequiredV2:
+      type: object
+      description: x402 v2 PaymentRequired envelope. Pick any entry from accepts[], sign for that rail, retry with the PAYMENT-SIGNATURE header.
+      required:
+      - x402Version
+      - accepts
+      properties:
+        x402Version:
+          type: integer
+          const: 2
+        error:
+          type: string
+          description: Human-readable reason payment is required.
+        resource:
+          type: string
+          description: The resource URL being purchased.
+        accepts:
+          type: array
+          description: Payment requirement options, one per supported network (Base USDC, Solana USDC).
+          items:
+            type: object
+            required:
+            - scheme
+            - network
+            - amount
+            - asset
+            - payTo
+            - maxTimeoutSeconds
+            properties:
+              scheme:
+                type: string
+                enum:
+                - exact
+              network:
+                type: string
+                description: CAIP-2 network id, e.g. "eip155:8453" (Base) or "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp".
+              amount:
+                type: string
+                description: Price in atomic asset units (USDC has 6 decimals).
+              asset:
+                type: string
+                description: Asset contract address / mint.
+              payTo:
+                type: string
+                description: Treasury address to pay.
+              maxTimeoutSeconds:
+                type: integer
+              extra:
+                type: object
+                description: 'Rail-specific extras (EVM: EIP-712 domain name/version; Solana: feePayer).'
+                additionalProperties: true
+        extensions:
+          type: object
+          description: Optional discovery metadata (e.g. bazaar input/output schemas).
+          additionalProperties: true
+  securitySchemes:
+    x402Payment:
+      type: apiKey
+      in: header
+      name: PAYMENT-SIGNATURE
+      description: 'x402 protocol v2: base64-encoded PaymentPayload. Call any paid endpoint without auth to receive a 402 with a multi-network PaymentRequirements envelope. Sign for either rail: EIP-3009 transferWithAuthorization (Base USDC) OR a partial SPL token transfer (Solana USDC). Retry with PAYMENT-SIGNATURE header. X-PAYMENT is also accepted for v1 buyer clients. See https://x402.org.'

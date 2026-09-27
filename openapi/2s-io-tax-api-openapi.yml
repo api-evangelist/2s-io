@@ -1,0 +1,372 @@
+openapi: 3.2.0
+info:
+  title: 2s — the (most) everything Tax API
+  version: '1'
+  summary: The (most) everything API.
+  description: 'The (most) everything API for AI agents: 575+ pay-per-call endpoints on one origin.'
+  contact:
+    name: 2s
+    url: https://2s.io
+    email: alley@2s.io
+  x-logo:
+    url: https://2s.io/icon-512.png
+    altText: 2s
+  x-guidance: 'Pay-per-call REST API for AI agents — hundreds of endpoints returning ground-truth data (US public records, company & legal identifiers, finance/SEC, crypto/web3, security & CVEs, medical codes, weather & geocoding, agriculture, energy, maritime, music, and more). Every endpoint is paid per call in USDC via x402 (Base or Solana) — no API key, no signup. Call any endpoint with no auth to get a 402 PaymentRequirements envelope, sign it (EIP-3009 on Base, partial SPL transfer on Solana), and retry with the PAYMENT-SIGNATURE header. Add ?trial=1 for one free real call per endpoint per hour to test before paying. To discover the right endpoint: GET https://2s.io/api/directory for the full catalog, or GET https://2s.io/api/search/endpoints?q=<natural-language task> for a ranked match. Per-call price is on each operation as x-payment-info (from $0.001). Batch up to 50 calls behind one payment via POST https://2s.io/api/batch/run.'
+servers:
+- url: https://2s.io
+tags:
+- name: Tax
+paths:
+  /api/tax/vat:
+    get:
+      tags:
+      - Tax
+      summary: Validate a European Union VAT number against the official
+      description: Validate a European Union VAT number against the official VIES (VAT Information Exchange System) register in real time. Confirms whether the VAT identifier is currently registered for intra-EU trade and, when the member state discloses them, returns the registered business name and address. Covers the 27 EU member states (Greece as EL) plus Northern Ireland (XI); Great Britain (GB) is not in VIES. Pass either a full identifier (vat=DE811569869) or country + number. Returns {valid, countryCode, vatNumber, name, address, requestDate, reason}. When a member-state register is temporarily down, returns a retryable 503 rather than a false negative. Data from the European Commission VIES service.
+      operationId: tax_vat
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized envelope: items = [VAT check result]; total = 1.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            input:
+                              type: string
+                            valid:
+                              type: boolean
+                              description: True only when VIES confirms the number is currently registered.
+                            countryCode:
+                              type: string
+                            vatNumber:
+                              type: string
+                            name:
+                              type: string
+                              nullable: true
+                              description: Registered legal name, when the member state discloses it.
+                            address:
+                              type: string
+                              nullable: true
+                              description: Registered address (single line), when disclosed.
+                            requestDate:
+                              type: string
+                              nullable: true
+                              description: VIES request timestamp (ISO 8601).
+                            reason:
+                              type: string
+                              nullable: true
+                              description: Why valid is false, when applicable.
+                          required:
+                          - input
+                          - valid
+                          - countryCode
+                          - vatNumber
+                          - name
+                          - address
+                          - requestDate
+                          - reason
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: tax.vat
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.0025
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.002500'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: vat
+        in: query
+        required: false
+        description: 'Full VAT identifier: 2-letter country prefix + number, e.g. "DE811569869" or "NL810433941B01" (spaces/dots/hyphens allowed).'
+        schema:
+          type: string
+          minLength: 3
+          maxLength: 20
+      - name: country
+        in: query
+        required: false
+        description: 2-letter VAT country prefix, e.g. "DE". Greece is EL (GR also accepted); Northern Ireland is XI. Use with number.
+        schema:
+          type: string
+          minLength: 2
+          maxLength: 2
+      - name: number
+        in: query
+        required: false
+        description: The VAT number without the country prefix, e.g. "811569869". Use with country.
+        schema:
+          type: string
+          minLength: 2
+          maxLength: 18
+      - $ref: '#/components/parameters/TrialMode'
+  /api/tax/vat-rates:
+    get:
+      tags:
+      - Tax
+      summary: Current EU VAT rates by member state - standard rate plus
+      description: 'Current EU VAT rates by member state — standard rate plus reduced/super-reduced/parking/zero rates. Pass `country` (ISO 2-letter; Greece is EL) for one state, or omit it for all 27. Each result returns the standard rate, the list of reduced rates in force, every rate category with its percentage, and the date the rates are in force. Source: European Commission TEDB (Taxes in Europe Database), refreshed regularly. Pairs with tax.vat (which validates a specific VAT number against the live VIES register).'
+      operationId: tax_vat-rates
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized envelope: items = per-member-state VAT rate summaries; total = number of states returned.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            memberState:
+                              type: string
+                              description: ISO 2-letter member-state code (Greece = EL).
+                            standardRate:
+                              type: number
+                              nullable: true
+                              description: Standard VAT rate (%).
+                            reducedRates:
+                              type: array
+                              items:
+                                type: number
+                              description: Reduced rates in force (%), ascending.
+                            categories:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  category:
+                                    type: string
+                                  rate:
+                                    type: number
+                                required:
+                                - category
+                                - rate
+                                additionalProperties: false
+                              description: Every rate category (STANDARD/REDUCED/…) with its percentage.
+                            situationOn:
+                              type: string
+                              nullable: true
+                              description: Date the rates are in force (YYYY-MM-DD).
+                          required:
+                          - memberState
+                          - standardRate
+                          - reducedRates
+                          - categories
+                          - situationOn
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: tax.vat-rates
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.0025
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.002500'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: country
+        in: query
+        required: false
+        description: Country name or ISO country code.
+        schema:
+          type: string
+          pattern: ^[A-Za-z]{2}$
+      - $ref: '#/components/parameters/TrialMode'
+components:
+  responses:
+    MethodNotAllowed:
+      description: Method not allowed — see `Allow` header for the supported method.
+    UpstreamError:
+      description: Upstream provider error.
+    ServerError:
+      description: Internal server error.
+    PaymentRequired:
+      description: Payment required. Body contains the x402 PaymentRequirements envelope with a multi-network accepts array; the per-call price is in accepts[].amount (and on the operation as x-2s-price). Sign for whichever rail you hold USDC on (EIP-3009 for Base, partial SPL transfer for Solana) and retry with the PAYMENT-SIGNATURE header (X-PAYMENT also accepted for v1 clients).
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/X402PaymentRequiredV2'
+    BadRequest:
+      description: Bad request — invalid parameters.
+  parameters:
+    TrialMode:
+      name: trial
+      in: query
+      required: false
+      description: 'Try before you buy. Set to 1 for one free real call per endpoint per hour — no wallet or payment needed — to verify the endpoint before paying. Equivalent to sending the "X-2s-Trial: 1" request header. Works on every endpoint.'
+      schema:
+        type: integer
+        enum:
+        - 1
+  schemas:
+    CallMeta:
+      type: object
+      description: Per-call meta envelope — endpoint id, cost, caller kind, settlement details.
+    Source:
+      type: object
+      description: 'Provenance of the data: upstream provider, source URL, and license.'
+      properties:
+        provider:
+          type: string
+          description: Upstream data provider.
+        url:
+          type: string
+          description: Source URL or documentation link.
+        license:
+          type: string
+          description: License / usage terms for the data.
+    X402PaymentRequiredV2:
+      type: object
+      description: x402 v2 PaymentRequired envelope. Pick any entry from accepts[], sign for that rail, retry with the PAYMENT-SIGNATURE header.
+      required:
+      - x402Version
+      - accepts
+      properties:
+        x402Version:
+          type: integer
+          const: 2
+        error:
+          type: string
+          description: Human-readable reason payment is required.
+        resource:
+          type: string
+          description: The resource URL being purchased.
+        accepts:
+          type: array
+          description: Payment requirement options, one per supported network (Base USDC, Solana USDC).
+          items:
+            type: object
+            required:
+            - scheme
+            - network
+            - amount
+            - asset
+            - payTo
+            - maxTimeoutSeconds
+            properties:
+              scheme:
+                type: string
+                enum:
+                - exact
+              network:
+                type: string
+                description: CAIP-2 network id, e.g. "eip155:8453" (Base) or "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp".
+              amount:
+                type: string
+                description: Price in atomic asset units (USDC has 6 decimals).
+              asset:
+                type: string
+                description: Asset contract address / mint.
+              payTo:
+                type: string
+                description: Treasury address to pay.
+              maxTimeoutSeconds:
+                type: integer
+              extra:
+                type: object
+                description: 'Rail-specific extras (EVM: EIP-712 domain name/version; Solana: feePayer).'
+                additionalProperties: true
+        extensions:
+          type: object
+          description: Optional discovery metadata (e.g. bazaar input/output schemas).
+          additionalProperties: true
+  securitySchemes:
+    x402Payment:
+      type: apiKey
+      in: header
+      name: PAYMENT-SIGNATURE
+      description: 'x402 protocol v2: base64-encoded PaymentPayload. Call any paid endpoint without auth to receive a 402 with a multi-network PaymentRequirements envelope. Sign for either rail: EIP-3009 transferWithAuthorization (Base USDC) OR a partial SPL token transfer (Solana USDC). Retry with PAYMENT-SIGNATURE header. X-PAYMENT is also accepted for v1 buyer clients. See https://x402.org.'

@@ -1,0 +1,1346 @@
+openapi: 3.2.0
+info:
+  title: 2s — the (most) everything Health API
+  version: '1'
+  summary: The (most) everything API.
+  description: 'The (most) everything API for AI agents: 575+ pay-per-call endpoints on one origin.'
+  contact:
+    name: 2s
+    url: https://2s.io
+    email: alley@2s.io
+  x-logo:
+    url: https://2s.io/icon-512.png
+    altText: 2s
+  x-guidance: 'Pay-per-call REST API for AI agents — hundreds of endpoints returning ground-truth data (US public records, company & legal identifiers, finance/SEC, crypto/web3, security & CVEs, medical codes, weather & geocoding, agriculture, energy, maritime, music, and more). Every endpoint is paid per call in USDC via x402 (Base or Solana) — no API key, no signup. Call any endpoint with no auth to get a 402 PaymentRequirements envelope, sign it (EIP-3009 on Base, partial SPL transfer on Solana), and retry with the PAYMENT-SIGNATURE header. Add ?trial=1 for one free real call per endpoint per hour to test before paying. To discover the right endpoint: GET https://2s.io/api/directory for the full catalog, or GET https://2s.io/api/search/endpoints?q=<natural-language task> for a ranked match. Per-call price is on each operation as x-payment-info (from $0.001). Batch up to 50 calls behind one payment via POST https://2s.io/api/batch/run.'
+servers:
+- url: https://2s.io
+tags:
+- name: Health
+paths:
+  /api/health/disease-surveillance:
+    get:
+      tags:
+      - Health
+      summary: Current US notifiable-disease surveillance from the CDC
+      description: 'Current US notifiable-disease surveillance from the CDC NNDSS (National Notifiable Diseases Surveillance System) weekly tables. Returns provisional weekly case counts for ~139 nationally notifiable conditions (e.g. Measles, Pertussis, Mumps, Hepatitis A, Lyme disease, Gonorrhea, West Nile, Dengue) by reporting area and MMWR week, updated weekly. Filter by condition (substring, case-insensitive: "measles" matches "Measles, Indigenous"), location (a reporting area: a US state full name like "California", "New York City", "U.S. Residents", a census region like "Pacific", or a territory), year (MMWR year, 2022 to current), and weeks (most-recent N observations). At least one of condition or location is required. Each record reports the current-week count, the previous-52-week maximum, cumulative cases YTD this MMWR year, and cumulative YTD the prior year for same-week comparison. Public-domain CDC federal data via data.cdc.gov. Use this to see live disease activity and outbreaks that postdate an agent''s training cutoff.'
+      operationId: health_disease-surveillance
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized envelope: items = NNDSS weekly surveillance records (condition, location, MMWR year/week, current-week count, previous-52-week max, cumulative YTD this/prior year); meta echoes the resolved filters.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            condition:
+                              type: string
+                            location:
+                              type: string
+                            year:
+                              type: integer
+                            week:
+                              type: integer
+                            currentWeek:
+                              type: number
+                              nullable: true
+                            currentWeekFlag:
+                              type: string
+                              nullable: true
+                            prev52WeekMax:
+                              type: number
+                              nullable: true
+                            cumulativeYTD:
+                              type: number
+                              nullable: true
+                            cumulativeYTDPrevYear:
+                              type: number
+                              nullable: true
+                            sourceTable:
+                              type: string
+                          required:
+                          - condition
+                          - location
+                          - year
+                          - week
+                          - currentWeek
+                          - currentWeekFlag
+                          - prev52WeekMax
+                          - cumulativeYTD
+                          - cumulativeYTDPrevYear
+                          - sourceTable
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                      meta:
+                        type: object
+                        properties:
+                          condition:
+                            type: string
+                            nullable: true
+                          location:
+                            type: string
+                            nullable: true
+                          year:
+                            type: integer
+                            nullable: true
+                          weeks:
+                            type: integer
+                            nullable: true
+                        required:
+                        - condition
+                        - location
+                        - year
+                        - weeks
+                        additionalProperties: false
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: health.disease-surveillance
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.003
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.003000'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: condition
+        in: query
+        required: false
+        description: Disease/condition substring, case-insensitive.
+        schema:
+          type: string
+          minLength: 2
+          maxLength: 80
+      - name: location
+        in: query
+        required: false
+        description: 'Reporting area: state, NYC, U.S. Residents, census region, or territory.'
+        schema:
+          type: string
+          minLength: 2
+          maxLength: 60
+      - name: year
+        in: query
+        required: false
+        description: MMWR year, 2022 to current.
+        schema:
+          type: integer
+          minimum: 2022
+          maximum: 2100
+      - name: weeks
+        in: query
+        required: false
+        description: Return roughly the most-recent N weeks of observations.
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 520
+      - name: limit
+        in: query
+        required: false
+        description: Maximum number of results to return.
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 1000
+          default: 100
+      - $ref: '#/components/parameters/TrialMode'
+  /api/health/hospital-lookup:
+    get:
+      tags:
+      - Health
+      summary: CMS Care Compare lookup for every CMS-certified US hospital
+      description: CMS Care Compare lookup for every CMS-certified US hospital (~5k). Lookup by 6-digit CMS Facility ID for direct match, or fuzzy by name + state + city + hospital type, with optional minimum overall rating (1-5) filter. Each record includes facility ID, name, full address, phone, hospital type (Acute Care / Critical Access / Psychiatric / etc.), ownership category, emergency services flag, birthing-friendly designation, CMS overall star rating, and per-measure-group counts (mortality, safety, readmission, patient experience, effectiveness, timeliness, medical imaging). Public-domain federal data.
+      operationId: health_hospital-lookup
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized envelope: items = CMS-certified hospital records; total = upstream match count; meta.query echoes the search.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            facilityId:
+                              type: string
+                            name:
+                              type: string
+                            address:
+                              type: string
+                              nullable: true
+                            city:
+                              type: string
+                              nullable: true
+                            state:
+                              type: string
+                              nullable: true
+                            zipcode:
+                              type: string
+                              nullable: true
+                            county:
+                              type: string
+                              nullable: true
+                            phone:
+                              type: string
+                              nullable: true
+                            hospitalType:
+                              type: string
+                              nullable: true
+                            ownership:
+                              type: string
+                              nullable: true
+                            hasEmergencyServices:
+                              type: boolean
+                              nullable: true
+                            meetsBirthingFriendlyCriteria:
+                              type: boolean
+                              nullable: true
+                            overallRating:
+                              type: integer
+                              nullable: true
+                            mortalityGroupCount:
+                              type: integer
+                              nullable: true
+                            safetyGroupCount:
+                              type: integer
+                              nullable: true
+                            readmissionGroupCount:
+                              type: integer
+                              nullable: true
+                            experienceGroupCount:
+                              type: integer
+                              nullable: true
+                            effectivenessGroupCount:
+                              type: integer
+                              nullable: true
+                            timelinessGroupCount:
+                              type: integer
+                              nullable: true
+                            imagingGroupCount:
+                              type: integer
+                              nullable: true
+                          required:
+                          - facilityId
+                          - name
+                          - address
+                          - city
+                          - state
+                          - zipcode
+                          - county
+                          - phone
+                          - hospitalType
+                          - ownership
+                          - hasEmergencyServices
+                          - meetsBirthingFriendlyCriteria
+                          - overallRating
+                          - mortalityGroupCount
+                          - safetyGroupCount
+                          - readmissionGroupCount
+                          - experienceGroupCount
+                          - effectivenessGroupCount
+                          - timelinessGroupCount
+                          - imagingGroupCount
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                      meta:
+                        type: object
+                        properties:
+                          query:
+                            type: object
+                            properties:
+                              facilityId:
+                                type: string
+                                nullable: true
+                              name:
+                                type: string
+                                nullable: true
+                              city:
+                                type: string
+                                nullable: true
+                              state:
+                                type: string
+                                nullable: true
+                              hospitalType:
+                                type: string
+                                nullable: true
+                              minRating:
+                                type: integer
+                                nullable: true
+                              limit:
+                                type: integer
+                              offset:
+                                type: integer
+                            required:
+                            - facilityId
+                            - name
+                            - city
+                            - state
+                            - hospitalType
+                            - minRating
+                            - limit
+                            - offset
+                            additionalProperties: false
+                          returned:
+                            type: integer
+                        required:
+                        - query
+                        - returned
+                        additionalProperties: false
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: health.hospital-lookup
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.003
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.003000'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: facilityId
+        in: query
+        required: false
+        description: Facility ID.
+        schema:
+          type: string
+          pattern: ^\d{6}$
+      - name: name
+        in: query
+        required: false
+        description: Name to search for.
+        schema:
+          type: string
+          minLength: 2
+          maxLength: 200
+      - name: city
+        in: query
+        required: false
+        description: City name to filter by.
+        schema:
+          type: string
+          minLength: 2
+          maxLength: 100
+      - name: state
+        in: query
+        required: false
+        description: US state — two-letter postal abbreviation (e.g. CA) or full name.
+        schema:
+          type: string
+          minLength: 2
+          maxLength: 2
+          pattern: ^[A-Za-z]{2}$
+      - name: hospitalType
+        in: query
+        required: false
+        description: Hospital type.
+        schema:
+          type: string
+          minLength: 2
+          maxLength: 80
+      - name: minRating
+        in: query
+        required: false
+        description: Min rating.
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 5
+      - name: limit
+        in: query
+        required: false
+        description: Maximum number of results to return.
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 20
+      - name: offset
+        in: query
+        required: false
+        description: Number of results to skip before returning (pagination offset).
+        schema:
+          type: integer
+          minimum: 0
+          maximum: 10000
+          default: 0
+      - $ref: '#/components/parameters/TrialMode'
+  /api/health/hospital-quality:
+    get:
+      tags:
+      - Health
+      summary: CMS Care Compare hospital quality ratings - the data behind
+      description: 'CMS Care Compare hospital quality ratings — the data behind medicare.gov hospital ratings, for all ~5,300 Medicare-certified US hospitals. Look up by facilityId (CMS certification number), or filter by state, city, and name (partial match). Each row: facility id/name/address/phone, hospital type + ownership, emergency services, overall star rating (1-5), and per-domain measure summaries (mortality, safety of care, readmission, patient experience, timeliness, effectiveness) showing whether the hospital performs better/same/worse than the national average. Rows returned with CMS''s documented column names. Public-domain federal data.'
+      operationId: health_hospital-quality
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized envelope: items = CMS Care Compare hospital rows (CMS''s documented column names, incl. hospital_overall_rating); total = upstream match count (null if CMS omits it).'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties: {}
+                          additionalProperties: true
+                          description: Raw CMS Care Compare hospital row with CMS's documented snake_case column names (facility_id, facility_name, citytown, state, hospital_type, hospital_overall_rating, per-domain measure columns, …).
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: health.hospital-quality
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.0072
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.007200'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: facilityId
+        in: query
+        required: false
+        description: Facility ID.
+        schema:
+          type: string
+          pattern: ^[0-9A-Za-z]{6}$
+      - name: state
+        in: query
+        required: false
+        description: US state — two-letter postal abbreviation (e.g. CA) or full name.
+        schema:
+          type: string
+          minLength: 2
+          maxLength: 2
+      - name: city
+        in: query
+        required: false
+        description: City name to filter by.
+        schema:
+          type: string
+          minLength: 2
+          maxLength: 60
+      - name: name
+        in: query
+        required: false
+        description: Name to search for.
+        schema:
+          type: string
+          minLength: 2
+          maxLength: 120
+      - name: limit
+        in: query
+        required: false
+        description: Maximum number of results to return.
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 10
+      - name: offset
+        in: query
+        required: false
+        description: Number of results to skip before returning (pagination offset).
+        schema:
+          type: integer
+          minimum: 0
+          default: 0
+      - $ref: '#/components/parameters/TrialMode'
+  /api/health/medicare-provider:
+    get:
+      tags:
+      - Health
+      summary: Medicare utilization + payments by provider (CMS 'Physician
+      description: 'Medicare utilization + payments by provider (CMS ''Physician & Other Practitioners - by Provider'' annual dataset). Look up by npi, or filter by lastName (exact last/organization name) + state. Each row: provider NPI, name, credentials, entity type, full address, provider type/specialty, Medicare participation, beneficiary counts, total services, submitted charges, Medicare allowed/payment amounts, plus beneficiary demographic + chronic-condition aggregates — CMS''s documented column names (Rndrng_NPI, Tot_Srvcs, Tot_Mdcr_Pymt_Amt, etc). Complements /api/health/open-payments (industry payments to the same NPIs). KYC, healthcare-fraud research, and provider due diligence. For a provider 360 (identity + industry payments + this) by NPI in one call, see /api/health/provider-profile. Public-domain federal data.'
+      operationId: health_medicare-provider
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized envelope: items = CMS Medicare provider utilization rows (CMS''s documented column names: Rndrng_NPI, Tot_Srvcs, Tot_Mdcr_Pymt_Amt, …); total = null (CMS data-api returns no match count).'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties: {}
+                          additionalProperties: true
+                          description: Raw CMS Medicare provider utilization row with CMS's documented column names (Rndrng_NPI, Rndrng_Prvdr_Last_Org_Name, Tot_Benes, Tot_Srvcs, Tot_Mdcr_Pymt_Amt, …). Values are strings as published by CMS.
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: health.medicare-provider
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.0072
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.007200'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: npi
+        in: query
+        required: false
+        description: NPI.
+        schema:
+          type: string
+          pattern: ^\d{10}$
+      - name: lastName
+        in: query
+        required: false
+        description: Last name to filter by.
+        schema:
+          type: string
+          minLength: 2
+          maxLength: 80
+      - name: state
+        in: query
+        required: false
+        description: US state — two-letter postal abbreviation (e.g. CA) or full name.
+        schema:
+          type: string
+          minLength: 2
+          maxLength: 2
+      - name: limit
+        in: query
+        required: false
+        description: Maximum number of results to return.
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 10
+      - name: offset
+        in: query
+        required: false
+        description: Number of results to skip before returning (pagination offset).
+        schema:
+          type: integer
+          minimum: 0
+          default: 0
+      - $ref: '#/components/parameters/TrialMode'
+  /api/health/mortality-stats:
+    get:
+      tags:
+      - Health
+      summary: US mortality statistics from CDC NCHS
+      description: 'US mortality statistics from CDC NCHS. dataset=leading-causes (default): annual deaths + age-adjusted death rate per 100k by state and top-10 cause of death, 1999-2017 — filter by state (full name, e.g. "California", or "United States"), year, cause (e.g. "Heart disease", "Cancer", "Suicide"). dataset=weekly-counts: provisional weekly death counts by jurisdiction with per-cause columns (all-cause, natural, COVID-19, heart disease, cancer, etc.), 2020-2023 — filter by state and mmwrYear. Rows returned raw from CDC with documented column names. Public-domain federal data.'
+      operationId: health_mortality-stats
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized envelope: items = raw CDC NCHS rows (documented column names); total = null (Socrata page, no upstream count); meta.dataset echoes which dataset was queried.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties: {}
+                          additionalProperties: true
+                          description: 'Raw CDC NCHS row; columns depend on dataset (leading-causes: year, state, cause_name, deaths, aadr; weekly-counts: jurisdiction_of_occurrence, week_ending_date, per-cause count columns). Values are strings as published by Socrata.'
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                      meta:
+                        type: object
+                        properties:
+                          dataset:
+                            type: string
+                            enum:
+                            - leading-causes
+                            - weekly-counts
+                        required:
+                        - dataset
+                        additionalProperties: false
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: health.mortality-stats
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.006
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.006000'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: dataset
+        in: query
+        required: false
+        description: Dataset.
+        schema:
+          type: string
+          enum:
+          - leading-causes
+          - weekly-counts
+          default: leading-causes
+      - name: state
+        in: query
+        required: false
+        description: US state — two-letter postal abbreviation (e.g. CA) or full name.
+        schema:
+          type: string
+          minLength: 2
+          maxLength: 40
+      - name: year
+        in: query
+        required: false
+        description: Four-digit calendar year.
+        schema:
+          type: integer
+          minimum: 1999
+          maximum: 2023
+      - name: cause
+        in: query
+        required: false
+        description: Cause.
+        schema:
+          type: string
+          minLength: 2
+          maxLength: 80
+      - name: limit
+        in: query
+        required: false
+        description: Maximum number of results to return.
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 200
+          default: 25
+      - name: offset
+        in: query
+        required: false
+        description: Number of results to skip before returning (pagination offset).
+        schema:
+          type: integer
+          minimum: 0
+          default: 0
+      - $ref: '#/components/parameters/TrialMode'
+  /api/health/open-payments:
+    get:
+      tags:
+      - Health
+      summary: Search CMS Open Payments - every payment from a drug/device
+      description: Search CMS Open Payments — every payment from a drug/device manufacturer or GPO to a US physician or teaching hospital under the Sunshine Act (~10M records per year). Lookup by 10-digit NPI for the recipient (most precise), by last/first name + state, or by payer (manufacturer) name. Each record includes recipient (NPI, name, specialty, location), payer (manufacturer name + state/country), payment (amount USD, date, nature of payment such as 'Consulting Fee'/'Food and Beverage'/'Travel'/'Royalty', form of payment), and associated product (drug/device name + therapeutic area). Investigative journalism + KYC + healthcare conflict-of-interest research. Public-domain federal data.
+      operationId: health_open-payments
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized envelope: items = CMS Open Payments records matching the query; total = upstream match count; meta carries the query echo + program year. For a provider 360 (identity + this + Medicare billing) by NPI in one call, see /api/health/provider-profile.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            recordId:
+                              type: string
+                            recipient:
+                              type: object
+                              properties:
+                                npi:
+                                  type: string
+                                  nullable: true
+                                firstName:
+                                  type: string
+                                  nullable: true
+                                lastName:
+                                  type: string
+                                  nullable: true
+                                type:
+                                  type: string
+                                  nullable: true
+                                primarySpecialty:
+                                  type: string
+                                  nullable: true
+                                city:
+                                  type: string
+                                  nullable: true
+                                state:
+                                  type: string
+                                  nullable: true
+                              required:
+                              - npi
+                              - firstName
+                              - lastName
+                              - type
+                              - primarySpecialty
+                              - city
+                              - state
+                              additionalProperties: false
+                            payer:
+                              type: object
+                              properties:
+                                name:
+                                  type: string
+                                  nullable: true
+                                state:
+                                  type: string
+                                  nullable: true
+                                country:
+                                  type: string
+                                  nullable: true
+                              required:
+                              - name
+                              - state
+                              - country
+                              additionalProperties: false
+                            payment:
+                              type: object
+                              properties:
+                                amountUsd:
+                                  type: number
+                                  nullable: true
+                                date:
+                                  type: string
+                                  nullable: true
+                                natureOfPayment:
+                                  type: string
+                                  nullable: true
+                                formOfPayment:
+                                  type: string
+                                  nullable: true
+                              required:
+                              - amountUsd
+                              - date
+                              - natureOfPayment
+                              - formOfPayment
+                              additionalProperties: false
+                            associatedProduct:
+                              type: object
+                              properties:
+                                type:
+                                  type: string
+                                  nullable: true
+                                name:
+                                  type: string
+                                  nullable: true
+                                therapeuticArea:
+                                  type: string
+                                  nullable: true
+                              required:
+                              - type
+                              - name
+                              - therapeuticArea
+                              additionalProperties: false
+                            programYear:
+                              type: string
+                              nullable: true
+                          required:
+                          - recordId
+                          - recipient
+                          - payer
+                          - payment
+                          - associatedProduct
+                          - programYear
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                      meta:
+                        type: object
+                        properties:
+                          query:
+                            type: object
+                            properties:
+                              npi:
+                                type: string
+                                nullable: true
+                              lastName:
+                                type: string
+                                nullable: true
+                              firstName:
+                                type: string
+                                nullable: true
+                              payerName:
+                                type: string
+                                nullable: true
+                              state:
+                                type: string
+                                nullable: true
+                              minAmount:
+                                type: number
+                                nullable: true
+                              limit:
+                                type: integer
+                              offset:
+                                type: integer
+                            required:
+                            - npi
+                            - lastName
+                            - firstName
+                            - payerName
+                            - state
+                            - minAmount
+                            - limit
+                            - offset
+                            additionalProperties: false
+                          programYear:
+                            type: string
+                        required:
+                        - query
+                        - programYear
+                        additionalProperties: false
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: health.open-payments
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.003
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.003000'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: npi
+        in: query
+        required: false
+        description: NPI.
+        schema:
+          type: string
+          pattern: ^\d{10}$
+      - name: firstName
+        in: query
+        required: false
+        description: First name to filter by.
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 80
+      - name: lastName
+        in: query
+        required: false
+        description: Last name to filter by.
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 80
+      - name: payerName
+        in: query
+        required: false
+        description: Payer name.
+        schema:
+          type: string
+          minLength: 2
+          maxLength: 200
+      - name: state
+        in: query
+        required: false
+        description: US state — two-letter postal abbreviation (e.g. CA) or full name.
+        schema:
+          type: string
+          minLength: 2
+          maxLength: 2
+          pattern: ^[A-Za-z]{2}$
+      - name: minAmount
+        in: query
+        required: false
+        description: Minimum amount to include (USD).
+        schema:
+          type: number
+          minimum: 0
+          maximum: 10000000
+      - name: limit
+        in: query
+        required: false
+        description: Maximum number of results to return.
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 20
+      - name: offset
+        in: query
+        required: false
+        description: Number of results to skip before returning (pagination offset).
+        schema:
+          type: integer
+          minimum: 0
+          maximum: 100000
+          default: 0
+      - $ref: '#/components/parameters/TrialMode'
+  /api/health/provider-profile:
+    get:
+      tags:
+      - Health
+      summary: Provider 360 - everything we know about a US healthcare
+      description: 'Provider 360 — everything we know about a US healthcare provider, merged on their 10-digit NPI in one call. Combines three federal datasets: identity (NPPES registry: name, specialty/taxonomy, practice address, licenses), industry payments (CMS Open Payments: what drug & device makers paid them), and Medicare billing (CMS Physician & Other Practitioners: services, charges, and Medicare payment amounts). Each section reports found/error independently — a provider with no Open Payments or Medicare record still returns identity. KYC, healthcare-fraud research, investigative journalism, provider due diligence. Pass npi (required). For the individual sources see /api/license/medical, /api/health/open-payments, /api/health/medicare-provider.'
+      operationId: health_provider-profile
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      npi:
+                        type: string
+                      identity:
+                        type: object
+                        properties:
+                          found:
+                            type: boolean
+                          error:
+                            type: string
+                            nullable: true
+                          provider:
+                            type: object
+                            additionalProperties: {}
+                            nullable: true
+                        required:
+                        - found
+                        - error
+                        - provider
+                        additionalProperties: false
+                      openPayments:
+                        type: object
+                        properties:
+                          found:
+                            type: boolean
+                          error:
+                            type: string
+                            nullable: true
+                          totalCount:
+                            type: number
+                            nullable: true
+                          payments:
+                            type: array
+                            items:
+                              type: object
+                              additionalProperties: {}
+                        required:
+                        - found
+                        - error
+                        - totalCount
+                        - payments
+                        additionalProperties: false
+                      medicare:
+                        type: object
+                        properties:
+                          found:
+                            type: boolean
+                          error:
+                            type: string
+                            nullable: true
+                          record:
+                            type: object
+                            additionalProperties: {}
+                            nullable: true
+                        required:
+                        - found
+                        - error
+                        - record
+                        additionalProperties: false
+                      sources:
+                        type: array
+                        items:
+                          type: object
+                          additionalProperties: {}
+                    required:
+                    - npi
+                    - identity
+                    - openPayments
+                    - medicare
+                    - sources
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: health.provider-profile
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.0144
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: legacy
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.014400'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: npi
+        in: query
+        required: true
+        description: NPI.
+        schema:
+          type: string
+          pattern: ^\d{10}$
+      - $ref: '#/components/parameters/TrialMode'
+components:
+  responses:
+    MethodNotAllowed:
+      description: Method not allowed — see `Allow` header for the supported method.
+    UpstreamError:
+      description: Upstream provider error.
+    ServerError:
+      description: Internal server error.
+    PaymentRequired:
+      description: Payment required. Body contains the x402 PaymentRequirements envelope with a multi-network accepts array; the per-call price is in accepts[].amount (and on the operation as x-2s-price). Sign for whichever rail you hold USDC on (EIP-3009 for Base, partial SPL transfer for Solana) and retry with the PAYMENT-SIGNATURE header (X-PAYMENT also accepted for v1 clients).
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/X402PaymentRequiredV2'
+    BadRequest:
+      description: Bad request — invalid parameters.
+  parameters:
+    TrialMode:
+      name: trial
+      in: query
+      required: false
+      description: 'Try before you buy. Set to 1 for one free real call per endpoint per hour — no wallet or payment needed — to verify the endpoint before paying. Equivalent to sending the "X-2s-Trial: 1" request header. Works on every endpoint.'
+      schema:
+        type: integer
+        enum:
+        - 1
+  schemas:
+    CallMeta:
+      type: object
+      description: Per-call meta envelope — endpoint id, cost, caller kind, settlement details.
+    Source:
+      type: object
+      description: 'Provenance of the data: upstream provider, source URL, and license.'
+      properties:
+        provider:
+          type: string
+          description: Upstream data provider.
+        url:
+          type: string
+          description: Source URL or documentation link.
+        license:
+          type: string
+          description: License / usage terms for the data.
+    X402PaymentRequiredV2:
+      type: object
+      description: x402 v2 PaymentRequired envelope. Pick any entry from accepts[], sign for that rail, retry with the PAYMENT-SIGNATURE header.
+      required:
+      - x402Version
+      - accepts
+      properties:
+        x402Version:
+          type: integer
+          const: 2
+        error:
+          type: string
+          description: Human-readable reason payment is required.
+        resource:
+          type: string
+          description: The resource URL being purchased.
+        accepts:
+          type: array
+          description: Payment requirement options, one per supported network (Base USDC, Solana USDC).
+          items:
+            type: object
+            required:
+            - scheme
+            - network
+            - amount
+            - asset
+            - payTo
+            - maxTimeoutSeconds
+            properties:
+              scheme:
+                type: string
+                enum:
+                - exact
+              network:
+                type: string
+                description: CAIP-2 network id, e.g. "eip155:8453" (Base) or "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp".
+              amount:
+                type: string
+                description: Price in atomic asset units (USDC has 6 decimals).
+              asset:
+                type: string
+                description: Asset contract address / mint.
+              payTo:
+                type: string
+                description: Treasury address to pay.
+              maxTimeoutSeconds:
+                type: integer
+              extra:
+                type: object
+                description: 'Rail-specific extras (EVM: EIP-712 domain name/version; Solana: feePayer).'
+                additionalProperties: true
+        extensions:
+          type: object
+          description: Optional discovery metadata (e.g. bazaar input/output schemas).
+          additionalProperties: true
+  securitySchemes:
+    x402Payment:
+      type: apiKey
+      in: header
+      name: PAYMENT-SIGNATURE
+      description: 'x402 protocol v2: base64-encoded PaymentPayload. Call any paid endpoint without auth to receive a 402 with a multi-network PaymentRequirements envelope. Sign for either rail: EIP-3009 transferWithAuthorization (Base USDC) OR a partial SPL token transfer (Solana USDC). Retry with PAYMENT-SIGNATURE header. X-PAYMENT is also accepted for v1 buyer clients. See https://x402.org.'

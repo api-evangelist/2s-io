@@ -1,0 +1,1783 @@
+openapi: 3.2.0
+info:
+  title: 2s — the (most) everything Store API
+  version: '1'
+  summary: The (most) everything API.
+  description: 'The (most) everything API for AI agents: 575+ pay-per-call endpoints on one origin.'
+  contact:
+    name: 2s
+    url: https://2s.io
+    email: alley@2s.io
+  x-logo:
+    url: https://2s.io/icon-512.png
+    altText: 2s
+  x-guidance: 'Pay-per-call REST API for AI agents — hundreds of endpoints returning ground-truth data (US public records, company & legal identifiers, finance/SEC, crypto/web3, security & CVEs, medical codes, weather & geocoding, agriculture, energy, maritime, music, and more). Every endpoint is paid per call in USDC via x402 (Base or Solana) — no API key, no signup. Call any endpoint with no auth to get a 402 PaymentRequirements envelope, sign it (EIP-3009 on Base, partial SPL transfer on Solana), and retry with the PAYMENT-SIGNATURE header. Add ?trial=1 for one free real call per endpoint per hour to test before paying. To discover the right endpoint: GET https://2s.io/api/directory for the full catalog, or GET https://2s.io/api/search/endpoints?q=<natural-language task> for a ranked match. Per-call price is on each operation as x-payment-info (from $0.001). Batch up to 50 calls behind one payment via POST https://2s.io/api/batch/run.'
+servers:
+- url: https://2s.io
+tags:
+- name: Store
+paths:
+  /api/store/blob-delete:
+    post:
+      tags:
+      - Store
+      summary: 'STORE: delete a file you uploaded, scoped to YOUR wallet'
+      description: 'STORE: delete a file you uploaded, scoped to YOUR wallet — removes the bytes from storage and the metadata. Idempotent: deleting a missing key succeeds with deleted:false. Private to your wallet (the x402 payer).'
+      operationId: store_blob-delete
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized: items = [the delete result].'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            key:
+                              type: string
+                            deleted:
+                              type: boolean
+                          required:
+                          - key
+                          - deleted
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: store.blob-delete
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.005
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.005000'
+        protocols:
+        - x402: {}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                ns:
+                  type: string
+                  description: Namespace the blob lives in.
+                key:
+                  type: string
+                  description: Key to delete.
+              required:
+              - ns
+              - key
+              additionalProperties: false
+      parameters:
+      - $ref: '#/components/parameters/TrialMode'
+  /api/store/blob-get:
+    post:
+      tags:
+      - Store
+      summary: 'STORE: download a file you uploaded with store.blob-put, in'
+      description: 'STORE: download a file you uploaded with store.blob-put, in a single paid call, scoped to YOUR wallet. The response body IS the raw bytes (with the stored Content-Type) — no extra fetch, no public URL. Every read is an x402-tolled call streamed through us, so your data can never be fetched without payment. Reading resets the 90-day TTL. 404 if the key doesn''t exist or has expired. Private to your wallet (the x402 payer).'
+      operationId: store_blob-get
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: The raw file bytes, served with the stored Content-Type.
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: store.blob-get
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.025
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.025000'
+        protocols:
+        - x402: {}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                ns:
+                  type: string
+                  description: Namespace the blob lives in.
+                key:
+                  type: string
+                  description: Key to download.
+              required:
+              - ns
+              - key
+              additionalProperties: false
+      parameters:
+      - $ref: '#/components/parameters/TrialMode'
+  /api/store/blob-list:
+    post:
+      tags:
+      - Store
+      summary: 'STORE: list the files you''ve uploaded in a namespace'
+      description: 'STORE: list the files you''ve uploaded in a namespace, scoped to YOUR wallet — keys, sizes, content types, expiry (metadata only, not the bytes). Optional prefix filter + cursor pagination (pass nextCursor as `after`). Listing does NOT extend TTLs or move bytes. Private to your wallet (the x402 payer).'
+      operationId: store_blob-list
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized: items = blob metadata; meta.nextCursor for pagination.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            key:
+                              type: string
+                            bytes:
+                              type: number
+                            contentType:
+                              type: string
+                              nullable: true
+                            expiresAt:
+                              type: string
+                          required:
+                          - key
+                          - bytes
+                          - contentType
+                          - expiresAt
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                      meta:
+                        type: object
+                        properties:
+                          nextCursor:
+                            type: string
+                            nullable: true
+                        required:
+                        - nextCursor
+                        additionalProperties: false
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: store.blob-list
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.005
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.005000'
+        protocols:
+        - x402: {}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                ns:
+                  type: string
+                  description: Namespace to list.
+                prefix:
+                  type: string
+                  description: Only return keys starting with this prefix.
+                limit:
+                  type: integer
+                  minimum: 1
+                  maximum: 1000
+                  description: Max keys to return. Default 50, max 1000.
+                after:
+                  type: string
+                  description: Cursor — pass the previous response's nextCursor to page forward.
+              required:
+              - ns
+              additionalProperties: false
+      parameters:
+      - $ref: '#/components/parameters/TrialMode'
+  /api/store/blob-put:
+    post:
+      tags:
+      - Store
+      summary: 'STORE: upload a file (any bytes) in a single paid call'
+      description: 'STORE: upload a file (any bytes) in a single paid call, scoped to YOUR wallet. Send the file base64-encoded in `data` with an optional contentType; we store it privately and key it to your payer address. Read it back with store.blob-get. Up to 3 MB per file (one-call limit); 50 MB total per wallet across kv/documents/vectors/files. Kept on a rolling 90-day window that resets on every touch. There is NO public URL — only paid store.blob-get can read it, so your bytes are never fetchable without payment. No account or API key.'
+      operationId: store_blob-put
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized: items = [the stored blob metadata].'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            key:
+                              type: string
+                            bytes:
+                              type: number
+                            contentType:
+                              type: string
+                              nullable: true
+                            expiresAt:
+                              type: string
+                          required:
+                          - key
+                          - bytes
+                          - contentType
+                          - expiresAt
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: store.blob-put
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.025
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.025000'
+        protocols:
+        - x402: {}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                ns:
+                  type: string
+                  description: Namespace to group blobs, 1-64 chars of [A-Za-z0-9._:-]. e.g. "uploads".
+                key:
+                  type: string
+                  description: Key within the namespace, up to 256 chars. e.g. "snapshot-42.json".
+                data:
+                  type: string
+                  minLength: 1
+                  description: The file bytes, base64-encoded. Decoded size up to 3 MB.
+                contentType:
+                  type: string
+                  maxLength: 128
+                  description: MIME type to return on read. e.g. "application/json", "image/png". Default application/octet-stream.
+              required:
+              - ns
+              - key
+              - data
+              additionalProperties: false
+      parameters:
+      - $ref: '#/components/parameters/TrialMode'
+  /api/store/doc-delete:
+    post:
+      tags:
+      - Store
+      summary: 'STORE: delete a stored document by id, scoped to YOUR wallet'
+      description: 'STORE: delete a stored document by id, scoped to YOUR wallet. Idempotent — deleting a missing id succeeds with deleted:false. Private to your wallet (the x402 payer).'
+      operationId: store_doc-delete
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized: items = [the delete result].'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            id:
+                              type: string
+                            deleted:
+                              type: boolean
+                          required:
+                          - id
+                          - deleted
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: store.doc-delete
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.005
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.005000'
+        protocols:
+        - x402: {}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                ns:
+                  type: string
+                  description: Namespace the document lives in.
+                id:
+                  type: string
+                  description: Document id to delete.
+              required:
+              - ns
+              - id
+              additionalProperties: false
+      parameters:
+      - $ref: '#/components/parameters/TrialMode'
+  /api/store/doc-get:
+    post:
+      tags:
+      - Store
+      summary: 'STORE: fetch a stored document by id, scoped to YOUR wallet'
+      description: 'STORE: fetch a stored document by id, scoped to YOUR wallet. Returns its body + meta. Reading resets the 90-day TTL (extend-on-touch). 404 if missing or expired. Private to your wallet (the x402 payer).'
+      operationId: store_doc-get
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized: items = [the document].'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            id:
+                              type: string
+                            body:
+                              type: string
+                            meta: {}
+                            expiresAt:
+                              type: string
+                          required:
+                          - id
+                          - body
+                          - expiresAt
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: store.doc-get
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.005
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.005000'
+        protocols:
+        - x402: {}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                ns:
+                  type: string
+                  description: Namespace the document lives in.
+                id:
+                  type: string
+                  description: Document id to fetch.
+              required:
+              - ns
+              - id
+              additionalProperties: false
+      parameters:
+      - $ref: '#/components/parameters/TrialMode'
+  /api/store/doc-put:
+    post:
+      tags:
+      - Store
+      summary: 'STORE: index a text document for full-text keyword search'
+      description: 'STORE: index a text document for full-text keyword search, scoped to YOUR wallet. Store body text (up to 1 MB) under an id with optional JSON meta; later find it with store.doc-search (SQLite FTS5 keyword ranking). Re-putting the same id replaces it. Kept on a rolling 90-day window. Private to your wallet (the x402 payer) — no account or API key. Pass redact=true to strip secrets (API keys, tokens, JWTs, private keys — see text.redact) from the body BEFORE it is stored, so agent memory never persists plaintext credentials; the response reports how many were removed.'
+      operationId: store_doc-put
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized: items = [the stored document].'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            id:
+                              type: string
+                            bytes:
+                              type: number
+                            expiresAt:
+                              type: string
+                            redacted:
+                              type: integer
+                              description: Count of secrets stripped from the body before storing (0 unless redact=true).
+                          required:
+                          - id
+                          - bytes
+                          - expiresAt
+                          - redacted
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: store.doc-put
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.005
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.005000'
+        protocols:
+        - x402: {}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                ns:
+                  type: string
+                  description: Namespace to group documents.
+                id:
+                  type: string
+                  description: Document id within the namespace, up to 256 chars.
+                body:
+                  type: string
+                  minLength: 1
+                  description: The text to index, up to 1 MB.
+                meta:
+                  description: Optional JSON metadata returned with search hits (not indexed). e.g. {"title":"notes","tags":["x"]}.
+                redact:
+                  type: boolean
+                  description: When true, strip secrets from body before storing (deja-vu-style index-time redaction). Default false.
+              required:
+              - ns
+              - id
+              - body
+              additionalProperties: false
+      parameters:
+      - $ref: '#/components/parameters/TrialMode'
+  /api/store/doc-search:
+    post:
+      tags:
+      - Store
+      summary: 'STORE: full-text keyword search over documents you stored'
+      description: 'STORE: full-text keyword search over documents you stored in a namespace, scoped to YOUR wallet. Uses SQLite FTS5 — supports terms, phrases ("..."), AND/OR/NOT, and prefix* matching. Returns ranked hits with body + meta + a relevance score (higher = better). Searching does NOT extend TTLs. Private to your wallet (the x402 payer).'
+      operationId: store_doc-search
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized: items = ranked hits (best first).'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            id:
+                              type: string
+                            body:
+                              type: string
+                            meta: {}
+                            score:
+                              type: number
+                          required:
+                          - id
+                          - body
+                          - score
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: store.doc-search
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.005
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.005000'
+        protocols:
+        - x402: {}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                ns:
+                  type: string
+                  description: Namespace to search.
+                query:
+                  type: string
+                  minLength: 1
+                  description: FTS5 query. e.g. `invoice AND 2026`, `"exact phrase"`, `lim*`.
+                limit:
+                  type: integer
+                  minimum: 1
+                  maximum: 1000
+                  description: Max hits. Default 50, max 1000.
+              required:
+              - ns
+              - query
+              additionalProperties: false
+      parameters:
+      - $ref: '#/components/parameters/TrialMode'
+  /api/store/kv-delete:
+    post:
+      tags:
+      - Store
+      summary: 'STORE: delete a key/value you stored, scoped to YOUR wallet'
+      description: 'STORE: delete a key/value you stored, scoped to YOUR wallet. Returns whether a value was removed. Idempotent — deleting a missing key succeeds with deleted:false. Private to your wallet (the x402 payer).'
+      operationId: store_kv-delete
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized: items = [the delete result].'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            key:
+                              type: string
+                            deleted:
+                              type: boolean
+                          required:
+                          - key
+                          - deleted
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: store.kv-delete
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.005
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.005000'
+        protocols:
+        - x402: {}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                ns:
+                  type: string
+                  description: Namespace the key lives in.
+                key:
+                  type: string
+                  description: Key to delete.
+              required:
+              - ns
+              - key
+              additionalProperties: false
+      parameters:
+      - $ref: '#/components/parameters/TrialMode'
+  /api/store/kv-get:
+    post:
+      tags:
+      - Store
+      summary: 'STORE: read back a JSON value you stored with store.kv-put'
+      description: 'STORE: read back a JSON value you stored with store.kv-put, scoped to YOUR wallet. Returns the value and its expiry. Reading the object resets its 90-day TTL (extend-on-touch). Returns 404 if the key doesn''t exist or has expired. Data is private to your wallet (the x402 payer) — no account or API key.'
+      operationId: store_kv-get
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized: items = [the value].'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            key:
+                              type: string
+                            value: {}
+                            expiresAt:
+                              type: string
+                          required:
+                          - key
+                          - expiresAt
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: store.kv-get
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.005
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.005000'
+        protocols:
+        - x402: {}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                ns:
+                  type: string
+                  description: Namespace the key lives in.
+                key:
+                  type: string
+                  description: Key to read.
+              required:
+              - ns
+              - key
+              additionalProperties: false
+      parameters:
+      - $ref: '#/components/parameters/TrialMode'
+  /api/store/kv-put:
+    post:
+      tags:
+      - Store
+      summary: 'STORE: persist a JSON value under a key, scoped to YOUR'
+      description: 'STORE: persist a JSON value under a key, scoped to YOUR wallet (the x402 payer). Key/value store with retrieval — set a value once, read it back later with store.kv-get or list with store.kv-scan. Data is private to your wallet and kept on a rolling 90-day window that resets every time you touch the object. Use a namespace (ns) to group related keys. Value up to 1 MB; 50 MB total per wallet across kv/documents/vectors/files. No account or API key — pay per call with x402 and your data is keyed to your payer address.'
+      operationId: store_kv-put
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized: items = [the stored key + its TTL].'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            key:
+                              type: string
+                            bytes:
+                              type: number
+                            expiresAt:
+                              type: string
+                          required:
+                          - key
+                          - bytes
+                          - expiresAt
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: store.kv-put
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.005
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.005000'
+        protocols:
+        - x402: {}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                ns:
+                  type: string
+                  description: Namespace to group keys, 1-64 chars of [A-Za-z0-9._:-]. e.g. "memory" or "session:42".
+                key:
+                  type: string
+                  description: Key within the namespace, up to 256 chars of [A-Za-z0-9._:/-].
+                value:
+                  description: Any JSON value (object, array, string, number, boolean, null). Up to 1 MB serialized.
+              required:
+              - ns
+              - key
+              additionalProperties: false
+      parameters:
+      - $ref: '#/components/parameters/TrialMode'
+  /api/store/kv-scan:
+    post:
+      tags:
+      - Store
+      summary: 'STORE: list keys in a namespace, scoped to YOUR wallet'
+      description: 'STORE: list keys in a namespace, scoped to YOUR wallet, optionally filtered by key prefix and paginated with a cursor. Set values:true to include each value inline. Ordered by key; returns nextCursor when more remain (pass it as `after`). Scanning does NOT extend TTLs. Private to your wallet (the x402 payer).'
+      operationId: store_kv-scan
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized: items = matching keys; meta.nextCursor for pagination.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            key:
+                              type: string
+                            value: {}
+                            bytes:
+                              type: number
+                            expiresAt:
+                              type: string
+                          required:
+                          - key
+                          - bytes
+                          - expiresAt
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                      meta:
+                        type: object
+                        properties:
+                          nextCursor:
+                            type: string
+                            nullable: true
+                        required:
+                        - nextCursor
+                        additionalProperties: false
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: store.kv-scan
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.005
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.005000'
+        protocols:
+        - x402: {}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                ns:
+                  type: string
+                  description: Namespace to list.
+                prefix:
+                  type: string
+                  description: Only return keys starting with this prefix. e.g. "session:".
+                limit:
+                  type: integer
+                  minimum: 1
+                  maximum: 1000
+                  description: Max keys to return. Default 50, max 1000.
+                after:
+                  type: string
+                  description: Cursor — pass the previous response's nextCursor to page forward.
+                values:
+                  type: boolean
+                  description: Include each value inline (default false — keys only).
+              required:
+              - ns
+              additionalProperties: false
+      parameters:
+      - $ref: '#/components/parameters/TrialMode'
+  /api/store/usage:
+    post:
+      tags:
+      - Store
+      summary: 'STORE: report how much storage YOUR wallet is using'
+      description: 'STORE: report how much storage YOUR wallet is using — structured bytes (kv + documents + vectors) and blob bytes. Use it to track headroom against the 50 MB per-wallet total (across kv/documents/vectors/files). Scoped to your wallet (the x402 payer); reports only your own usage.'
+      operationId: store_usage
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized: items = [your usage incl. totalBytes + capBytes headroom].'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            tursoBytes:
+                              type: number
+                            blobBytes:
+                              type: number
+                            totalBytes:
+                              type: number
+                            capBytes:
+                              type: number
+                          required:
+                          - tursoBytes
+                          - blobBytes
+                          - totalBytes
+                          - capBytes
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: store.usage
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.005
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.005000'
+        protocols:
+        - x402: {}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties: {}
+              additionalProperties: false
+      parameters:
+      - $ref: '#/components/parameters/TrialMode'
+  /api/store/vector-delete:
+    post:
+      tags:
+      - Store
+      summary: 'STORE: delete a vector by id from a namespace, scoped to'
+      description: 'STORE: delete a vector by id from a namespace, scoped to YOUR wallet. Idempotent — deleting a missing id succeeds with deleted:false. Private to your wallet (the x402 payer).'
+      operationId: store_vector-delete
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized: items = [the delete result].'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            id:
+                              type: string
+                            deleted:
+                              type: boolean
+                          required:
+                          - id
+                          - deleted
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: store.vector-delete
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.005
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.005000'
+        protocols:
+        - x402: {}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                ns:
+                  type: string
+                  description: Namespace the vector lives in.
+                id:
+                  type: string
+                  description: Vector id to delete.
+              required:
+              - ns
+              - id
+              additionalProperties: false
+      parameters:
+      - $ref: '#/components/parameters/TrialMode'
+  /api/store/vector-query:
+    post:
+      tags:
+      - Store
+      summary: 'STORE: nearest-neighbor search over vectors you upserted in'
+      description: 'STORE: nearest-neighbor search over vectors you upserted in a namespace, scoped to YOUR wallet. Pass a query embedding (same dimensionality as the stored vectors) and get the top-K most similar by cosine similarity, each with its body + meta + score (1.0 = identical). The retrieval half of agent memory / RAG — bring your own query embedding. Querying does NOT extend TTLs. Private to your wallet (the x402 payer).'
+      operationId: store_vector-query
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized: items = nearest neighbors (best first).'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            id:
+                              type: string
+                            score:
+                              type: number
+                            body:
+                              type: string
+                              nullable: true
+                            meta: {}
+                          required:
+                          - id
+                          - score
+                          - body
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: store.vector-query
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.025
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.025000'
+        protocols:
+        - x402: {}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                ns:
+                  type: string
+                  description: Namespace (index) to search.
+                embedding:
+                  type: array
+                  items:
+                    type: number
+                  minItems: 1
+                  maxItems: 4096
+                  description: Query embedding (float array), same dimensionality as the stored vectors.
+                topK:
+                  type: integer
+                  minimum: 1
+                  maximum: 100
+                  description: How many neighbors to return. Default 10, max 100.
+              required:
+              - ns
+              - embedding
+              additionalProperties: false
+      parameters:
+      - $ref: '#/components/parameters/TrialMode'
+  /api/store/vector-upsert:
+    post:
+      tags:
+      - Store
+      summary: 'STORE: upsert a vector for semantic retrieval, scoped to'
+      description: 'STORE: upsert a vector for semantic retrieval, scoped to YOUR wallet. Bring your own embedding (any model, any dimension up to 4096) — store it under an id with optional body text + JSON meta, then find nearest neighbors with store.vector-query. Re-upserting the same id replaces it. This is the memory/RAG primitive for agents: no embedding key required on our side, no account, pay per call with x402. Kept on a rolling 90-day window.'
+      operationId: store_vector-upsert
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized: items = [the upserted vector].'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            id:
+                              type: string
+                            dim:
+                              type: number
+                            bytes:
+                              type: number
+                            expiresAt:
+                              type: string
+                          required:
+                          - id
+                          - dim
+                          - bytes
+                          - expiresAt
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: store.vector-upsert
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.0125
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.012500'
+        protocols:
+        - x402: {}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                ns:
+                  type: string
+                  description: Namespace (an index) to group vectors. Vectors in a namespace should share dimensionality.
+                id:
+                  type: string
+                  description: Vector id within the namespace, up to 256 chars.
+                embedding:
+                  type: array
+                  items:
+                    type: number
+                  minItems: 1
+                  maxItems: 4096
+                  description: The embedding as a float array (your model's output). 1-4096 dims.
+                body:
+                  type: string
+                  description: Optional source text returned with query hits (e.g. the chunk this vector embeds).
+                meta:
+                  description: Optional JSON metadata returned with query hits. e.g. {"docId":"d1","page":3}.
+              required:
+              - ns
+              - id
+              - embedding
+              additionalProperties: false
+      parameters:
+      - $ref: '#/components/parameters/TrialMode'
+components:
+  responses:
+    MethodNotAllowed:
+      description: Method not allowed — see `Allow` header for the supported method.
+    UpstreamError:
+      description: Upstream provider error.
+    ServerError:
+      description: Internal server error.
+    PaymentRequired:
+      description: Payment required. Body contains the x402 PaymentRequirements envelope with a multi-network accepts array; the per-call price is in accepts[].amount (and on the operation as x-2s-price). Sign for whichever rail you hold USDC on (EIP-3009 for Base, partial SPL transfer for Solana) and retry with the PAYMENT-SIGNATURE header (X-PAYMENT also accepted for v1 clients).
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/X402PaymentRequiredV2'
+    BadRequest:
+      description: Bad request — invalid parameters.
+  parameters:
+    TrialMode:
+      name: trial
+      in: query
+      required: false
+      description: 'Try before you buy. Set to 1 for one free real call per endpoint per hour — no wallet or payment needed — to verify the endpoint before paying. Equivalent to sending the "X-2s-Trial: 1" request header. Works on every endpoint.'
+      schema:
+        type: integer
+        enum:
+        - 1
+  schemas:
+    CallMeta:
+      type: object
+      description: Per-call meta envelope — endpoint id, cost, caller kind, settlement details.
+    Source:
+      type: object
+      description: 'Provenance of the data: upstream provider, source URL, and license.'
+      properties:
+        provider:
+          type: string
+          description: Upstream data provider.
+        url:
+          type: string
+          description: Source URL or documentation link.
+        license:
+          type: string
+          description: License / usage terms for the data.
+    X402PaymentRequiredV2:
+      type: object
+      description: x402 v2 PaymentRequired envelope. Pick any entry from accepts[], sign for that rail, retry with the PAYMENT-SIGNATURE header.
+      required:
+      - x402Version
+      - accepts
+      properties:
+        x402Version:
+          type: integer
+          const: 2
+        error:
+          type: string
+          description: Human-readable reason payment is required.
+        resource:
+          type: string
+          description: The resource URL being purchased.
+        accepts:
+          type: array
+          description: Payment requirement options, one per supported network (Base USDC, Solana USDC).
+          items:
+            type: object
+            required:
+            - scheme
+            - network
+            - amount
+            - asset
+            - payTo
+            - maxTimeoutSeconds
+            properties:
+              scheme:
+                type: string
+                enum:
+                - exact
+              network:
+                type: string
+                description: CAIP-2 network id, e.g. "eip155:8453" (Base) or "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp".
+              amount:
+                type: string
+                description: Price in atomic asset units (USDC has 6 decimals).
+              asset:
+                type: string
+                description: Asset contract address / mint.
+              payTo:
+                type: string
+                description: Treasury address to pay.
+              maxTimeoutSeconds:
+                type: integer
+              extra:
+                type: object
+                description: 'Rail-specific extras (EVM: EIP-712 domain name/version; Solana: feePayer).'
+                additionalProperties: true
+        extensions:
+          type: object
+          description: Optional discovery metadata (e.g. bazaar input/output schemas).
+          additionalProperties: true
+  securitySchemes:
+    x402Payment:
+      type: apiKey
+      in: header
+      name: PAYMENT-SIGNATURE
+      description: 'x402 protocol v2: base64-encoded PaymentPayload. Call any paid endpoint without auth to receive a 402 with a multi-network PaymentRequirements envelope. Sign for either rail: EIP-3009 transferWithAuthorization (Base USDC) OR a partial SPL token transfer (Solana USDC). Retry with PAYMENT-SIGNATURE header. X-PAYMENT is also accepted for v1 buyer clients. See https://x402.org.'

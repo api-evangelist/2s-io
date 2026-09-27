@@ -1,0 +1,4118 @@
+openapi: 3.2.0
+info:
+  title: 2s — the (most) everything Watchers API
+  version: '1'
+  summary: The (most) everything API.
+  description: 'The (most) everything API for AI agents: 575+ pay-per-call endpoints on one origin.'
+  contact:
+    name: 2s
+    url: https://2s.io
+    email: alley@2s.io
+  x-logo:
+    url: https://2s.io/icon-512.png
+    altText: 2s
+  x-guidance: 'Pay-per-call REST API for AI agents — hundreds of endpoints returning ground-truth data (US public records, company & legal identifiers, finance/SEC, crypto/web3, security & CVEs, medical codes, weather & geocoding, agriculture, energy, maritime, music, and more). Every endpoint is paid per call in USDC via x402 (Base or Solana) — no API key, no signup. Call any endpoint with no auth to get a 402 PaymentRequirements envelope, sign it (EIP-3009 on Base, partial SPL transfer on Solana), and retry with the PAYMENT-SIGNATURE header. Add ?trial=1 for one free real call per endpoint per hour to test before paying. To discover the right endpoint: GET https://2s.io/api/directory for the full catalog, or GET https://2s.io/api/search/endpoints?q=<natural-language task> for a ranked match. Per-call price is on each operation as x-payment-info (from $0.001). Batch up to 50 calls behind one payment via POST https://2s.io/api/batch/run.'
+servers:
+- url: https://2s.io
+tags:
+- name: Watchers
+paths:
+  /api/watchers/business-earnings:
+    post:
+      tags:
+      - Watchers
+      summary: 'WATCHER: get a signed callback around a US company''s earnings'
+      description: 'WATCHER: get a signed callback around a US company''s earnings. Arm once, pay once (no account, no API key). trigger ''reported'' (default) fires when results post — with reported EPS vs estimate, the surprise, and revenue; trigger ''upcoming'' fires daysBefore the scheduled report date as a heads-up. Pass ticker (+ optional daysBefore for upcoming). Fires once per report period; bounded by a maxFires / expiry budget. Calendar via Finnhub. Deliveries are EIP-191-signed (verify offline) and retried with exponential backoff; missed pushes are recoverable via watchers.status. Returns a watcherId.'
+      operationId: watchers_business-earnings
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized: items = [the armed business-earnings watcher].'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            watcherId:
+                              type: string
+                            status:
+                              type: string
+                            ticker:
+                              type: string
+                            trigger:
+                              type: string
+                            daysBefore:
+                              type: number
+                              nullable: true
+                            maxFires:
+                              type: number
+                            firesRemaining:
+                              type: number
+                            expiresAt:
+                              type: string
+                            statusUrl:
+                              type: string
+                            callbackSigner:
+                              type: string
+                          required:
+                          - watcherId
+                          - status
+                          - ticker
+                          - trigger
+                          - daysBefore
+                          - maxFires
+                          - firesRemaining
+                          - expiresAt
+                          - statusUrl
+                          - callbackSigner
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: watchers.business-earnings
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.125
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.125000'
+        protocols:
+        - x402: {}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                ticker:
+                  type: string
+                  minLength: 1
+                  maxLength: 12
+                  pattern: ^[A-Za-z][A-Za-z0-9.\-]{0,11}$
+                  description: US-listed ticker to watch, e.g. AAPL.
+                trigger:
+                  type: string
+                  enum:
+                  - reported
+                  - upcoming
+                  description: '''reported'' (default) fires when results post; ''upcoming'' fires ahead of the scheduled date.'
+                daysBefore:
+                  type: integer
+                  minimum: 0
+                  maximum: 30
+                  description: 'For trigger=''upcoming'': how many days before the report date to fire (default 1).'
+                callbackUrl:
+                  type: string
+                  format: uri
+                  maxLength: 2048
+                  description: Where we POST the event. Any http(s) URL; the JSON body is signed (verify with X-2s-Signature). e.g. https://your-agent.app/hooks/earnings
+                payload:
+                  type: object
+                  additionalProperties: {}
+                  description: Arbitrary JSON echoed back verbatim in every callback so you can route/identify the event. e.g. {"agentId":"a1"}
+                expiresInSeconds:
+                  type: integer
+                  minimum: 60
+                  maximum: 7776000
+                  description: How long the watch stays active, in seconds. Default 2592000 (30 days), max 7776000 (90 days).
+                maxFires:
+                  type: integer
+                  minimum: 1
+                  maximum: 1000
+                  description: Stop after this many report events (default 1 — the next report). Each fire is a distinct fiscal period.
+                label:
+                  type: string
+                  maxLength: 64
+                  description: Optional free-text tag to recognize this watcher later.
+              required:
+              - ticker
+              - callbackUrl
+              additionalProperties: false
+      parameters:
+      - $ref: '#/components/parameters/TrialMode'
+  /api/watchers/cancel:
+    post:
+      tags:
+      - Watchers
+      summary: Cancel an active watcher by watcherId - it stops watching
+      description: 'Cancel an active watcher by watcherId — it stops watching immediately. Flat-fee model: no refund of the unused window (nothing is held or owed). Idempotent. Pairs with watchers.crypto-address-activity and watchers.status.'
+      operationId: watchers_cancel
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized: items = [{ watcherId, status }].'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            watcherId:
+                              type: string
+                            status:
+                              type: string
+                          required:
+                          - watcherId
+                          - status
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: watchers.cancel
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.0025
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.002500'
+        protocols:
+        - x402: {}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                watcherId:
+                  type: string
+                  minLength: 8
+                  maxLength: 80
+                  description: Watcher ID.
+              required:
+              - watcherId
+              additionalProperties: false
+      parameters:
+      - $ref: '#/components/parameters/TrialMode'
+  /api/watchers/company-news:
+    post:
+      tags:
+      - Watchers
+      summary: 'WATCHER: get a signed callback when a new news article is'
+      description: 'WATCHER: get a signed callback when a new news article is published about a US company. Arm once, pay once. Pass ticker; optionally keyword to only fire on headlines containing it. Fires once per new article (deduped by id); bounded by maxFires/expiry. Existing articles at arm time are baselined. News via Finnhub. Signed (verify offline) + retried; recoverable via watchers.status. Returns a watcherId.'
+      operationId: watchers_company-news
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized: items = [the armed company-news watcher].'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            watcherId:
+                              type: string
+                              description: Use with watchers.status / watchers.cancel.
+                            status:
+                              type: string
+                              description: '"armed" on creation.'
+                            ticker:
+                              type: string
+                            keyword:
+                              type: string
+                              nullable: true
+                              description: The headline filter, or null when none.
+                            maxFires:
+                              type: number
+                            firesRemaining:
+                              type: number
+                            expiresAt:
+                              type: string
+                              description: ISO expiry timestamp.
+                            statusUrl:
+                              type: string
+                            callbackSigner:
+                              type: string
+                              description: Address that signs callback payloads (verify X-2s-Signature offline).
+                          required:
+                          - watcherId
+                          - status
+                          - ticker
+                          - keyword
+                          - maxFires
+                          - firesRemaining
+                          - expiresAt
+                          - statusUrl
+                          - callbackSigner
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: watchers.company-news
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.125
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.125000'
+        protocols:
+        - x402: {}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                ticker:
+                  type: string
+                  minLength: 1
+                  maxLength: 12
+                  pattern: ^[A-Za-z][A-Za-z0-9.\-]{0,11}$
+                  description: US-listed ticker, e.g. AAPL.
+                keyword:
+                  type: string
+                  maxLength: 64
+                  description: 'Optional: only fire on headlines containing this text (case-insensitive).'
+                callbackUrl:
+                  type: string
+                  format: uri
+                  maxLength: 2048
+                  description: Signed event POSTed here (verify X-2s-Signature). Any http(s) URL.
+                payload:
+                  type: object
+                  additionalProperties: {}
+                  description: Arbitrary JSON echoed back in every callback.
+                expiresInSeconds:
+                  type: integer
+                  minimum: 60
+                  maximum: 7776000
+                  description: Active window in seconds (default 30d, max 90d).
+                maxFires:
+                  type: integer
+                  minimum: 1
+                  maximum: 1000
+                  description: Stop after this many articles (default 25).
+                label:
+                  type: string
+                  maxLength: 64
+                  description: Optional free-text tag.
+              required:
+              - ticker
+              - callbackUrl
+              additionalProperties: false
+      parameters:
+      - $ref: '#/components/parameters/TrialMode'
+  /api/watchers/crypto-address-activity:
+    post:
+      tags:
+      - Watchers
+      summary: 'WATCHER: get a signed callback the moment a crypto address'
+      description: 'WATCHER: get a signed callback the moment a crypto address transacts. Arm once, pay once (no account, no API key) — we watch Base, Ethereum, or Bitcoin and POST your custom payload to callbackUrl when the address sends/receives native coins, ERC-20s, or ERC-721s. Filter by direction (in/out/both), asset type, and a USD minimum (minValueUsd) to skip dust. Bounded by a 30-day / 25-fire window. Deliveries are EIP-191-signed by our published key (verify offline) and retried with exponential backoff; missed pushes are recoverable via watchers.status. Returns a watcherId.'
+      operationId: watchers_crypto-address-activity
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized: items = [the armed watcher].'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            watcherId:
+                              type: string
+                            status:
+                              type: string
+                            chain:
+                              type: string
+                            address:
+                              type: string
+                            direction:
+                              type: string
+                            assetTypes:
+                              type: array
+                              items:
+                                type: string
+                            minValueUsd:
+                              type: number
+                              nullable: true
+                            maxFires:
+                              type: number
+                            firesRemaining:
+                              type: number
+                            expiresAt:
+                              type: string
+                            statusUrl:
+                              type: string
+                            callbackSigner:
+                              type: string
+                          required:
+                          - watcherId
+                          - status
+                          - chain
+                          - address
+                          - direction
+                          - assetTypes
+                          - minValueUsd
+                          - maxFires
+                          - firesRemaining
+                          - expiresAt
+                          - statusUrl
+                          - callbackSigner
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: watchers.crypto-address-activity
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.125
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.125000'
+        protocols:
+        - x402: {}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                chain:
+                  type: string
+                  enum:
+                  - base
+                  - ethereum
+                  - bitcoin
+                  description: 'Which chain to watch: base, ethereum, or bitcoin.'
+                address:
+                  type: string
+                  minLength: 20
+                  maxLength: 100
+                  description: The address to watch — an EVM address (0x… 40 hex) for base/ethereum, or a Bitcoin address (bc1…/1…/3…).
+                callbackUrl:
+                  type: string
+                  format: uri
+                  maxLength: 2048
+                  description: Where we POST the event. Any http(s) URL; the JSON body is signed (verify with X-2s-Signature). e.g. https://your-agent.app/hooks/wallet
+                direction:
+                  type: string
+                  enum:
+                  - in
+                  - out
+                  - both
+                  description: 'Which flows to fire on: "in" = address received, "out" = address sent, "both" = either. Default: both.'
+                assetTypes:
+                  type: array
+                  items:
+                    type: string
+                    enum:
+                    - native
+                    - erc20
+                    - erc721
+                  maxItems: 3
+                  description: 'Limit to asset kinds: any of "native" (ETH/BTC), "erc20" (tokens), "erc721" (NFTs). Omit to watch all. EVM only — Bitcoin is always native. e.g. ["erc20"] for token transfers only.'
+                minValueUsd:
+                  type: number
+                  exclusiveMinimum: true
+                  minimum: 0
+                  maximum: 1000000000000
+                  description: Only fire when the transfer is worth at least this many USD — filters out dust/spam. e.g. 100 ignores anything under $100. Omit to fire on any non-zero amount.
+                payload:
+                  type: object
+                  additionalProperties: {}
+                  description: Arbitrary JSON, echoed back verbatim in every callback so you can route/identify the event on your side. e.g. {"agentId":"a1","reason":"treasury-monitor"}
+                expiresInSeconds:
+                  type: integer
+                  minimum: 60
+                  maximum: 7776000
+                  description: How long the watch stays active, in seconds. Default 2592000 (30 days), max 7776000 (90 days). e.g. 86400 = 1 day.
+                maxFires:
+                  type: integer
+                  minimum: 1
+                  maximum: 1000
+                  description: Stop after this many callbacks. Default 25, max 1000. The watch ends at whichever comes first — maxFires or expiry.
+                label:
+                  type: string
+                  maxLength: 64
+                  description: Optional free-text tag to recognize this watcher later. e.g. "exchange-cold-wallet".
+              required:
+              - chain
+              - address
+              - callbackUrl
+              additionalProperties: false
+      parameters:
+      - $ref: '#/components/parameters/TrialMode'
+  /api/watchers/dns:
+    post:
+      tags:
+      - Watchers
+      summary: 'WATCHER: get a signed callback when a host''s DNS records'
+      description: 'WATCHER: get a signed callback when a host''s DNS records change. Arm once, pay once. Pass host (e.g. example.com). Fires when the resolved answers change (e.g. an A/AAAA/CNAME/MX update); bounded by maxFires/expiry. The records at arm time are baselined. Useful for detecting domain takeover, migrations, or unexpected changes. Signed (verify offline) + retried; recoverable via watchers.status. Returns a watcherId.'
+      operationId: watchers_dns
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized: items = [the armed dns watcher].'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            watcherId:
+                              type: string
+                              description: Use with watchers.status / watchers.cancel.
+                            status:
+                              type: string
+                              description: '"armed" on creation.'
+                            host:
+                              type: string
+                            maxFires:
+                              type: number
+                            firesRemaining:
+                              type: number
+                            expiresAt:
+                              type: string
+                              description: ISO expiry timestamp.
+                            statusUrl:
+                              type: string
+                            callbackSigner:
+                              type: string
+                              description: Address that signs callback payloads (verify X-2s-Signature offline).
+                          required:
+                          - watcherId
+                          - status
+                          - host
+                          - maxFires
+                          - firesRemaining
+                          - expiresAt
+                          - statusUrl
+                          - callbackSigner
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: watchers.dns
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.125
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.125000'
+        protocols:
+        - x402: {}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                host:
+                  type: string
+                  minLength: 1
+                  maxLength: 255
+                  description: Hostname to monitor, e.g. example.com.
+                callbackUrl:
+                  type: string
+                  format: uri
+                  maxLength: 2048
+                  description: Signed event POSTed here (verify X-2s-Signature). Any http(s) URL.
+                payload:
+                  type: object
+                  additionalProperties: {}
+                  description: Arbitrary JSON echoed back in every callback.
+                expiresInSeconds:
+                  type: integer
+                  minimum: 60
+                  maximum: 7776000
+                  description: Active window in seconds (default 30d, max 90d).
+                maxFires:
+                  type: integer
+                  minimum: 1
+                  maximum: 1000
+                  description: Stop after this many changes (default 10).
+                label:
+                  type: string
+                  maxLength: 64
+                  description: Optional free-text tag.
+              required:
+              - host
+              - callbackUrl
+              additionalProperties: false
+      parameters:
+      - $ref: '#/components/parameters/TrialMode'
+  /api/watchers/earthquake:
+    post:
+      tags:
+      - Watchers
+      summary: 'WATCHER: get a signed callback when USGS reports a new'
+      description: 'WATCHER: get a signed callback when USGS reports a new earthquake near a location above a magnitude. Arm once, pay once. Pass lat, lon, optional radiusKm (default 500) and minMagnitude (default 4). Fires once per new quake (deduped by id); bounded by maxFires/expiry. Quakes already in the window at arm time are baselined. Free public-domain (USGS). Signed + retried; recoverable via watchers.status. Returns a watcherId.'
+      operationId: watchers_earthquake
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized: items = [the armed earthquake watcher].'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            watcherId:
+                              type: string
+                              description: Use with watchers.status / watchers.cancel.
+                            status:
+                              type: string
+                              description: '"armed" on creation.'
+                            lat:
+                              type: number
+                            lon:
+                              type: number
+                            radiusKm:
+                              type: number
+                            minMagnitude:
+                              type: number
+                            maxFires:
+                              type: number
+                            firesRemaining:
+                              type: number
+                            expiresAt:
+                              type: string
+                              description: ISO expiry timestamp.
+                            statusUrl:
+                              type: string
+                            callbackSigner:
+                              type: string
+                              description: Address that signs callback payloads (verify X-2s-Signature offline).
+                          required:
+                          - watcherId
+                          - status
+                          - lat
+                          - lon
+                          - radiusKm
+                          - minMagnitude
+                          - maxFires
+                          - firesRemaining
+                          - expiresAt
+                          - statusUrl
+                          - callbackSigner
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: watchers.earthquake
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.125
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.125000'
+        protocols:
+        - x402: {}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                lat:
+                  type: number
+                  minimum: -90
+                  maximum: 90
+                  description: Latitude of the center point.
+                lon:
+                  type: number
+                  minimum: -180
+                  maximum: 180
+                  description: Longitude of the center point.
+                radiusKm:
+                  type: number
+                  minimum: 1
+                  maximum: 1000
+                  description: Search radius in km (default 500).
+                minMagnitude:
+                  type: number
+                  minimum: 0
+                  maximum: 10
+                  description: Minimum magnitude to fire on (default 4).
+                callbackUrl:
+                  type: string
+                  format: uri
+                  maxLength: 2048
+                  description: Signed event POSTed here (verify X-2s-Signature). Any http(s) URL.
+                payload:
+                  type: object
+                  additionalProperties: {}
+                  description: Arbitrary JSON echoed back in every callback.
+                expiresInSeconds:
+                  type: integer
+                  minimum: 60
+                  maximum: 7776000
+                  description: Active window in seconds (default 30d, max 90d).
+                maxFires:
+                  type: integer
+                  minimum: 1
+                  maximum: 1000
+                  description: Stop after this many quakes (default 25).
+                label:
+                  type: string
+                  maxLength: 64
+                  description: Optional free-text tag.
+              required:
+              - lat
+              - lon
+              - callbackUrl
+              additionalProperties: false
+      parameters:
+      - $ref: '#/components/parameters/TrialMode'
+  /api/watchers/fear-greed:
+    post:
+      tags:
+      - Watchers
+      summary: 'WATCHER: get a signed callback when the Crypto Fear & Greed'
+      description: 'WATCHER: get a signed callback when the Crypto Fear & Greed index crosses a level (e.g. drops into Extreme Fear). Arm once, pay once. conditionType ''above''/''below''; threshold is the index value 0–100. Fires once per crossing; bounded by maxFires/expiry. Signed (verify offline) + retried; recoverable via watchers.status. Returns a watcherId.'
+      operationId: watchers_fear-greed
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized: items = [the armed fear-greed watcher].'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            watcherId:
+                              type: string
+                            status:
+                              type: string
+                            conditionType:
+                              type: string
+                            threshold:
+                              type: number
+                            maxFires:
+                              type: number
+                            firesRemaining:
+                              type: number
+                            expiresAt:
+                              type: string
+                            statusUrl:
+                              type: string
+                            callbackSigner:
+                              type: string
+                          required:
+                          - watcherId
+                          - status
+                          - conditionType
+                          - threshold
+                          - maxFires
+                          - firesRemaining
+                          - expiresAt
+                          - statusUrl
+                          - callbackSigner
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: watchers.fear-greed
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.125
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.125000'
+        protocols:
+        - x402: {}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                conditionType:
+                  type: string
+                  enum:
+                  - above
+                  - below
+                  description: Fire when the index goes above or below the threshold.
+                threshold:
+                  type: number
+                  minimum: 0
+                  maximum: 100
+                  description: Index value 0–100 to cross (e.g. 20 = extreme fear, 80 = extreme greed).
+                callbackUrl:
+                  type: string
+                  format: uri
+                  maxLength: 2048
+                  description: Signed event POSTed here (verify X-2s-Signature). Any http(s) URL.
+                payload:
+                  type: object
+                  additionalProperties: {}
+                  description: Arbitrary JSON echoed back in every callback.
+                expiresInSeconds:
+                  type: integer
+                  minimum: 60
+                  maximum: 7776000
+                  description: Active window in seconds (default 30d, max 90d).
+                maxFires:
+                  type: integer
+                  minimum: 1
+                  maximum: 1000
+                  description: Stop after this many callbacks (default 1).
+                label:
+                  type: string
+                  maxLength: 64
+                  description: Optional free-text tag.
+              required:
+              - conditionType
+              - threshold
+              - callbackUrl
+              additionalProperties: false
+      parameters:
+      - $ref: '#/components/parameters/TrialMode'
+  /api/watchers/federal-register:
+    post:
+      tags:
+      - Watchers
+      summary: 'WATCHER: get a signed callback when a new US Federal'
+      description: 'WATCHER: get a signed callback when a new US Federal Register document is published. Arm once, pay once. Optionally filter by type (RULE / PRORULE / NOTICE / PRESDOCU), agency (slug, e.g. environmental-protection-agency), and/or keyword in the title. Fires once per new document (deduped by document number); bounded by maxFires/expiry. Existing docs at arm time are baselined. Free public-domain data. Signed + retried; recoverable via watchers.status. Returns a watcherId.'
+      operationId: watchers_federal-register
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized: items = [the armed federal-register watcher].'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            watcherId:
+                              type: string
+                            status:
+                              type: string
+                            type:
+                              type: string
+                              nullable: true
+                            agency:
+                              type: string
+                              nullable: true
+                            keyword:
+                              type: string
+                              nullable: true
+                            maxFires:
+                              type: number
+                            firesRemaining:
+                              type: number
+                            expiresAt:
+                              type: string
+                            statusUrl:
+                              type: string
+                            callbackSigner:
+                              type: string
+                          required:
+                          - watcherId
+                          - status
+                          - type
+                          - agency
+                          - keyword
+                          - maxFires
+                          - firesRemaining
+                          - expiresAt
+                          - statusUrl
+                          - callbackSigner
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: watchers.federal-register
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.125
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.125000'
+        protocols:
+        - x402: {}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                type:
+                  type: string
+                  enum:
+                  - RULE
+                  - PRORULE
+                  - NOTICE
+                  - PRESDOCU
+                  description: Document type filter. Omit for all.
+                agency:
+                  type: string
+                  maxLength: 80
+                  pattern: ^[A-Za-z0-9-]+$
+                  description: Agency slug, e.g. federal-trade-commission.
+                keyword:
+                  type: string
+                  maxLength: 64
+                  description: 'Optional: only fire on titles containing this text (case-insensitive).'
+                callbackUrl:
+                  type: string
+                  format: uri
+                  maxLength: 2048
+                  description: Signed event POSTed here (verify X-2s-Signature). Any http(s) URL.
+                payload:
+                  type: object
+                  additionalProperties: {}
+                  description: Arbitrary JSON echoed back in every callback.
+                expiresInSeconds:
+                  type: integer
+                  minimum: 60
+                  maximum: 7776000
+                  description: Active window in seconds (default 30d, max 90d).
+                maxFires:
+                  type: integer
+                  minimum: 1
+                  maximum: 1000
+                  description: Stop after this many documents (default 25).
+                label:
+                  type: string
+                  maxLength: 64
+                  description: Optional free-text tag.
+              required:
+              - callbackUrl
+              additionalProperties: false
+      parameters:
+      - $ref: '#/components/parameters/TrialMode'
+  /api/watchers/flight-status:
+    post:
+      tags:
+      - Watchers
+      summary: 'WATCHER: get a signed callback when a flight''s status'
+      description: 'WATCHER: get a signed callback when a flight''s status changes (e.g. Scheduled → Delayed → Departed → Landed). Arm once, pay once. Pass ident (airline flight designator like UAL1 / UA1, or a tail number). Fires on each status transition for the nearest instance; bounded by maxFires/expiry. The status at arm time is baselined (only changes fire). Data via FlightAware. Signed + retried; recoverable via watchers.status. Returns a watcherId.'
+      operationId: watchers_flight-status
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized: items = [the armed flight-status watcher].'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            watcherId:
+                              type: string
+                            status:
+                              type: string
+                            ident:
+                              type: string
+                            maxFires:
+                              type: number
+                            firesRemaining:
+                              type: number
+                            expiresAt:
+                              type: string
+                            statusUrl:
+                              type: string
+                            callbackSigner:
+                              type: string
+                          required:
+                          - watcherId
+                          - status
+                          - ident
+                          - maxFires
+                          - firesRemaining
+                          - expiresAt
+                          - statusUrl
+                          - callbackSigner
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: watchers.flight-status
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.125
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.125000'
+        protocols:
+        - x402: {}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                ident:
+                  type: string
+                  minLength: 2
+                  maxLength: 20
+                  pattern: ^[A-Za-z0-9-]+$
+                  description: Flight designator (UAL1 / UA1) or tail number.
+                callbackUrl:
+                  type: string
+                  format: uri
+                  maxLength: 2048
+                  description: Signed event POSTed here (verify X-2s-Signature). Any http(s) URL.
+                payload:
+                  type: object
+                  additionalProperties: {}
+                  description: Arbitrary JSON echoed back in every callback.
+                expiresInSeconds:
+                  type: integer
+                  minimum: 60
+                  maximum: 7776000
+                  description: Active window in seconds (default 7 days; flights are short-lived).
+                maxFires:
+                  type: integer
+                  minimum: 1
+                  maximum: 1000
+                  description: Stop after this many status changes (default 10).
+                label:
+                  type: string
+                  maxLength: 64
+                  description: Optional free-text tag.
+              required:
+              - ident
+              - callbackUrl
+              additionalProperties: false
+      parameters:
+      - $ref: '#/components/parameters/TrialMode'
+  /api/watchers/fred-series:
+    post:
+      tags:
+      - Watchers
+      summary: 'WATCHER: get a signed callback when a FRED economic series'''
+      description: 'WATCHER: get a signed callback when a FRED economic series'' latest value crosses a level. Arm once, pay once. Pass seriesId (e.g. DGS10 = 10yr Treasury, UNRATE = unemployment, CPIAUCSL = CPI, FEDFUNDS = fed funds). conditionType ''above''/''below''; threshold is the series value. Fires once per crossing as new data posts; bounded by maxFires/expiry. Free public-domain (FRED). Signed (verify offline) + retried; recoverable via watchers.status. Returns a watcherId.'
+      operationId: watchers_fred-series
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized: items = [the armed fred-series watcher].'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            watcherId:
+                              type: string
+                            status:
+                              type: string
+                            seriesId:
+                              type: string
+                            conditionType:
+                              type: string
+                            threshold:
+                              type: number
+                            maxFires:
+                              type: number
+                            firesRemaining:
+                              type: number
+                            expiresAt:
+                              type: string
+                            statusUrl:
+                              type: string
+                            callbackSigner:
+                              type: string
+                          required:
+                          - watcherId
+                          - status
+                          - seriesId
+                          - conditionType
+                          - threshold
+                          - maxFires
+                          - firesRemaining
+                          - expiresAt
+                          - statusUrl
+                          - callbackSigner
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: watchers.fred-series
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.125
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.125000'
+        protocols:
+        - x402: {}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                seriesId:
+                  type: string
+                  minLength: 1
+                  maxLength: 64
+                  pattern: ^[A-Za-z0-9.\-_]+$
+                  description: FRED series id, e.g. DGS10, UNRATE, CPIAUCSL, FEDFUNDS.
+                conditionType:
+                  type: string
+                  enum:
+                  - above
+                  - below
+                  description: Fire when the latest value goes above or below the threshold.
+                threshold:
+                  type: number
+                  description: The series value to cross, e.g. 5 (for DGS10 = 5% 10yr yield).
+                callbackUrl:
+                  type: string
+                  format: uri
+                  maxLength: 2048
+                  description: Signed event POSTed here (verify X-2s-Signature). Any http(s) URL.
+                payload:
+                  type: object
+                  additionalProperties: {}
+                  description: Arbitrary JSON echoed back in every callback.
+                expiresInSeconds:
+                  type: integer
+                  minimum: 60
+                  maximum: 7776000
+                  description: Active window in seconds (default 30d, max 90d).
+                maxFires:
+                  type: integer
+                  minimum: 1
+                  maximum: 1000
+                  description: Stop after this many callbacks (default 1).
+                label:
+                  type: string
+                  maxLength: 64
+                  description: Optional free-text tag.
+              required:
+              - seriesId
+              - conditionType
+              - threshold
+              - callbackUrl
+              additionalProperties: false
+      parameters:
+      - $ref: '#/components/parameters/TrialMode'
+  /api/watchers/funding-rate:
+    post:
+      tags:
+      - Watchers
+      summary: 'WATCHER: get a signed callback when a Hyperliquid'
+      description: 'WATCHER: get a signed callback when a Hyperliquid perpetual''s hourly funding rate crosses a level (e.g. flips negative). Arm once, pay once. Pass coin (e.g. BTC, ETH). conditionType ''above''/''below''; threshold is the hourly funding rate (can be negative, e.g. -0.0001). Fires once per crossing; bounded by maxFires/expiry. Data via Hyperliquid. Signed (verify offline) + retried; recoverable via watchers.status. Returns a watcherId.'
+      operationId: watchers_funding-rate
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized: items = [the armed funding-rate watcher].'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            watcherId:
+                              type: string
+                            status:
+                              type: string
+                            coin:
+                              type: string
+                            conditionType:
+                              type: string
+                            threshold:
+                              type: number
+                            maxFires:
+                              type: number
+                            firesRemaining:
+                              type: number
+                            expiresAt:
+                              type: string
+                            statusUrl:
+                              type: string
+                            callbackSigner:
+                              type: string
+                          required:
+                          - watcherId
+                          - status
+                          - coin
+                          - conditionType
+                          - threshold
+                          - maxFires
+                          - firesRemaining
+                          - expiresAt
+                          - statusUrl
+                          - callbackSigner
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: watchers.funding-rate
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.125
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.125000'
+        protocols:
+        - x402: {}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                coin:
+                  type: string
+                  minLength: 1
+                  maxLength: 20
+                  pattern: ^[A-Za-z0-9]+$
+                  description: Perp coin symbol, e.g. BTC, ETH, SOL.
+                conditionType:
+                  type: string
+                  enum:
+                  - above
+                  - below
+                  description: Fire when hourly funding goes above or below the threshold.
+                threshold:
+                  type: number
+                  description: Hourly funding rate to cross (can be negative, e.g. -0.0001).
+                callbackUrl:
+                  type: string
+                  format: uri
+                  maxLength: 2048
+                  description: Signed event POSTed here (verify X-2s-Signature). Any http(s) URL.
+                payload:
+                  type: object
+                  additionalProperties: {}
+                  description: Arbitrary JSON echoed back in every callback.
+                expiresInSeconds:
+                  type: integer
+                  minimum: 60
+                  maximum: 7776000
+                  description: Active window in seconds (default 30d, max 90d).
+                maxFires:
+                  type: integer
+                  minimum: 1
+                  maximum: 1000
+                  description: Stop after this many callbacks (default 1).
+                label:
+                  type: string
+                  maxLength: 64
+                  description: Optional free-text tag.
+              required:
+              - coin
+              - conditionType
+              - threshold
+              - callbackUrl
+              additionalProperties: false
+      parameters:
+      - $ref: '#/components/parameters/TrialMode'
+  /api/watchers/fx-rate:
+    post:
+      tags:
+      - Watchers
+      summary: 'WATCHER: get a signed callback when an FX pair crosses a'
+      description: 'WATCHER: get a signed callback when an FX pair crosses a rate you set. Arm once, pay once. base + quote are 3-letter ISO currency codes (e.g. base USD, quote EUR). conditionType ''above''/''below''; threshold is the quote-per-base rate. Fires once per crossing; bounded by maxFires/expiry. Rates via Frankfurter (ECB). Signed (verify offline) + retried; recoverable via watchers.status. Returns a watcherId.'
+      operationId: watchers_fx-rate
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized: items = [the armed fx-rate watcher].'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            watcherId:
+                              type: string
+                            status:
+                              type: string
+                            base:
+                              type: string
+                            quote:
+                              type: string
+                            conditionType:
+                              type: string
+                            threshold:
+                              type: number
+                            maxFires:
+                              type: number
+                            firesRemaining:
+                              type: number
+                            expiresAt:
+                              type: string
+                            statusUrl:
+                              type: string
+                            callbackSigner:
+                              type: string
+                          required:
+                          - watcherId
+                          - status
+                          - base
+                          - quote
+                          - conditionType
+                          - threshold
+                          - maxFires
+                          - firesRemaining
+                          - expiresAt
+                          - statusUrl
+                          - callbackSigner
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: watchers.fx-rate
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.125
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.125000'
+        protocols:
+        - x402: {}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                base:
+                  type: string
+                  pattern: ^[A-Za-z]{3}$
+                  description: Base currency, e.g. USD.
+                quote:
+                  type: string
+                  pattern: ^[A-Za-z]{3}$
+                  description: Quote currency, e.g. EUR.
+                conditionType:
+                  type: string
+                  enum:
+                  - above
+                  - below
+                  description: Fire when the rate goes above or below the threshold.
+                threshold:
+                  type: number
+                  exclusiveMinimum: true
+                  minimum: 0
+                  description: Quote-per-base rate to cross, e.g. 0.95.
+                callbackUrl:
+                  type: string
+                  format: uri
+                  maxLength: 2048
+                  description: Signed event POSTed here (verify X-2s-Signature). Any http(s) URL.
+                payload:
+                  type: object
+                  additionalProperties: {}
+                  description: Arbitrary JSON echoed back in every callback.
+                expiresInSeconds:
+                  type: integer
+                  minimum: 60
+                  maximum: 7776000
+                  description: Active window in seconds (default 30d, max 90d).
+                maxFires:
+                  type: integer
+                  minimum: 1
+                  maximum: 1000
+                  description: Stop after this many callbacks (default 1).
+                label:
+                  type: string
+                  maxLength: 64
+                  description: Optional free-text tag.
+              required:
+              - base
+              - quote
+              - conditionType
+              - threshold
+              - callbackUrl
+              additionalProperties: false
+      parameters:
+      - $ref: '#/components/parameters/TrialMode'
+  /api/watchers/gas-price:
+    post:
+      tags:
+      - Watchers
+      summary: 'WATCHER: get a signed callback when EVM gas crosses a level'
+      description: 'WATCHER: get a signed callback when EVM gas crosses a level you set — e.g. "wake me when Ethereum gas drops below 10 gwei." Arm once, pay once (no account, no API key). chain: base | ethereum | polygon | arbitrum | optimism. conditionType: ''below'' or ''above''; threshold is in gwei (compared to the chosen fee tier''s max fee per gas). tier: slow | standard | fast (default standard). Fires once per crossing; bounded by a maxFires / expiry budget. Deliveries are EIP-191-signed (verify offline) and retried with exponential backoff; missed pushes are recoverable via watchers.status. Returns a watcherId.'
+      operationId: watchers_gas-price
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized: items = [the armed gas-price watcher].'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            watcherId:
+                              type: string
+                            status:
+                              type: string
+                            chain:
+                              type: string
+                            conditionType:
+                              type: string
+                            threshold:
+                              type: number
+                            tier:
+                              type: string
+                            maxFires:
+                              type: number
+                            firesRemaining:
+                              type: number
+                            expiresAt:
+                              type: string
+                            statusUrl:
+                              type: string
+                            callbackSigner:
+                              type: string
+                          required:
+                          - watcherId
+                          - status
+                          - chain
+                          - conditionType
+                          - threshold
+                          - tier
+                          - maxFires
+                          - firesRemaining
+                          - expiresAt
+                          - statusUrl
+                          - callbackSigner
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: watchers.gas-price
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.125
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.125000'
+        protocols:
+        - x402: {}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                chain:
+                  type: string
+                  enum:
+                  - base
+                  - ethereum
+                  - polygon
+                  - arbitrum
+                  - optimism
+                  description: EVM chain whose gas to watch.
+                conditionType:
+                  type: string
+                  enum:
+                  - below
+                  - above
+                  description: '''below'' (cheap gas alert) or ''above'' (congestion alert).'
+                threshold:
+                  type: number
+                  exclusiveMinimum: true
+                  minimum: 0
+                  maximum: 1000000
+                  description: Gas price threshold in gwei (e.g. 10), compared to the chosen tier’s max fee per gas.
+                tier:
+                  type: string
+                  enum:
+                  - slow
+                  - standard
+                  - fast
+                  description: 'Fee tier to compare against. Default: standard.'
+                callbackUrl:
+                  type: string
+                  format: uri
+                  maxLength: 2048
+                  description: Where we POST the event. Any http(s) URL; the JSON body is signed (verify with X-2s-Signature). e.g. https://your-agent.app/hooks/gas
+                payload:
+                  type: object
+                  additionalProperties: {}
+                  description: Arbitrary JSON echoed back verbatim in every callback. e.g. {"agentId":"a1"}
+                expiresInSeconds:
+                  type: integer
+                  minimum: 60
+                  maximum: 7776000
+                  description: How long the watch stays active, in seconds. Default 2592000 (30 days), max 7776000 (90 days).
+                maxFires:
+                  type: integer
+                  minimum: 1
+                  maximum: 1000
+                  description: Stop after this many callbacks (default 1). Each fire is a fresh crossing into the condition.
+                label:
+                  type: string
+                  maxLength: 64
+                  description: Optional free-text tag to recognize this watcher later.
+              required:
+              - chain
+              - conditionType
+              - threshold
+              - callbackUrl
+              additionalProperties: false
+      parameters:
+      - $ref: '#/components/parameters/TrialMode'
+  /api/watchers/http-headers:
+    post:
+      tags:
+      - Watchers
+      summary: 'WATCHER: get a signed callback when a website''s HTTP'
+      description: 'WATCHER: get a signed callback when a website''s HTTP security-headers grade changes (e.g. a regression from A to C). Arm once, pay once. Pass url. Fires when the grade changes; bounded by maxFires/expiry. The grade at arm time is baselined. Useful for catching config regressions. Signed (verify offline) + retried; recoverable via watchers.status. Returns a watcherId.'
+      operationId: watchers_http-headers
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized: items = [the armed http-headers watcher].'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            watcherId:
+                              type: string
+                            status:
+                              type: string
+                            url:
+                              type: string
+                            maxFires:
+                              type: number
+                            firesRemaining:
+                              type: number
+                            expiresAt:
+                              type: string
+                            statusUrl:
+                              type: string
+                            callbackSigner:
+                              type: string
+                          required:
+                          - watcherId
+                          - status
+                          - url
+                          - maxFires
+                          - firesRemaining
+                          - expiresAt
+                          - statusUrl
+                          - callbackSigner
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: watchers.http-headers
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.125
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.125000'
+        protocols:
+        - x402: {}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                url:
+                  type: string
+                  format: uri
+                  maxLength: 2048
+                  description: The URL to monitor, e.g. https://example.com.
+                callbackUrl:
+                  type: string
+                  format: uri
+                  maxLength: 2048
+                  description: Signed event POSTed here (verify X-2s-Signature). Any http(s) URL.
+                payload:
+                  type: object
+                  additionalProperties: {}
+                  description: Arbitrary JSON echoed back in every callback.
+                expiresInSeconds:
+                  type: integer
+                  minimum: 60
+                  maximum: 7776000
+                  description: Active window in seconds (default 30d, max 90d).
+                maxFires:
+                  type: integer
+                  minimum: 1
+                  maximum: 1000
+                  description: Stop after this many changes (default 10).
+                label:
+                  type: string
+                  maxLength: 64
+                  description: Optional free-text tag.
+              required:
+              - url
+              - callbackUrl
+              additionalProperties: false
+      parameters:
+      - $ref: '#/components/parameters/TrialMode'
+  /api/watchers/ioc-reputation:
+    post:
+      tags:
+      - Watchers
+      summary: 'WATCHER: get a signed callback when an indicator of'
+      description: 'WATCHER: get a signed callback when an indicator of compromise (IP or domain) changes malicious status across threat feeds. Arm once, pay once. Pass ioc (an IP address or domain). Fires when the malicious verdict flips; bounded by maxFires/expiry. The status at arm time is baselined. Signed (verify offline) + retried; recoverable via watchers.status. Returns a watcherId.'
+      operationId: watchers_ioc-reputation
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized: items = [the armed ioc-reputation watcher].'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            watcherId:
+                              type: string
+                            status:
+                              type: string
+                            ioc:
+                              type: string
+                            maxFires:
+                              type: number
+                            firesRemaining:
+                              type: number
+                            expiresAt:
+                              type: string
+                            statusUrl:
+                              type: string
+                            callbackSigner:
+                              type: string
+                          required:
+                          - watcherId
+                          - status
+                          - ioc
+                          - maxFires
+                          - firesRemaining
+                          - expiresAt
+                          - statusUrl
+                          - callbackSigner
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: watchers.ioc-reputation
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.125
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.125000'
+        protocols:
+        - x402: {}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                ioc:
+                  type: string
+                  minLength: 3
+                  maxLength: 255
+                  description: 'Indicator to watch: an IP address or domain.'
+                callbackUrl:
+                  type: string
+                  format: uri
+                  maxLength: 2048
+                  description: Signed event POSTed here (verify X-2s-Signature). Any http(s) URL.
+                payload:
+                  type: object
+                  additionalProperties: {}
+                  description: Arbitrary JSON echoed back in every callback.
+                expiresInSeconds:
+                  type: integer
+                  minimum: 60
+                  maximum: 7776000
+                  description: Active window in seconds (default 30d, max 90d).
+                maxFires:
+                  type: integer
+                  minimum: 1
+                  maximum: 1000
+                  description: Stop after this many changes (default 10).
+                label:
+                  type: string
+                  maxLength: 64
+                  description: Optional free-text tag.
+              required:
+              - ioc
+              - callbackUrl
+              additionalProperties: false
+      parameters:
+      - $ref: '#/components/parameters/TrialMode'
+  /api/watchers/ipo:
+    post:
+      tags:
+      - Watchers
+      summary: 'WATCHER: get a signed callback when a new US IPO appears on'
+      description: 'WATCHER: get a signed callback when a new US IPO appears on the calendar. Arm once, pay once. Optionally pass keyword to only fire when the company name/symbol matches. Fires once per new IPO (deduped by symbol); bounded by maxFires/expiry. Existing entries at arm time are baselined. Calendar via Finnhub. Signed (verify offline) + retried; recoverable via watchers.status. Returns a watcherId.'
+      operationId: watchers_ipo
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized: items = [the armed ipo watcher].'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            watcherId:
+                              type: string
+                            status:
+                              type: string
+                            keyword:
+                              type: string
+                              nullable: true
+                            maxFires:
+                              type: number
+                            firesRemaining:
+                              type: number
+                            expiresAt:
+                              type: string
+                            statusUrl:
+                              type: string
+                            callbackSigner:
+                              type: string
+                          required:
+                          - watcherId
+                          - status
+                          - keyword
+                          - maxFires
+                          - firesRemaining
+                          - expiresAt
+                          - statusUrl
+                          - callbackSigner
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: watchers.ipo
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.125
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.125000'
+        protocols:
+        - x402: {}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                keyword:
+                  type: string
+                  maxLength: 64
+                  description: 'Optional: only fire when the IPO name contains this text (case-insensitive).'
+                callbackUrl:
+                  type: string
+                  format: uri
+                  maxLength: 2048
+                  description: Signed event POSTed here (verify X-2s-Signature). Any http(s) URL.
+                payload:
+                  type: object
+                  additionalProperties: {}
+                  description: Arbitrary JSON echoed back in every callback.
+                expiresInSeconds:
+                  type: integer
+                  minimum: 60
+                  maximum: 7776000
+                  description: Active window in seconds (default 30d, max 90d).
+                maxFires:
+                  type: integer
+                  minimum: 1
+                  maximum: 1000
+                  description: Stop after this many IPOs (default 25).
+                label:
+                  type: string
+                  maxLength: 64
+                  description: Optional free-text tag.
+              required:
+              - callbackUrl
+              additionalProperties: false
+      parameters:
+      - $ref: '#/components/parameters/TrialMode'
+  /api/watchers/package-release:
+    post:
+      tags:
+      - Watchers
+      summary: 'WATCHER: get a signed callback when a package publishes a'
+      description: 'WATCHER: get a signed callback when a package publishes a new version — track your dependencies. Arm once, pay once. registry is ''npm'' or ''pypi''; name is the package name (e.g. react, requests). Fires when the latest version changes; bounded by maxFires/expiry. The version at arm time is baselined. Signed (verify offline) + retried; recoverable via watchers.status. Returns a watcherId.'
+      operationId: watchers_package-release
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized: items = [the armed package-release watcher].'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            watcherId:
+                              type: string
+                            status:
+                              type: string
+                            registry:
+                              type: string
+                            name:
+                              type: string
+                            maxFires:
+                              type: number
+                            firesRemaining:
+                              type: number
+                            expiresAt:
+                              type: string
+                            statusUrl:
+                              type: string
+                            callbackSigner:
+                              type: string
+                          required:
+                          - watcherId
+                          - status
+                          - registry
+                          - name
+                          - maxFires
+                          - firesRemaining
+                          - expiresAt
+                          - statusUrl
+                          - callbackSigner
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: watchers.package-release
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.125
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.125000'
+        protocols:
+        - x402: {}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                registry:
+                  type: string
+                  enum:
+                  - npm
+                  - pypi
+                  description: 'Package registry: npm or pypi.'
+                name:
+                  type: string
+                  minLength: 1
+                  maxLength: 120
+                  description: Package name, e.g. react (npm) or requests (pypi).
+                callbackUrl:
+                  type: string
+                  format: uri
+                  maxLength: 2048
+                  description: Signed event POSTed here (verify X-2s-Signature). Any http(s) URL.
+                payload:
+                  type: object
+                  additionalProperties: {}
+                  description: Arbitrary JSON echoed back in every callback.
+                expiresInSeconds:
+                  type: integer
+                  minimum: 60
+                  maximum: 7776000
+                  description: Active window in seconds (default 30d, max 90d).
+                maxFires:
+                  type: integer
+                  minimum: 1
+                  maximum: 1000
+                  description: Stop after this many releases (default 10).
+                label:
+                  type: string
+                  maxLength: 64
+                  description: Optional free-text tag.
+              required:
+              - registry
+              - name
+              - callbackUrl
+              additionalProperties: false
+      parameters:
+      - $ref: '#/components/parameters/TrialMode'
+  /api/watchers/paper:
+    post:
+      tags:
+      - Watchers
+      summary: 'WATCHER: get a signed callback when a new academic paper'
+      description: 'WATCHER: get a signed callback when a new academic paper matching your query is published (arXiv / PubMed / Semantic Scholar). Arm once, pay once. Pass query (keywords, author, topic). Fires once per new paper (deduped by source id); bounded by maxFires/expiry. Existing results at arm time are baselined. Signed (verify offline) + retried; recoverable via watchers.status. Returns a watcherId.'
+      operationId: watchers_paper
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized: items = [the armed paper watcher].'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            watcherId:
+                              type: string
+                            status:
+                              type: string
+                            query:
+                              type: string
+                            maxFires:
+                              type: number
+                            firesRemaining:
+                              type: number
+                            expiresAt:
+                              type: string
+                            statusUrl:
+                              type: string
+                            callbackSigner:
+                              type: string
+                          required:
+                          - watcherId
+                          - status
+                          - query
+                          - maxFires
+                          - firesRemaining
+                          - expiresAt
+                          - statusUrl
+                          - callbackSigner
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: watchers.paper
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.125
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.125000'
+        protocols:
+        - x402: {}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                query:
+                  type: string
+                  minLength: 2
+                  maxLength: 200
+                  description: Search query — keywords, author, or topic.
+                callbackUrl:
+                  type: string
+                  format: uri
+                  maxLength: 2048
+                  description: Signed event POSTed here (verify X-2s-Signature). Any http(s) URL.
+                payload:
+                  type: object
+                  additionalProperties: {}
+                  description: Arbitrary JSON echoed back in every callback.
+                expiresInSeconds:
+                  type: integer
+                  minimum: 60
+                  maximum: 7776000
+                  description: Active window in seconds (default 30d, max 90d).
+                maxFires:
+                  type: integer
+                  minimum: 1
+                  maximum: 1000
+                  description: Stop after this many papers (default 25).
+                label:
+                  type: string
+                  maxLength: 64
+                  description: Optional free-text tag.
+              required:
+              - query
+              - callbackUrl
+              additionalProperties: false
+      parameters:
+      - $ref: '#/components/parameters/TrialMode'
+  /api/watchers/patent:
+    post:
+      tags:
+      - Watchers
+      summary: 'WATCHER: get a signed callback when a new USPTO patent'
+      description: 'WATCHER: get a signed callback when a new USPTO patent matching your query appears. Arm once, pay once. Pass query (keywords, assignee, etc.). Fires once per new patent (deduped by application number); bounded by maxFires/expiry. Existing results at arm time are baselined. Signed (verify offline) + retried; recoverable via watchers.status. Returns a watcherId.'
+      operationId: watchers_patent
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized: items = [the armed patent watcher].'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            watcherId:
+                              type: string
+                            status:
+                              type: string
+                            query:
+                              type: string
+                            maxFires:
+                              type: number
+                            firesRemaining:
+                              type: number
+                            expiresAt:
+                              type: string
+                            statusUrl:
+                              type: string
+                            callbackSigner:
+                              type: string
+                          required:
+                          - watcherId
+                          - status
+                          - query
+                          - maxFires
+                          - firesRemaining
+                          - expiresAt
+                          - statusUrl
+                          - callbackSigner
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: watchers.patent
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.125
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.125000'
+        protocols:
+        - x402: {}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                query:
+                  type: string
+                  minLength: 2
+                  maxLength: 200
+                  description: Search query — keywords, assignee, inventor, etc.
+                callbackUrl:
+                  type: string
+                  format: uri
+                  maxLength: 2048
+                  description: Signed event POSTed here (verify X-2s-Signature). Any http(s) URL.
+                payload:
+                  type: object
+                  additionalProperties: {}
+                  description: Arbitrary JSON echoed back in every callback.
+                expiresInSeconds:
+                  type: integer
+                  minimum: 60
+                  maximum: 7776000
+                  description: Active window in seconds (default 30d, max 90d).
+                maxFires:
+                  type: integer
+                  minimum: 1
+                  maximum: 1000
+                  description: Stop after this many patents (default 25).
+                label:
+                  type: string
+                  maxLength: 64
+                  description: Optional free-text tag.
+              required:
+              - query
+              - callbackUrl
+              additionalProperties: false
+      parameters:
+      - $ref: '#/components/parameters/TrialMode'
+  /api/watchers/prediction-market:
+    post:
+      tags:
+      - Watchers
+      summary: 'WATCHER: get a signed callback when a Polymarket outcome''s'
+      description: 'WATCHER: get a signed callback when a Polymarket outcome''s implied probability crosses a level. Arm once, pay once. Pass conditionId (the market''s condition id) and outcomeIndex (0 = first outcome, usually Yes). conditionType ''above''/''below''; threshold is a probability 0–1 (e.g. 0.8). Fires once per crossing; bounded by maxFires/expiry. Prices via Polymarket. Signed (verify offline) + retried; recoverable via watchers.status. Returns a watcherId.'
+      operationId: watchers_prediction-market
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized: items = [the armed prediction-market watcher].'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            watcherId:
+                              type: string
+                            status:
+                              type: string
+                            conditionId:
+                              type: string
+                            outcomeIndex:
+                              type: number
+                            conditionType:
+                              type: string
+                            threshold:
+                              type: number
+                            maxFires:
+                              type: number
+                            firesRemaining:
+                              type: number
+                            expiresAt:
+                              type: string
+                            statusUrl:
+                              type: string
+                            callbackSigner:
+                              type: string
+                          required:
+                          - watcherId
+                          - status
+                          - conditionId
+                          - outcomeIndex
+                          - conditionType
+                          - threshold
+                          - maxFires
+                          - firesRemaining
+                          - expiresAt
+                          - statusUrl
+                          - callbackSigner
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: watchers.prediction-market
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.125
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.125000'
+        protocols:
+        - x402: {}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                conditionId:
+                  type: string
+                  minLength: 3
+                  maxLength: 80
+                  description: Polymarket market conditionId (from predict.market / predict.markets).
+                outcomeIndex:
+                  type: integer
+                  minimum: 0
+                  maximum: 50
+                  description: Which outcome to watch (0 = first, usually Yes). Default 0.
+                conditionType:
+                  type: string
+                  enum:
+                  - above
+                  - below
+                  description: Fire when the probability goes above or below the threshold.
+                threshold:
+                  type: number
+                  minimum: 0
+                  maximum: 1
+                  description: Probability 0–1 to cross, e.g. 0.8.
+                callbackUrl:
+                  type: string
+                  format: uri
+                  maxLength: 2048
+                  description: Signed event POSTed here (verify X-2s-Signature). Any http(s) URL.
+                payload:
+                  type: object
+                  additionalProperties: {}
+                  description: Arbitrary JSON echoed back in every callback.
+                expiresInSeconds:
+                  type: integer
+                  minimum: 60
+                  maximum: 7776000
+                  description: Active window in seconds (default 30d, max 90d).
+                maxFires:
+                  type: integer
+                  minimum: 1
+                  maximum: 1000
+                  description: Stop after this many callbacks (default 1).
+                label:
+                  type: string
+                  maxLength: 64
+                  description: Optional free-text tag.
+              required:
+              - conditionId
+              - conditionType
+              - threshold
+              - callbackUrl
+              additionalProperties: false
+      parameters:
+      - $ref: '#/components/parameters/TrialMode'
+  /api/watchers/product-recall:
+    post:
+      tags:
+      - Watchers
+      summary: 'WATCHER: get a signed callback when a new US product recall'
+      description: 'WATCHER: get a signed callback when a new US product recall is published (CPSC). Arm once, pay once. Optionally pass keyword to only fire on recalls whose title contains it (e.g. a brand or product). Fires once per new recall (deduped by recall id); bounded by maxFires/expiry. Existing recalls at arm time are baselined. Free public-domain data. Signed (verify offline) + retried; recoverable via watchers.status. Returns a watcherId.'
+      operationId: watchers_product-recall
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized: items = [the armed product-recall watcher].'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            watcherId:
+                              type: string
+                            status:
+                              type: string
+                            keyword:
+                              type: string
+                              nullable: true
+                            maxFires:
+                              type: number
+                            firesRemaining:
+                              type: number
+                            expiresAt:
+                              type: string
+                            statusUrl:
+                              type: string
+                            callbackSigner:
+                              type: string
+                          required:
+                          - watcherId
+                          - status
+                          - keyword
+                          - maxFires
+                          - firesRemaining
+                          - expiresAt
+                          - statusUrl
+                          - callbackSigner
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: watchers.product-recall
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.125
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.125000'
+        protocols:
+        - x402: {}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                keyword:
+                  type: string
+                  maxLength: 64
+                  description: 'Optional: only fire on recalls whose title contains this text (case-insensitive).'
+                callbackUrl:
+                  type: string
+                  format: uri
+                  maxLength: 2048
+                  description: Signed event POSTed here (verify X-2s-Signature). Any http(s) URL.
+                payload:
+                  type: object
+                  additionalProperties: {}
+                  description: Arbitrary JSON echoed back in every callback.
+                expiresInSeconds:
+                  type: integer
+                  minimum: 60
+                  maximum: 7776000
+                  description: Active window in seconds (default 30d, max 90d).
+                maxFires:
+                  type: integer
+                  minimum: 1
+                  maximum: 1000
+                  description: Stop after this many recalls (default 25).
+                label:
+                  type: string
+                  maxLength: 64
+                  description: Optional free-text tag.
+              required:
+              - callbackUrl
+              additionalProperties: false
+      parameters:
+      - $ref: '#/components/parameters/TrialMode'
+  /api/watchers/sec-filing:
+    post:
+      tags:
+      - Watchers
+      summary: 'WATCHER: get a signed callback when a US company files with'
+      description: 'WATCHER: get a signed callback when a US company files with the SEC (EDGAR). Arm once, pay once. Pass ticker; optionally form to only fire on a specific filing type (e.g. 8-K, 10-K, 13F, 4). Fires once per new filing (deduped by accession number); bounded by maxFires/expiry. Existing filings at arm time are baselined (no backlog blast). Signed (verify offline) + retried; recoverable via watchers.status. Returns a watcherId.'
+      operationId: watchers_sec-filing
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized: items = [the armed sec-filing watcher].'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            watcherId:
+                              type: string
+                            status:
+                              type: string
+                            ticker:
+                              type: string
+                            form:
+                              type: string
+                              nullable: true
+                            maxFires:
+                              type: number
+                            firesRemaining:
+                              type: number
+                            expiresAt:
+                              type: string
+                            statusUrl:
+                              type: string
+                            callbackSigner:
+                              type: string
+                          required:
+                          - watcherId
+                          - status
+                          - ticker
+                          - form
+                          - maxFires
+                          - firesRemaining
+                          - expiresAt
+                          - statusUrl
+                          - callbackSigner
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: watchers.sec-filing
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.125
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.125000'
+        protocols:
+        - x402: {}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                ticker:
+                  type: string
+                  minLength: 1
+                  maxLength: 12
+                  pattern: ^[A-Za-z][A-Za-z0-9.\-]{0,11}$
+                  description: US-listed ticker, e.g. AAPL.
+                form:
+                  type: string
+                  maxLength: 20
+                  description: Optional filing type to filter on (e.g. 8-K, 10-K, 13F, 4). Omit for all forms.
+                callbackUrl:
+                  type: string
+                  format: uri
+                  maxLength: 2048
+                  description: Signed event POSTed here (verify X-2s-Signature). Any http(s) URL.
+                payload:
+                  type: object
+                  additionalProperties: {}
+                  description: Arbitrary JSON echoed back in every callback.
+                expiresInSeconds:
+                  type: integer
+                  minimum: 60
+                  maximum: 7776000
+                  description: Active window in seconds (default 30d, max 90d).
+                maxFires:
+                  type: integer
+                  minimum: 1
+                  maximum: 1000
+                  description: Stop after this many filings (default 25).
+                label:
+                  type: string
+                  maxLength: 64
+                  description: Optional free-text tag.
+              required:
+              - ticker
+              - callbackUrl
+              additionalProperties: false
+      parameters:
+      - $ref: '#/components/parameters/TrialMode'
+  /api/watchers/status:
+    get:
+      tags:
+      - Watchers
+      summary: 'Status of a watcher by watcherId: state'
+      description: 'Status of a watcher by watcherId: state (armed/completed/expired/cancelled), fires used/remaining, expiry, recent deliveries (with HTTP result + attempt count), and any UNDELIVERED events with their full callback bodies — the pull backstop, so a missed push is always recoverable here. Pairs with watchers.crypto-address-activity.'
+      operationId: watchers_status
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized: items = [watcher status + delivery log].'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            watcherId:
+                              type: string
+                            status:
+                              type: string
+                            chain:
+                              type: string
+                            address:
+                              type: string
+                            firesUsed:
+                              type: number
+                            firesRemaining:
+                              type: number
+                            maxFires:
+                              type: number
+                            expiresAt:
+                              type: string
+                            recentDeliveries:
+                              type: array
+                              items: {}
+                            undelivered:
+                              type: array
+                              items: {}
+                          required:
+                          - watcherId
+                          - status
+                          - chain
+                          - address
+                          - firesUsed
+                          - firesRemaining
+                          - maxFires
+                          - expiresAt
+                          - recentDeliveries
+                          - undelivered
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: watchers.status
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.0025
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.002500'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: watcherId
+        in: query
+        required: true
+        description: Watcher ID.
+        schema:
+          type: string
+          minLength: 8
+          maxLength: 80
+      - $ref: '#/components/parameters/TrialMode'
+  /api/watchers/stock-price:
+    post:
+      tags:
+      - Watchers
+      summary: 'WATCHER: get a signed callback when a US stock crosses a'
+      description: 'WATCHER: get a signed callback when a US stock crosses a price you set. Arm once, pay once (no account, no API key) — we poll the quote during US market hours and POST your custom payload to callbackUrl the moment the condition is met. conditionType: ''above'' / ''below'' (threshold = a USD price) or ''pct_up'' / ''pct_down'' (threshold = a percent move vs the prior close). Fires once per crossing into the condition; bounded by a maxFires / expiry budget. Real-time IEX-tier quote via Finnhub. Deliveries are EIP-191-signed (verify offline) and retried with exponential backoff; missed pushes are recoverable via watchers.status. Returns a watcherId.'
+      operationId: watchers_stock-price
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized: items = [the armed stock-price watcher].'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            watcherId:
+                              type: string
+                            status:
+                              type: string
+                            ticker:
+                              type: string
+                            conditionType:
+                              type: string
+                            threshold:
+                              type: number
+                            maxFires:
+                              type: number
+                            firesRemaining:
+                              type: number
+                            expiresAt:
+                              type: string
+                            statusUrl:
+                              type: string
+                            callbackSigner:
+                              type: string
+                          required:
+                          - watcherId
+                          - status
+                          - ticker
+                          - conditionType
+                          - threshold
+                          - maxFires
+                          - firesRemaining
+                          - expiresAt
+                          - statusUrl
+                          - callbackSigner
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: watchers.stock-price
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.125
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.125000'
+        protocols:
+        - x402: {}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                ticker:
+                  type: string
+                  minLength: 1
+                  maxLength: 12
+                  pattern: ^[A-Za-z][A-Za-z0-9.\-]{0,11}$
+                  description: US-listed ticker to watch, e.g. AAPL.
+                conditionType:
+                  type: string
+                  enum:
+                  - above
+                  - below
+                  - pct_up
+                  - pct_down
+                  description: above/below = threshold is a USD price; pct_up/pct_down = threshold is a percent move vs the prior close.
+                threshold:
+                  type: number
+                  description: The trigger level. A USD price for above/below (e.g. 200), or a percent for pct_up/pct_down (e.g. 5 = ±5%).
+                callbackUrl:
+                  type: string
+                  format: uri
+                  maxLength: 2048
+                  description: Where we POST the event. Any http(s) URL; the JSON body is signed (verify with X-2s-Signature). e.g. https://your-agent.app/hooks/price
+                payload:
+                  type: object
+                  additionalProperties: {}
+                  description: Arbitrary JSON echoed back verbatim in every callback so you can route/identify the event. e.g. {"agentId":"a1"}
+                expiresInSeconds:
+                  type: integer
+                  minimum: 60
+                  maximum: 7776000
+                  description: How long the watch stays active, in seconds. Default 2592000 (30 days), max 7776000 (90 days).
+                maxFires:
+                  type: integer
+                  minimum: 1
+                  maximum: 1000
+                  description: Stop after this many callbacks (default 1 — a one-shot alert). Each fire is a fresh crossing into the condition.
+                label:
+                  type: string
+                  maxLength: 64
+                  description: Optional free-text tag to recognize this watcher later.
+              required:
+              - ticker
+              - conditionType
+              - threshold
+              - callbackUrl
+              additionalProperties: false
+      parameters:
+      - $ref: '#/components/parameters/TrialMode'
+  /api/watchers/token-price:
+    post:
+      tags:
+      - Watchers
+      summary: 'WATCHER: get a signed callback when a crypto asset crosses'
+      description: 'WATCHER: get a signed callback when a crypto asset crosses a price you set. Arm once, pay once (no account, no API key) — we poll the spot price and POST your custom payload to callbackUrl the moment the condition is met. tokenId is a CoinGecko asset id (lowercase, e.g. bitcoin, ethereum, solana — not the ticker). conditionType: ''above'' / ''below'' (threshold = a USD price) or ''pct_up'' / ''pct_down'' (threshold = a percent move over 24h). Fires once per crossing; bounded by a maxFires / expiry budget. Price via CoinGecko. Deliveries are EIP-191-signed (verify offline) and retried with exponential backoff; missed pushes are recoverable via watchers.status. Returns a watcherId.'
+      operationId: watchers_token-price
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized: items = [the armed token-price watcher].'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            watcherId:
+                              type: string
+                            status:
+                              type: string
+                            tokenId:
+                              type: string
+                            conditionType:
+                              type: string
+                            threshold:
+                              type: number
+                            maxFires:
+                              type: number
+                            firesRemaining:
+                              type: number
+                            expiresAt:
+                              type: string
+                            statusUrl:
+                              type: string
+                            callbackSigner:
+                              type: string
+                          required:
+                          - watcherId
+                          - status
+                          - tokenId
+                          - conditionType
+                          - threshold
+                          - maxFires
+                          - firesRemaining
+                          - expiresAt
+                          - statusUrl
+                          - callbackSigner
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: watchers.token-price
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.125
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.125000'
+        protocols:
+        - x402: {}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                tokenId:
+                  type: string
+                  minLength: 1
+                  maxLength: 64
+                  pattern: ^[a-z0-9-]{1,64}$
+                  description: CoinGecko asset id (lowercase, not ticker), e.g. bitcoin, ethereum, solana.
+                conditionType:
+                  type: string
+                  enum:
+                  - above
+                  - below
+                  - pct_up
+                  - pct_down
+                  description: above/below = threshold is a USD price; pct_up/pct_down = threshold is a percent move over 24h.
+                threshold:
+                  type: number
+                  description: 'Trigger level: a USD price for above/below (e.g. 100000), or a percent for pct_up/pct_down (e.g. 10 = ±10% over 24h).'
+                callbackUrl:
+                  type: string
+                  format: uri
+                  maxLength: 2048
+                  description: Where we POST the event. Any http(s) URL; the JSON body is signed (verify with X-2s-Signature). e.g. https://your-agent.app/hooks/btc
+                payload:
+                  type: object
+                  additionalProperties: {}
+                  description: Arbitrary JSON echoed back verbatim in every callback. e.g. {"agentId":"a1"}
+                expiresInSeconds:
+                  type: integer
+                  minimum: 60
+                  maximum: 7776000
+                  description: How long the watch stays active, in seconds. Default 2592000 (30 days), max 7776000 (90 days).
+                maxFires:
+                  type: integer
+                  minimum: 1
+                  maximum: 1000
+                  description: Stop after this many callbacks (default 1 — a one-shot alert). Each fire is a fresh crossing into the condition.
+                label:
+                  type: string
+                  maxLength: 64
+                  description: Optional free-text tag to recognize this watcher later.
+              required:
+              - tokenId
+              - conditionType
+              - threshold
+              - callbackUrl
+              additionalProperties: false
+      parameters:
+      - $ref: '#/components/parameters/TrialMode'
+  /api/watchers/weather-alert:
+    post:
+      tags:
+      - Watchers
+      summary: 'WATCHER: get a signed callback when the US National Weather'
+      description: 'WATCHER: get a signed callback when the US National Weather Service issues a new alert for an area. Arm once, pay once. Pass area (2-letter state/territory code, e.g. CA, TX); optionally severity to only fire at/above a level (Minor/Moderate/Severe/Extreme). Fires once per new alert (deduped by id); bounded by maxFires/expiry. Active alerts at arm time are baselined. Free public-domain (NWS). Signed + retried; recoverable via watchers.status. Returns a watcherId.'
+      operationId: watchers_weather-alert
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized: items = [the armed weather-alert watcher].'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            watcherId:
+                              type: string
+                            status:
+                              type: string
+                            area:
+                              type: string
+                            severity:
+                              type: string
+                              nullable: true
+                            maxFires:
+                              type: number
+                            firesRemaining:
+                              type: number
+                            expiresAt:
+                              type: string
+                            statusUrl:
+                              type: string
+                            callbackSigner:
+                              type: string
+                          required:
+                          - watcherId
+                          - status
+                          - area
+                          - severity
+                          - maxFires
+                          - firesRemaining
+                          - expiresAt
+                          - statusUrl
+                          - callbackSigner
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: watchers.weather-alert
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.125
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.125000'
+        protocols:
+        - x402: {}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                area:
+                  type: string
+                  pattern: ^[A-Za-z]{2}$
+                  description: US state/territory code, e.g. CA, TX, FL.
+                severity:
+                  type: string
+                  enum:
+                  - Minor
+                  - Moderate
+                  - Severe
+                  - Extreme
+                  description: 'Optional: only fire on alerts of this severity.'
+                callbackUrl:
+                  type: string
+                  format: uri
+                  maxLength: 2048
+                  description: Signed event POSTed here (verify X-2s-Signature). Any http(s) URL.
+                payload:
+                  type: object
+                  additionalProperties: {}
+                  description: Arbitrary JSON echoed back in every callback.
+                expiresInSeconds:
+                  type: integer
+                  minimum: 60
+                  maximum: 7776000
+                  description: Active window in seconds (default 30d, max 90d).
+                maxFires:
+                  type: integer
+                  minimum: 1
+                  maximum: 1000
+                  description: Stop after this many alerts (default 25).
+                label:
+                  type: string
+                  maxLength: 64
+                  description: Optional free-text tag.
+              required:
+              - area
+              - callbackUrl
+              additionalProperties: false
+      parameters:
+      - $ref: '#/components/parameters/TrialMode'
+  /api/watchers/whois:
+    post:
+      tags:
+      - Watchers
+      summary: 'WATCHER: get a signed callback when a domain''s WHOIS'
+      description: 'WATCHER: get a signed callback when a domain''s WHOIS registration changes — registrar, expiry, or status. Arm once, pay once. Pass domain. Fires on any WHOIS change (e.g. transfer, renewal, expiry shift); bounded by maxFires/expiry. The record at arm time is baselined. Useful for catching domain transfers/expiries or monitoring a brand. Signed (verify offline) + retried; recoverable via watchers.status. Returns a watcherId.'
+      operationId: watchers_whois
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized: items = [the armed whois watcher].'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            watcherId:
+                              type: string
+                            status:
+                              type: string
+                            domain:
+                              type: string
+                            maxFires:
+                              type: number
+                            firesRemaining:
+                              type: number
+                            expiresAt:
+                              type: string
+                            statusUrl:
+                              type: string
+                            callbackSigner:
+                              type: string
+                          required:
+                          - watcherId
+                          - status
+                          - domain
+                          - maxFires
+                          - firesRemaining
+                          - expiresAt
+                          - statusUrl
+                          - callbackSigner
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: watchers.whois
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.125
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.125000'
+        protocols:
+        - x402: {}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                domain:
+                  type: string
+                  minLength: 3
+                  maxLength: 255
+                  description: Domain to monitor, e.g. example.com.
+                callbackUrl:
+                  type: string
+                  format: uri
+                  maxLength: 2048
+                  description: Signed event POSTed here (verify X-2s-Signature). Any http(s) URL.
+                payload:
+                  type: object
+                  additionalProperties: {}
+                  description: Arbitrary JSON echoed back in every callback.
+                expiresInSeconds:
+                  type: integer
+                  minimum: 60
+                  maximum: 7776000
+                  description: Active window in seconds (default 30d, max 90d).
+                maxFires:
+                  type: integer
+                  minimum: 1
+                  maximum: 1000
+                  description: Stop after this many changes (default 10).
+                label:
+                  type: string
+                  maxLength: 64
+                  description: Optional free-text tag.
+              required:
+              - domain
+              - callbackUrl
+              additionalProperties: false
+      parameters:
+      - $ref: '#/components/parameters/TrialMode'
+components:
+  responses:
+    MethodNotAllowed:
+      description: Method not allowed — see `Allow` header for the supported method.
+    UpstreamError:
+      description: Upstream provider error.
+    ServerError:
+      description: Internal server error.
+    PaymentRequired:
+      description: Payment required. Body contains the x402 PaymentRequirements envelope with a multi-network accepts array; the per-call price is in accepts[].amount (and on the operation as x-2s-price). Sign for whichever rail you hold USDC on (EIP-3009 for Base, partial SPL transfer for Solana) and retry with the PAYMENT-SIGNATURE header (X-PAYMENT also accepted for v1 clients).
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/X402PaymentRequiredV2'
+    BadRequest:
+      description: Bad request — invalid parameters.
+  parameters:
+    TrialMode:
+      name: trial
+      in: query
+      required: false
+      description: 'Try before you buy. Set to 1 for one free real call per endpoint per hour — no wallet or payment needed — to verify the endpoint before paying. Equivalent to sending the "X-2s-Trial: 1" request header. Works on every endpoint.'
+      schema:
+        type: integer
+        enum:
+        - 1
+  schemas:
+    CallMeta:
+      type: object
+      description: Per-call meta envelope — endpoint id, cost, caller kind, settlement details.
+    Source:
+      type: object
+      description: 'Provenance of the data: upstream provider, source URL, and license.'
+      properties:
+        provider:
+          type: string
+          description: Upstream data provider.
+        url:
+          type: string
+          description: Source URL or documentation link.
+        license:
+          type: string
+          description: License / usage terms for the data.
+    X402PaymentRequiredV2:
+      type: object
+      description: x402 v2 PaymentRequired envelope. Pick any entry from accepts[], sign for that rail, retry with the PAYMENT-SIGNATURE header.
+      required:
+      - x402Version
+      - accepts
+      properties:
+        x402Version:
+          type: integer
+          const: 2
+        error:
+          type: string
+          description: Human-readable reason payment is required.
+        resource:
+          type: string
+          description: The resource URL being purchased.
+        accepts:
+          type: array
+          description: Payment requirement options, one per supported network (Base USDC, Solana USDC).
+          items:
+            type: object
+            required:
+            - scheme
+            - network
+            - amount
+            - asset
+            - payTo
+            - maxTimeoutSeconds
+            properties:
+              scheme:
+                type: string
+                enum:
+                - exact
+              network:
+                type: string
+                description: CAIP-2 network id, e.g. "eip155:8453" (Base) or "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp".
+              amount:
+                type: string
+                description: Price in atomic asset units (USDC has 6 decimals).
+              asset:
+                type: string
+                description: Asset contract address / mint.
+              payTo:
+                type: string
+                description: Treasury address to pay.
+              maxTimeoutSeconds:
+                type: integer
+              extra:
+                type: object
+                description: 'Rail-specific extras (EVM: EIP-712 domain name/version; Solana: feePayer).'
+                additionalProperties: true
+        extensions:
+          type: object
+          description: Optional discovery metadata (e.g. bazaar input/output schemas).
+          additionalProperties: true
+  securitySchemes:
+    x402Payment:
+      type: apiKey
+      in: header
+      name: PAYMENT-SIGNATURE
+      description: 'x402 protocol v2: base64-encoded PaymentPayload. Call any paid endpoint without auth to receive a 402 with a multi-network PaymentRequirements envelope. Sign for either rail: EIP-3009 transferWithAuthorization (Base USDC) OR a partial SPL token transfer (Solana USDC). Retry with PAYMENT-SIGNATURE header. X-PAYMENT is also accepted for v1 buyer clients. See https://x402.org.'

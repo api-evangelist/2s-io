@@ -1,0 +1,530 @@
+openapi: 3.2.0
+info:
+  title: 2s — the (most) everything Country API
+  version: '1'
+  summary: The (most) everything API.
+  description: 'The (most) everything API for AI agents: 575+ pay-per-call endpoints on one origin.'
+  contact:
+    name: 2s
+    url: https://2s.io
+    email: alley@2s.io
+  x-logo:
+    url: https://2s.io/icon-512.png
+    altText: 2s
+  x-guidance: 'Pay-per-call REST API for AI agents — hundreds of endpoints returning ground-truth data (US public records, company & legal identifiers, finance/SEC, crypto/web3, security & CVEs, medical codes, weather & geocoding, agriculture, energy, maritime, music, and more). Every endpoint is paid per call in USDC via x402 (Base or Solana) — no API key, no signup. Call any endpoint with no auth to get a 402 PaymentRequirements envelope, sign it (EIP-3009 on Base, partial SPL transfer on Solana), and retry with the PAYMENT-SIGNATURE header. Add ?trial=1 for one free real call per endpoint per hour to test before paying. To discover the right endpoint: GET https://2s.io/api/directory for the full catalog, or GET https://2s.io/api/search/endpoints?q=<natural-language task> for a ranked match. Per-call price is on each operation as x-payment-info (from $0.001). Batch up to 50 calls behind one payment via POST https://2s.io/api/batch/run.'
+servers:
+- url: https://2s.io
+tags:
+- name: Country
+paths:
+  /api/country/financials:
+    get:
+      tags:
+      - Country
+      summary: Country-level financial and credit reference data
+      description: 'Country-level financial and credit reference data: sovereign credit rating, equity risk premium, country risk premium, default spread, currency (name + ISO code), region/sub-region, and ISO country codes. Returns all ~249 countries by default, or pass code (ISO alpha-2 or alpha-3) to get one. Use it for cross-border valuation (discount-rate inputs) and sovereign-risk context — distinct from country.lookup (general reference). Data by Finnhub.'
+      operationId: country_financials
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized: items = country financial/credit reference rows.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            country:
+                              type: string
+                              nullable: true
+                            code2:
+                              type: string
+                              nullable: true
+                            code3:
+                              type: string
+                              nullable: true
+                            currency:
+                              type: string
+                              nullable: true
+                            currencyCode:
+                              type: string
+                              nullable: true
+                            region:
+                              type: string
+                              nullable: true
+                            subRegion:
+                              type: string
+                              nullable: true
+                            rating:
+                              type: string
+                              nullable: true
+                              description: Moody’s-style sovereign credit rating.
+                            equityRiskPremium:
+                              type: number
+                              nullable: true
+                            countryRiskPremium:
+                              type: number
+                              nullable: true
+                            defaultSpread:
+                              type: number
+                              nullable: true
+                          required:
+                          - country
+                          - code2
+                          - code3
+                          - currency
+                          - currencyCode
+                          - region
+                          - subRegion
+                          - rating
+                          - equityRiskPremium
+                          - countryRiskPremium
+                          - defaultSpread
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                      meta:
+                        type: object
+                        properties:
+                          code:
+                            type: string
+                            nullable: true
+                        required:
+                        - code
+                        additionalProperties: false
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: country.financials
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.0025
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.002500'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: code
+        in: query
+        required: false
+        description: ISO alpha-2 or alpha-3 country code. Omit for all countries.
+        schema:
+          type: string
+          minLength: 2
+          maxLength: 3
+          pattern: ^[A-Za-z]{2,3}$
+      - $ref: '#/components/parameters/TrialMode'
+  /api/country/lookup:
+    get:
+      tags:
+      - Country
+      summary: Look up country metadata via REST Countries
+      description: Look up country metadata via REST Countries. Pass alpha2 (2-letter ISO 3166-1), alpha3 (3-letter), or name (with optional fullText=true for exact match). Returns common + official name, ISO codes, region + subregion, independence + UN-member flags, capital(s), population, area km², landlocked flag, neighboring borders (alpha-3), timezones, currencies (code → name + symbol), languages, calling code, flag emoji + SVG/PNG URLs, lat/lng coordinates, Google Maps + OSM URLs, driving side, top-level domains.
+      operationId: country_lookup
+      deprecated: false
+      security:
+      - x402Payment: []
+      responses:
+        '200':
+          description: 'Normalized envelope: items = matched country records (usually one for code lookups, several for name fuzzy match); total = number matched; meta.query echoes the lookup.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        enum:
+                        - true
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            name:
+                              type: object
+                              properties:
+                                common:
+                                  type: string
+                                official:
+                                  type: string
+                              required:
+                              - common
+                              - official
+                              additionalProperties: false
+                            alpha2:
+                              type: string
+                            alpha3:
+                              type: string
+                            numericCode:
+                              type: string
+                              nullable: true
+                            cioc:
+                              type: string
+                              nullable: true
+                            region:
+                              type: string
+                              nullable: true
+                            subregion:
+                              type: string
+                              nullable: true
+                            independent:
+                              type: boolean
+                              nullable: true
+                            unMember:
+                              type: boolean
+                              nullable: true
+                            capital:
+                              type: array
+                              items:
+                                type: string
+                            population:
+                              type: integer
+                              nullable: true
+                            areaKm2:
+                              type: number
+                              nullable: true
+                            landlocked:
+                              type: boolean
+                              nullable: true
+                            borders:
+                              type: array
+                              items:
+                                type: string
+                            timezones:
+                              type: array
+                              items:
+                                type: string
+                            currencies:
+                              type: object
+                              additionalProperties:
+                                type: object
+                                properties:
+                                  name:
+                                    type: string
+                                  symbol:
+                                    type: string
+                                    nullable: true
+                                required:
+                                - name
+                                - symbol
+                                additionalProperties: false
+                            languages:
+                              type: object
+                              additionalProperties:
+                                type: string
+                            callingCode:
+                              type: string
+                              nullable: true
+                            flag:
+                              type: string
+                              nullable: true
+                            flagSvg:
+                              type: string
+                              nullable: true
+                            flagPng:
+                              type: string
+                              nullable: true
+                            coordinates:
+                              type: object
+                              properties:
+                                lat:
+                                  type: number
+                                lng:
+                                  type: number
+                              required:
+                              - lat
+                              - lng
+                              additionalProperties: false
+                              nullable: true
+                            googleMapsUrl:
+                              type: string
+                              nullable: true
+                            openStreetMapsUrl:
+                              type: string
+                              nullable: true
+                            drivingSide:
+                              type: string
+                              nullable: true
+                            tld:
+                              type: array
+                              items:
+                                type: string
+                          required:
+                          - name
+                          - alpha2
+                          - alpha3
+                          - numericCode
+                          - cioc
+                          - region
+                          - subregion
+                          - independent
+                          - unMember
+                          - capital
+                          - population
+                          - areaKm2
+                          - landlocked
+                          - borders
+                          - timezones
+                          - currencies
+                          - languages
+                          - callingCode
+                          - flag
+                          - flagSvg
+                          - flagPng
+                          - coordinates
+                          - googleMapsUrl
+                          - openStreetMapsUrl
+                          - drivingSide
+                          - tld
+                          additionalProperties: false
+                      total:
+                        type: integer
+                        nullable: true
+                        description: Total matching rows upstream; null when unknown.
+                      source:
+                        $ref: '#/components/schemas/Source'
+                      meta:
+                        type: object
+                        properties:
+                          query:
+                            type: object
+                            properties:
+                              alpha2:
+                                type: string
+                                nullable: true
+                              alpha3:
+                                type: string
+                                nullable: true
+                              name:
+                                type: string
+                                nullable: true
+                              fullText:
+                                type: boolean
+                            required:
+                            - alpha2
+                            - alpha3
+                            - name
+                            - fullText
+                            additionalProperties: false
+                        required:
+                        - query
+                        additionalProperties: false
+                    required:
+                    - ok
+                    - items
+                    - total
+                    - source
+                    additionalProperties: false
+                  meta:
+                    $ref: '#/components/schemas/CallMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+          $ref: '#/components/responses/UpstreamError'
+      x-2s-id: country.lookup
+      x-2s-version: null
+      x-2s-price:
+        usd: 0.003
+      x-2s-accepts:
+      - x402
+      x-2s-response-shape: normalized
+      x-payment-info:
+        price:
+          mode: fixed
+          currency: USD
+          amount: '0.003000'
+        protocols:
+        - x402: {}
+      parameters:
+      - name: alpha2
+        in: query
+        required: false
+        description: Alpha2.
+        schema:
+          type: string
+          minLength: 2
+          maxLength: 2
+          pattern: ^[A-Za-z]{2}$
+      - name: alpha3
+        in: query
+        required: false
+        description: Alpha3.
+        schema:
+          type: string
+          minLength: 3
+          maxLength: 3
+          pattern: ^[A-Za-z]{3}$
+      - name: name
+        in: query
+        required: false
+        description: Name to search for.
+        schema:
+          type: string
+          minLength: 2
+          maxLength: 80
+      - name: fullText
+        in: query
+        required: false
+        description: Full text.
+        schema:
+          type: boolean
+          default: false
+      - $ref: '#/components/parameters/TrialMode'
+components:
+  responses:
+    MethodNotAllowed:
+      description: Method not allowed — see `Allow` header for the supported method.
+    UpstreamError:
+      description: Upstream provider error.
+    ServerError:
+      description: Internal server error.
+    PaymentRequired:
+      description: Payment required. Body contains the x402 PaymentRequirements envelope with a multi-network accepts array; the per-call price is in accepts[].amount (and on the operation as x-2s-price). Sign for whichever rail you hold USDC on (EIP-3009 for Base, partial SPL transfer for Solana) and retry with the PAYMENT-SIGNATURE header (X-PAYMENT also accepted for v1 clients).
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/X402PaymentRequiredV2'
+    BadRequest:
+      description: Bad request — invalid parameters.
+  parameters:
+    TrialMode:
+      name: trial
+      in: query
+      required: false
+      description: 'Try before you buy. Set to 1 for one free real call per endpoint per hour — no wallet or payment needed — to verify the endpoint before paying. Equivalent to sending the "X-2s-Trial: 1" request header. Works on every endpoint.'
+      schema:
+        type: integer
+        enum:
+        - 1
+  schemas:
+    CallMeta:
+      type: object
+      description: Per-call meta envelope — endpoint id, cost, caller kind, settlement details.
+    Source:
+      type: object
+      description: 'Provenance of the data: upstream provider, source URL, and license.'
+      properties:
+        provider:
+          type: string
+          description: Upstream data provider.
+        url:
+          type: string
+          description: Source URL or documentation link.
+        license:
+          type: string
+          description: License / usage terms for the data.
+    X402PaymentRequiredV2:
+      type: object
+      description: x402 v2 PaymentRequired envelope. Pick any entry from accepts[], sign for that rail, retry with the PAYMENT-SIGNATURE header.
+      required:
+      - x402Version
+      - accepts
+      properties:
+        x402Version:
+          type: integer
+          const: 2
+        error:
+          type: string
+          description: Human-readable reason payment is required.
+        resource:
+          type: string
+          description: The resource URL being purchased.
+        accepts:
+          type: array
+          description: Payment requirement options, one per supported network (Base USDC, Solana USDC).
+          items:
+            type: object
+            required:
+            - scheme
+            - network
+            - amount
+            - asset
+            - payTo
+            - maxTimeoutSeconds
+            properties:
+              scheme:
+                type: string
+                enum:
+                - exact
+              network:
+                type: string
+                description: CAIP-2 network id, e.g. "eip155:8453" (Base) or "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp".
+              amount:
+                type: string
+                description: Price in atomic asset units (USDC has 6 decimals).
+              asset:
+                type: string
+                description: Asset contract address / mint.
+              payTo:
+                type: string
+                description: Treasury address to pay.
+              maxTimeoutSeconds:
+                type: integer
+              extra:
+                type: object
+                description: 'Rail-specific extras (EVM: EIP-712 domain name/version; Solana: feePayer).'
+                additionalProperties: true
+        extensions:
+          type: object
+          description: Optional discovery metadata (e.g. bazaar input/output schemas).
+          additionalProperties: true
+  securitySchemes:
+    x402Payment:
+      type: apiKey
+      in: header
+      name: PAYMENT-SIGNATURE
+      description: 'x402 protocol v2: base64-encoded PaymentPayload. Call any paid endpoint without auth to receive a 402 with a multi-network PaymentRequirements envelope. Sign for either rail: EIP-3009 transferWithAuthorization (Base USDC) OR a partial SPL token transfer (Solana USDC). Retry with PAYMENT-SIGNATURE header. X-PAYMENT is also accepted for v1 buyer clients. See https://x402.org.'
