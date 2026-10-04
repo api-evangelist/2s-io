@@ -126,6 +126,8 @@ apis:
   humanURL: https://2s.io/discover
   baseURL: https://2s.io/mcp
   tags:
+  - Agents
+  tags_raw:
   - agent
   properties:
   - type: OpenAPI
@@ -142,6 +144,8 @@ apis:
   humanURL: https://2s.io/discover
   baseURL: https://2s.io/mcp
   tags:
+  - Agriculture
+  tags_raw:
   - agriculture
   properties:
   - type: OpenAPI
@@ -158,6 +162,8 @@ apis:
   humanURL: https://2s.io/discover
   baseURL: https://2s.io/mcp
   tags:
+  - Artificial Intelligence
+  tags_raw:
   - ai
   properties:
   - type: OpenAPI
@@ -174,6 +180,8 @@ apis:
   humanURL: https://2s.io/discover
   baseURL: https://2s.io/mcp
   tags:
+  - Airport
+  tags_raw:
   - airport
   properties:
   - type: OpenAPI
@@ -190,6 +198,8 @@ apis:
   humanURL: https://2s.io/discover
   baseURL: https://2s.io/mcp
   tags:
+  - Aviation
+  tags_raw:
   - aviation
   properties:
   - type: OpenAPI
@@ -206,6 +216,8 @@ apis:
   humanURL: https://2s.io/discover
   baseURL: https://2s.io/mcp
   tags:
+  - Bank
+  tags_raw:
   - bank
   properties:
   - type: OpenAPI
@@ -222,6 +234,8 @@ apis:
   humanURL: https://2s.io/discover
   baseURL: https://2s.io/mcp
   tags:
+  - Barcodes
+  tags_raw:
   - barcode
   properties:
   - type: OpenAPI
@@ -238,6 +252,8 @@ apis:
   humanURL: https://2s.io/discover
   baseURL: https://2s.io/mcp
   tags:
+  - Batch
+  tags_raw:
   - batch
   properties:
   - type: OpenAPI
@@ -254,6 +270,8 @@ apis:
   humanURL: https://2s.io/discover
   baseURL: https://2s.io/mcp
   tags:
+  - Bio
+  tags_raw:
   - bio
   properties:
   - type: OpenAPI
@@ -270,6 +288,8 @@ apis:
   humanURL: https://2s.io/discover
   baseURL: https://2s.io/mcp
   tags:
+  - BLS
+  tags_raw:
   - bls
   properties:
   - type: OpenAPI
@@ -286,6 +306,8 @@ apis:
   humanURL: https://2s.io/discover
   baseURL: https://2s.io/mcp
   tags:
+  - Book
+  tags_raw:
   - book
   properties:
   - type: OpenAPI
@@ -302,6 +324,8 @@ apis:
   humanURL: https://2s.io/discover
   baseURL: https://2s.io/mcp
   tags:
+  - Business
+  tags_raw:
   - business
   properties:
   - type: OpenAPI
@@ -318,6 +342,8 @@ apis:
   humanURL: https://2s.io/discover
   baseURL: https://2s.io/mcp
   tags:
+  - Calendar
+  tags_raw:
   - calendar
   properties:
   - type: OpenAPI
@@ -334,6 +360,8 @@ apis:
   humanURL: https://2s.io/discover
   baseURL: https://2s.io/mcp
   tags:
+  - Census
+  tags_raw:
   - census
   properties:
   - type: OpenAPI
@@ -366,6 +394,8 @@ apis:
   humanURL: https://2s.io/discover
   baseURL: https://2s.io/mcp
   tags:
+  - Chinese
+  tags_raw:
   - chinese
   properties:
   - type: OpenAPI
@@ -382,6 +412,8 @@ apis:
   humanURL: https://2s.io/discover
   baseURL: https://2s.io/mcp
   tags:
+  - Class
+  tags_raw:
   - class
   properties:
   - type: OpenAPI
@@ -398,6 +430,8 @@ apis:
   humanURL: https://2s.io/discover
   baseURL: https://2s.io/mcp
   tags:
+  - Climate
+  tags_raw:
   - climate
   properties:
   - type: OpenAPI
@@ -414,6 +448,8 @@ apis:
   humanURL: https://2s.io/discover
   baseURL: https://2s.io/mcp
   tags:
+  - Clinical
+  tags_raw:
   - clinical
   properties:
   - type: OpenAPI
@@ -430,6 +466,8 @@ apis:
   humanURL: https://2s.io/discover
   baseURL: https://2s.io/mcp
   tags:
+  - Code
+  tags_raw:
   - code
   properties:
   - type: OpenAPI
@@ -446,6 +484,8 @@ apis:
   humanURL: https://2s.io/discover
   baseURL: https://2s.io/mcp
   tags:
+  - Convert
+  tags_raw:
   - convert
   properties:
   - type: OpenAPI
@@ -462,6 +502,8 @@ apis:
   humanURL: https://2s.io/discover
   baseURL: https://2s.io/mcp
   tags:
+  - Countdown
+  tags_raw:
   - countdown
   properties:
   - type: OpenAPI
@@ -478,6 +520,8 @@ apis:
   humanURL: https://2s.io/discover
   baseURL: https://2s.io/mcp
   tags:
+  - Country
+  tags_raw:
   - country
   properties:
   - type: OpenAPI
@@ -494,6 +538,8 @@ apis:
   humanURL: https://2s.io/discover
   baseURL: https://2s.io/mcp
   tags:
+  - Crypto
+  tags_raw:
   - crypto
   properties:
   - type: OpenAPI
@@ -510,6 +556,8 @@ apis:
   humanURL: https://2s.io/discover
   baseURL: https://2s.io/mcp
   tags:
+  - Dev
+  tags_raw:
   - dev
   properties:
   - type: OpenAPI
@@ -526,6 +574,8 @@ apis:
   humanURL: https://2s.io/discover
   baseURL: https://2s.io/mcp
   tags:
+  - DNS
+  tags_raw:
   - dns
   properties:
   - type: OpenAPI
@@ -542,6 +592,8 @@ apis:
   humanURL: https://2s.io/discover
   baseURL: https://2s.io/mcp
   tags:
+  - Domain
+  tags_raw:
   - domain
   properties:
   - type: OpenAPI
@@ -558,6 +610,8 @@ apis:
   humanURL: https://2s.io/discover
   baseURL: https://2s.io/mcp
   tags:
+  - Earth
+  tags_raw:
   - earth
   properties:
   - type: OpenAPI
@@ -590,6 +644,8 @@ apis:
   humanURL: https://2s.io/discover
   baseURL: https://2s.io/mcp
   tags:
+  - EDI
+  tags_raw:
   - edi
   properties:
   - type: OpenAPI
@@ -622,6 +678,8 @@ apis:
   humanURL: https://2s.io/discover
   baseURL: https://2s.io/mcp
   tags:
+  - Email
+  tags_raw:
   - email
   properties:
   - type: OpenAPI
@@ -638,6 +696,8 @@ apis:
   humanURL: https://2s.io/discover
   baseURL: https://2s.io/mcp
   tags:
+  - Energy
+  tags_raw:
   - energy
   properties:
   - type: OpenAPI
@@ -654,6 +714,8 @@ apis:
   humanURL: https://2s.io/discover
   baseURL: https://2s.io/mcp
   tags:
+  - Fact Check
+  tags_raw:
   - factcheck
   properties:
   - type: OpenAPI
@@ -670,6 +732,8 @@ apis:
   humanURL: https://2s.io/discover
   baseURL: https://2s.io/mcp
   tags:
+  - Feedback
+  tags_raw:
   - feedback
   properties:
   - type: OpenAPI
@@ -686,6 +750,8 @@ apis:
   humanURL: https://2s.io/discover
   baseURL: https://2s.io/mcp
   tags:
+  - Finance
+  tags_raw:
   - finance
   properties:
   - type: OpenAPI
@@ -702,6 +768,8 @@ apis:
   humanURL: https://2s.io/discover
   baseURL: https://2s.io/mcp
   tags:
+  - Flights
+  tags_raw:
   - flight
   properties:
   - type: OpenAPI
@@ -718,6 +786,8 @@ apis:
   humanURL: https://2s.io/discover
   baseURL: https://2s.io/mcp
   tags:
+  - Food
+  tags_raw:
   - food
   properties:
   - type: OpenAPI
@@ -734,6 +804,8 @@ apis:
   humanURL: https://2s.io/discover
   baseURL: https://2s.io/mcp
   tags:
+  - FX
+  tags_raw:
   - fx
   properties:
   - type: OpenAPI
@@ -750,6 +822,8 @@ apis:
   humanURL: https://2s.io/discover
   baseURL: https://2s.io/mcp
   tags:
+  - Geo
+  tags_raw:
   - geo
   properties:
   - type: OpenAPI
@@ -766,6 +840,8 @@ apis:
   humanURL: https://2s.io/discover
   baseURL: https://2s.io/mcp
   tags:
+  - Geocode
+  tags_raw:
   - geocode
   properties:
   - type: OpenAPI
@@ -782,6 +858,8 @@ apis:
   humanURL: https://2s.io/discover
   baseURL: https://2s.io/mcp
   tags:
+  - GitHub
+  tags_raw:
   - github
   properties:
   - type: OpenAPI
@@ -798,6 +876,8 @@ apis:
   humanURL: https://2s.io/discover
   baseURL: https://2s.io/mcp
   tags:
+  - Gov
+  tags_raw:
   - gov
   properties:
   - type: OpenAPI
@@ -814,6 +894,8 @@ apis:
   humanURL: https://2s.io/discover
   baseURL: https://2s.io/mcp
   tags:
+  - Hash
+  tags_raw:
   - hash
   properties:
   - type: OpenAPI
@@ -830,6 +912,8 @@ apis:
   humanURL: https://2s.io/discover
   baseURL: https://2s.io/mcp
   tags:
+  - Health
+  tags_raw:
   - health
   properties:
   - type: OpenAPI
@@ -846,6 +930,8 @@ apis:
   humanURL: https://2s.io/discover
   baseURL: https://2s.io/mcp
   tags:
+  - HTML
+  tags_raw:
   - html
   properties:
   - type: OpenAPI
@@ -862,6 +948,8 @@ apis:
   humanURL: https://2s.io/discover
   baseURL: https://2s.io/mcp
   tags:
+  - Image
+  tags_raw:
   - image
   properties:
   - type: OpenAPI
@@ -878,6 +966,8 @@ apis:
   humanURL: https://2s.io/discover
   baseURL: https://2s.io/mcp
   tags:
+  - Inflation
+  tags_raw:
   - inflation
   properties:
   - type: OpenAPI
@@ -894,6 +984,8 @@ apis:
   humanURL: https://2s.io/discover
   baseURL: https://2s.io/mcp
   tags:
+  - ip-info
+  tags_raw:
   - ipinfo
   properties:
   - type: OpenAPI
@@ -910,6 +1002,8 @@ apis:
   humanURL: https://2s.io/discover
   baseURL: https://2s.io/mcp
   tags:
+  - ISO
+  tags_raw:
   - iso
   properties:
   - type: OpenAPI
@@ -926,6 +1020,8 @@ apis:
   humanURL: https://2s.io/discover
   baseURL: https://2s.io/mcp
   tags:
+  - Job
+  tags_raw:
   - job
   properties:
   - type: OpenAPI
@@ -942,6 +1038,8 @@ apis:
   humanURL: https://2s.io/discover
   baseURL: https://2s.io/mcp
   tags:
+  - Labor
+  tags_raw:
   - labor
   properties:
   - type: OpenAPI
@@ -958,6 +1056,8 @@ apis:
   humanURL: https://2s.io/discover
   baseURL: https://2s.io/mcp
   tags:
+  - Law
+  tags_raw:
   - law
   properties:
   - type: OpenAPI
@@ -974,6 +1074,8 @@ apis:
   humanURL: https://2s.io/discover
   baseURL: https://2s.io/mcp
   tags:
+  - License
+  tags_raw:
   - license
   properties:
   - type: OpenAPI
@@ -990,6 +1092,8 @@ apis:
   humanURL: https://2s.io/discover
   baseURL: https://2s.io/mcp
   tags:
+  - Lock
+  tags_raw:
   - lock
   properties:
   - type: OpenAPI
@@ -1006,6 +1110,8 @@ apis:
   humanURL: https://2s.io/discover
   baseURL: https://2s.io/mcp
   tags:
+  - Maritime
+  tags_raw:
   - maritime
   properties:
   - type: OpenAPI
@@ -1022,6 +1128,8 @@ apis:
   humanURL: https://2s.io/discover
   baseURL: https://2s.io/mcp
   tags:
+  - Markets
+  tags_raw:
   - markets
   properties:
   - type: OpenAPI
@@ -1038,6 +1146,8 @@ apis:
   humanURL: https://2s.io/discover
   baseURL: https://2s.io/mcp
   tags:
+  - Medical
+  tags_raw:
   - medical
   properties:
   - type: OpenAPI
@@ -1054,6 +1164,8 @@ apis:
   humanURL: https://2s.io/discover
   baseURL: https://2s.io/mcp
   tags:
+  - Music
+  tags_raw:
   - music
   properties:
   - type: OpenAPI
@@ -1070,6 +1182,8 @@ apis:
   humanURL: https://2s.io/discover
   baseURL: https://2s.io/mcp
   tags:
+  - .NET
+  tags_raw:
   - net
   properties:
   - type: OpenAPI
@@ -1086,6 +1200,8 @@ apis:
   humanURL: https://2s.io/discover
   baseURL: https://2s.io/mcp
   tags:
+  - News
+  tags_raw:
   - news
   properties:
   - type: OpenAPI
@@ -1102,6 +1218,8 @@ apis:
   humanURL: https://2s.io/discover
   baseURL: https://2s.io/mcp
   tags:
+  - Non-Profit
+  tags_raw:
   - nonprofit
   properties:
   - type: OpenAPI
@@ -1118,6 +1236,8 @@ apis:
   humanURL: https://2s.io/discover
   baseURL: https://2s.io/mcp
   tags:
+  - Nutrition
+  tags_raw:
   - nutrition
   properties:
   - type: OpenAPI
@@ -1134,6 +1254,8 @@ apis:
   humanURL: https://2s.io/discover
   baseURL: https://2s.io/mcp
   tags:
+  - Occupation
+  tags_raw:
   - occupation
   properties:
   - type: OpenAPI
@@ -1150,6 +1272,8 @@ apis:
   humanURL: https://2s.io/discover
   baseURL: https://2s.io/mcp
   tags:
+  - Paper
+  tags_raw:
   - paper
   properties:
   - type: OpenAPI
@@ -1166,6 +1290,8 @@ apis:
   humanURL: https://2s.io/discover
   baseURL: https://2s.io/mcp
   tags:
+  - Paper
+  tags_raw:
   - papers
   properties:
   - type: OpenAPI
@@ -1182,6 +1308,8 @@ apis:
   humanURL: https://2s.io/discover
   baseURL: https://2s.io/mcp
   tags:
+  - Park
+  tags_raw:
   - park
   properties:
   - type: OpenAPI
@@ -1198,6 +1326,8 @@ apis:
   humanURL: https://2s.io/discover
   baseURL: https://2s.io/mcp
   tags:
+  - Patents
+  tags_raw:
   - patents
   properties:
   - type: OpenAPI
@@ -1214,6 +1344,8 @@ apis:
   humanURL: https://2s.io/discover
   baseURL: https://2s.io/mcp
   tags:
+  - Persons
+  tags_raw:
   - person
   properties:
   - type: OpenAPI
@@ -1230,6 +1362,8 @@ apis:
   humanURL: https://2s.io/discover
   baseURL: https://2s.io/mcp
   tags:
+  - Phone
+  tags_raw:
   - phone
   properties:
   - type: OpenAPI
@@ -1246,6 +1380,8 @@ apis:
   humanURL: https://2s.io/discover
   baseURL: https://2s.io/mcp
   tags:
+  - POI
+  tags_raw:
   - poi
   properties:
   - type: OpenAPI
@@ -1262,6 +1398,8 @@ apis:
   humanURL: https://2s.io/discover
   baseURL: https://2s.io/mcp
   tags:
+  - Predict
+  tags_raw:
   - predict
   properties:
   - type: OpenAPI
@@ -1278,6 +1416,8 @@ apis:
   humanURL: https://2s.io/discover
   baseURL: https://2s.io/mcp
   tags:
+  - Product
+  tags_raw:
   - product
   properties:
   - type: OpenAPI
@@ -1294,6 +1434,8 @@ apis:
   humanURL: https://2s.io/discover
   baseURL: https://2s.io/mcp
   tags:
+  - Property
+  tags_raw:
   - property
   properties:
   - type: OpenAPI
@@ -1310,6 +1452,8 @@ apis:
   humanURL: https://2s.io/discover
   baseURL: https://2s.io/mcp
   tags:
+  - Pub-Sub
+  tags_raw:
   - pubsub
   properties:
   - type: OpenAPI
@@ -1342,6 +1486,8 @@ apis:
   humanURL: https://2s.io/discover
   baseURL: https://2s.io/mcp
   tags:
+  - Queues
+  tags_raw:
   - queue
   properties:
   - type: OpenAPI
@@ -1358,6 +1504,8 @@ apis:
   humanURL: https://2s.io/discover
   baseURL: https://2s.io/mcp
   tags:
+  - Recreation
+  tags_raw:
   - recreation
   properties:
   - type: OpenAPI
@@ -1374,6 +1522,8 @@ apis:
   humanURL: https://2s.io/discover
   baseURL: https://2s.io/mcp
   tags:
+  - Registry
+  tags_raw:
   - registry
   properties:
   - type: OpenAPI
@@ -1390,6 +1540,8 @@ apis:
   humanURL: https://2s.io/discover
   baseURL: https://2s.io/mcp
   tags:
+  - Research
+  tags_raw:
   - research
   properties:
   - type: OpenAPI
@@ -1406,6 +1558,8 @@ apis:
   humanURL: https://2s.io/discover
   baseURL: https://2s.io/mcp
   tags:
+  - Schedule
+  tags_raw:
   - schedule
   properties:
   - type: OpenAPI
@@ -1422,6 +1576,8 @@ apis:
   humanURL: https://2s.io/discover
   baseURL: https://2s.io/mcp
   tags:
+  - Search
+  tags_raw:
   - search
   properties:
   - type: OpenAPI
@@ -1438,6 +1594,8 @@ apis:
   humanURL: https://2s.io/discover
   baseURL: https://2s.io/mcp
   tags:
+  - Security
+  tags_raw:
   - security
   properties:
   - type: OpenAPI
@@ -1454,6 +1612,8 @@ apis:
   humanURL: https://2s.io/discover
   baseURL: https://2s.io/mcp
   tags:
+  - Soil
+  tags_raw:
   - soil
   properties:
   - type: OpenAPI
@@ -1470,6 +1630,8 @@ apis:
   humanURL: https://2s.io/discover
   baseURL: https://2s.io/mcp
   tags:
+  - Space
+  tags_raw:
   - space
   properties:
   - type: OpenAPI
@@ -1486,6 +1648,8 @@ apis:
   humanURL: https://2s.io/discover
   baseURL: https://2s.io/mcp
   tags:
+  - Sports
+  tags_raw:
   - sports
   properties:
   - type: OpenAPI
@@ -1502,6 +1666,8 @@ apis:
   humanURL: https://2s.io/discover
   baseURL: https://2s.io/mcp
   tags:
+  - Stocks
+  tags_raw:
   - stocks
   properties:
   - type: OpenAPI
@@ -1518,6 +1684,8 @@ apis:
   humanURL: https://2s.io/discover
   baseURL: https://2s.io/mcp
   tags:
+  - Store
+  tags_raw:
   - store
   properties:
   - type: OpenAPI
@@ -1534,6 +1702,8 @@ apis:
   humanURL: https://2s.io/discover
   baseURL: https://2s.io/mcp
   tags:
+  - Sunrise
+  tags_raw:
   - sunrise
   properties:
   - type: OpenAPI
@@ -1550,6 +1720,8 @@ apis:
   humanURL: https://2s.io/discover
   baseURL: https://2s.io/mcp
   tags:
+  - Tax
+  tags_raw:
   - tax
   properties:
   - type: OpenAPI
@@ -1566,6 +1738,8 @@ apis:
   humanURL: https://2s.io/discover
   baseURL: https://2s.io/mcp
   tags:
+  - TCG
+  tags_raw:
   - tcg
   properties:
   - type: OpenAPI
@@ -1582,6 +1756,8 @@ apis:
   humanURL: https://2s.io/discover
   baseURL: https://2s.io/mcp
   tags:
+  - Telecommunications
+  tags_raw:
   - telecom
   properties:
   - type: OpenAPI
@@ -1598,6 +1774,8 @@ apis:
   humanURL: https://2s.io/discover
   baseURL: https://2s.io/mcp
   tags:
+  - Text
+  tags_raw:
   - text
   properties:
   - type: OpenAPI
@@ -1614,6 +1792,8 @@ apis:
   humanURL: https://2s.io/discover
   baseURL: https://2s.io/mcp
   tags:
+  - Tides
+  tags_raw:
   - tides
   properties:
   - type: OpenAPI
@@ -1630,6 +1810,8 @@ apis:
   humanURL: https://2s.io/discover
   baseURL: https://2s.io/mcp
   tags:
+  - Time
+  tags_raw:
   - time
   properties:
   - type: OpenAPI
@@ -1646,6 +1828,8 @@ apis:
   humanURL: https://2s.io/discover
   baseURL: https://2s.io/mcp
   tags:
+  - Timezone
+  tags_raw:
   - timezone
   properties:
   - type: OpenAPI
@@ -1678,6 +1862,8 @@ apis:
   humanURL: https://2s.io/discover
   baseURL: https://2s.io/mcp
   tags:
+  - TLS
+  tags_raw:
   - tls
   properties:
   - type: OpenAPI
@@ -1694,6 +1880,8 @@ apis:
   humanURL: https://2s.io/discover
   baseURL: https://2s.io/mcp
   tags:
+  - Trade
+  tags_raw:
   - trade
   properties:
   - type: OpenAPI
@@ -1726,6 +1914,8 @@ apis:
   humanURL: https://2s.io/discover
   baseURL: https://2s.io/mcp
   tags:
+  - Travel
+  tags_raw:
   - travel
   properties:
   - type: OpenAPI
@@ -1742,6 +1932,8 @@ apis:
   humanURL: https://2s.io/discover
   baseURL: https://2s.io/mcp
   tags:
+  - Treasury
+  tags_raw:
   - treasury
   properties:
   - type: OpenAPI
@@ -1758,6 +1950,8 @@ apis:
   humanURL: https://2s.io/discover
   baseURL: https://2s.io/mcp
   tags:
+  - URLs
+  tags_raw:
   - url
   properties:
   - type: OpenAPI
@@ -1774,6 +1968,8 @@ apis:
   humanURL: https://2s.io/discover
   baseURL: https://2s.io/mcp
   tags:
+  - Validate
+  tags_raw:
   - validate
   properties:
   - type: OpenAPI
@@ -1790,6 +1986,8 @@ apis:
   humanURL: https://2s.io/discover
   baseURL: https://2s.io/mcp
   tags:
+  - Vehicles
+  tags_raw:
   - vehicle
   properties:
   - type: OpenAPI
@@ -1806,6 +2004,8 @@ apis:
   humanURL: https://2s.io/discover
   baseURL: https://2s.io/mcp
   tags:
+  - Watchers
+  tags_raw:
   - watchers
   properties:
   - type: OpenAPI
@@ -1822,6 +2022,8 @@ apis:
   humanURL: https://2s.io/discover
   baseURL: https://2s.io/mcp
   tags:
+  - Water
+  tags_raw:
   - water
   properties:
   - type: OpenAPI
@@ -1838,6 +2040,8 @@ apis:
   humanURL: https://2s.io/discover
   baseURL: https://2s.io/mcp
   tags:
+  - Weather
+  tags_raw:
   - weather
   properties:
   - type: OpenAPI
@@ -1870,6 +2074,8 @@ apis:
   humanURL: https://2s.io/discover
   baseURL: https://2s.io/mcp
   tags:
+  - Wikipedia
+  tags_raw:
   - wikipedia
   properties:
   - type: OpenAPI
@@ -1886,6 +2092,8 @@ apis:
   humanURL: https://2s.io/discover
   baseURL: https://2s.io/mcp
   tags:
+  - Word
+  tags_raw:
   - word
   properties:
   - type: OpenAPI
@@ -1902,6 +2110,8 @@ apis:
   humanURL: https://2s.io/discover
   baseURL: https://2s.io/mcp
   tags:
+  - World Bank
+  tags_raw:
   - worldbank
   properties:
   - type: OpenAPI
@@ -1918,6 +2128,9 @@ maintainers:
 - FN: APIs.json
   email: info@apis.io
 common:
+- type: CapabilityMap
+  url: capabilities/2s-io-capability-edges.yml
+  name: 2s Business Capability Map
 - type: Overlay
   url: overlays/2s-io-openapi-overlay.yaml
 - type: Website
