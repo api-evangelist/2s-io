@@ -293,6 +293,31 @@ paths:
           maxLength: 12
       - $ref: '#/components/parameters/TrialMode'
 components:
+  responses:
+    PaymentRequired:
+      description: Payment required. Body contains the x402 PaymentRequirements envelope with a multi-network accepts array; the per-call price is in accepts[].amount (and on the operation as x-2s-price). Sign for whichever rail you hold USDC on (EIP-3009 for Base, partial SPL transfer for Solana) and retry with the PAYMENT-SIGNATURE header (X-PAYMENT also accepted for v1 clients).
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/X402PaymentRequiredV2'
+    UpstreamError:
+      description: Upstream provider error.
+    MethodNotAllowed:
+      description: Method not allowed — see `Allow` header for the supported method.
+    ServerError:
+      description: Internal server error.
+    BadRequest:
+      description: Bad request — invalid parameters.
+  parameters:
+    TrialMode:
+      name: trial
+      in: query
+      required: false
+      description: 'Try before you buy. Set to 1 for one free real call per endpoint per hour — no wallet or payment needed — to verify the endpoint before paying. Equivalent to sending the "X-2s-Trial: 1" request header. Works on every endpoint.'
+      schema:
+        type: integer
+        enum:
+        - 1
   schemas:
     X402PaymentRequiredV2:
       type: object
@@ -349,31 +374,6 @@ components:
           type: object
           description: Optional discovery metadata (e.g. bazaar input/output schemas).
           additionalProperties: true
-  responses:
-    ServerError:
-      description: Internal server error.
-    PaymentRequired:
-      description: Payment required. Body contains the x402 PaymentRequirements envelope with a multi-network accepts array; the per-call price is in accepts[].amount (and on the operation as x-2s-price). Sign for whichever rail you hold USDC on (EIP-3009 for Base, partial SPL transfer for Solana) and retry with the PAYMENT-SIGNATURE header (X-PAYMENT also accepted for v1 clients).
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/X402PaymentRequiredV2'
-    MethodNotAllowed:
-      description: Method not allowed — see `Allow` header for the supported method.
-    BadRequest:
-      description: Bad request — invalid parameters.
-    UpstreamError:
-      description: Upstream provider error.
-  parameters:
-    TrialMode:
-      name: trial
-      in: query
-      required: false
-      description: 'Try before you buy. Set to 1 for one free real call per endpoint per hour — no wallet or payment needed — to verify the endpoint before paying. Equivalent to sending the "X-2s-Trial: 1" request header. Works on every endpoint.'
-      schema:
-        type: integer
-        enum:
-        - 1
   securitySchemes:
     x402Payment:
       type: apiKey

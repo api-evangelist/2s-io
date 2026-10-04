@@ -216,6 +216,22 @@ paths:
       - $ref: '#/components/parameters/TrialMode'
 components:
   schemas:
+    Source:
+      type: object
+      description: 'Provenance of the data: upstream provider, source URL, and license.'
+      properties:
+        provider:
+          type: string
+          description: Upstream data provider.
+        url:
+          type: string
+          description: Source URL or documentation link.
+        license:
+          type: string
+          description: License / usage terms for the data.
+    CallMeta:
+      type: object
+      description: Per-call meta envelope — endpoint id, cost, caller kind, settlement details.
     X402PaymentRequiredV2:
       type: object
       description: x402 v2 PaymentRequired envelope. Pick any entry from accepts[], sign for that rail, retry with the PAYMENT-SIGNATURE header.
@@ -271,37 +287,21 @@ components:
           type: object
           description: Optional discovery metadata (e.g. bazaar input/output schemas).
           additionalProperties: true
-    Source:
-      type: object
-      description: 'Provenance of the data: upstream provider, source URL, and license.'
-      properties:
-        provider:
-          type: string
-          description: Upstream data provider.
-        url:
-          type: string
-          description: Source URL or documentation link.
-        license:
-          type: string
-          description: License / usage terms for the data.
-    CallMeta:
-      type: object
-      description: Per-call meta envelope — endpoint id, cost, caller kind, settlement details.
   responses:
-    ServerError:
-      description: Internal server error.
     PaymentRequired:
       description: Payment required. Body contains the x402 PaymentRequirements envelope with a multi-network accepts array; the per-call price is in accepts[].amount (and on the operation as x-2s-price). Sign for whichever rail you hold USDC on (EIP-3009 for Base, partial SPL transfer for Solana) and retry with the PAYMENT-SIGNATURE header (X-PAYMENT also accepted for v1 clients).
       content:
         application/json:
           schema:
             $ref: '#/components/schemas/X402PaymentRequiredV2'
-    MethodNotAllowed:
-      description: Method not allowed — see `Allow` header for the supported method.
-    BadRequest:
-      description: Bad request — invalid parameters.
     UpstreamError:
       description: Upstream provider error.
+    MethodNotAllowed:
+      description: Method not allowed — see `Allow` header for the supported method.
+    ServerError:
+      description: Internal server error.
+    BadRequest:
+      description: Bad request — invalid parameters.
   parameters:
     TrialMode:
       name: trial
