@@ -1,0 +1,38 @@
+slug: 2s-io
+provider: 2s
+generated_by: planning/capability-mapping/scripts/classify_capabilities.py
+model: claude-opus-5
+frame:
+- Software & Technology
+min_confidence: 0.7
+capability_model:
+  source: https://github.com/vincentmakes/turbo-ea-capabilities
+  license: CC-BY-4.0
+  attribution: Turbo EA Capabilities by Vincent Verdet — Turbo EA, https://github.com/vincentmakes/turbo-ea-capabilities,
+    CC BY 4.0
+  notice: NOTICE
+edge_count: 2
+edges:
+- tag: Security
+  spec_file: 2s-io-security-api-openapi.yml
+  capability_id: BC-620
+  capability_id_l1: BC-620
+  capability_name: Cybersecurity Management
+  confidence: 0.85
+  evidence: GET /api/security/cve — "Look up a CVE by id"; GET /api/security/exploit-availability — "Does
+    public exploit code exist for a CVE"; GET /api/security/ioc-reputation — "Threat-intelligence reputation
+    for an indicator of"
+  reason: Operations deliver vulnerability (CVE/CWE/CAPEC, ICS advisories) and threat-intelligence (IOC
+    reputation, IP abuse/blacklist) data, squarely cybersecurity management. Evidence straddles Vulnerability
+    Management and Threat Detection & Response, so mapped at L1 only.
+- tag: Tax
+  spec_file: 2s-io-tax-api-openapi.yml
+  capability_id: BC-220.20
+  capability_id_l1: BC-220
+  capability_name: Indirect Tax Management
+  confidence: 0.78
+  evidence: GET /api/tax/vat — "Validate a European Union VAT number against the official"; GET /api/tax/vat-rates
+    — "Current EU VAT rates by member state - standard rate plus"
+  reason: VAT number validation and EU VAT rate lookup directly serve indirect tax determination and compliance.
+    Thin surface (2 endpoints) so confidence is moderate, but the mapping to Indirect Tax Management is
+    unambiguous.
