@@ -1,0 +1,35 @@
+# Front Door AI Index — 2s-io — 2026-09-17
+# AI vocabulary counted on the provider's root page. Generated; do not edit.
+# `score` is null unless ownership is `own` — see front_door_ai.py.
+front_door_ai:
+  slug: 2s-io
+  lexicon_version: '1.0'
+  probed_at: '2026-09-25'
+  host: 2s.io
+  final_host: 2s.io
+  ownership: own
+  owner: 2s-io
+  shares_host_with: null
+  inherited_from: null
+  alias_of: null
+  verdict: scored
+  score: 22
+  band: 6
+  band_label: dominant
+  host_score: 22
+  density: 9.37
+  words: 2347
+  tiers:
+    agentic: 12
+    core: 9
+    model: 1
+  ambiguous: 18
+  top_terms:
+    agent: 18
+    AI: 9
+    RAG: 4
+    MCP: 3
+    AI agent: 2
+    embedding: 2
+    Claude: 1
+    autonomous agent: 1

@@ -1,4 +1,4 @@
-generated: '2026-09-19'
+generated: '2026-09-23'
 method: generated
 source: openapi/2s-io-openapi.json
 description: Recommended x-agentic-access execution contracts, classified heuristically from
@@ -7,11 +7,11 @@ description: Recommended x-agentic-access execution contracts, classified heuris
 summary:
   operations: 575
   by_action_class:
-    acting: 105
-    connected: 470
+    acting: 102
+    connected: 473
   by_consequence:
-    write: 100
-    read: 470
+    write: 97
+    read: 473
     physical: 3
     safety-critical: 2
   human_in_the_loop_required: 2
@@ -3272,18 +3272,12 @@ operations:
   method: post
   operationId: law_opinion
   x-agentic-access:
-    action-class: acting
-    consequence: write
-    subject: required
-    audience: null
+    action-class: connected
+    consequence: read
+    subject: optional
     token:
-      max-ttl: 900
-    escalation:
-      human-in-the-loop: conditional
-      triggers:
-      - abnormal
-      - high-value
-    audit: required
+      max-ttl: 3600
+    audit: none
 - path: /api/law/sanctions-check
   method: post
   operationId: law_sanctions-check
@@ -4458,18 +4452,12 @@ operations:
   method: post
   operationId: search_crawl
   x-agentic-access:
-    action-class: acting
-    consequence: write
-    subject: required
-    audience: null
+    action-class: connected
+    consequence: read
+    subject: optional
     token:
-      max-ttl: 900
-    escalation:
-      human-in-the-loop: conditional
-      triggers:
-      - abnormal
-      - high-value
-    audit: required
+      max-ttl: 3600
+    audit: none
 - path: /api/search/endpoints
   method: get
   operationId: search_endpoints
@@ -4484,18 +4472,12 @@ operations:
   method: post
   operationId: search_extract
   x-agentic-access:
-    action-class: acting
-    consequence: write
-    subject: required
-    audience: null
+    action-class: connected
+    consequence: read
+    subject: optional
     token:
-      max-ttl: 900
-    escalation:
-      human-in-the-loop: conditional
-      triggers:
-      - abnormal
-      - high-value
-    audit: required
+      max-ttl: 3600
+    audit: none
 - path: /api/search/web
   method: get
   operationId: search_web
