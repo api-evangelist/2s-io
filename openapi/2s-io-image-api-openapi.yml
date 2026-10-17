@@ -107,20 +107,10 @@ components:
       description: Upstream provider error.
     MethodNotAllowed:
       description: Method not allowed — see `Allow` header for the supported method.
-    ServerError:
-      description: Internal server error.
     BadRequest:
       description: Bad request — invalid parameters.
-  parameters:
-    TrialMode:
-      name: trial
-      in: query
-      required: false
-      description: 'Try before you buy. Set to 1 for one free real call per endpoint per hour — no wallet or payment needed — to verify the endpoint before paying. Equivalent to sending the "X-2s-Trial: 1" request header. Works on every endpoint.'
-      schema:
-        type: integer
-        enum:
-        - 1
+    ServerError:
+      description: Internal server error.
   schemas:
     X402PaymentRequiredV2:
       type: object
@@ -177,6 +167,16 @@ components:
           type: object
           description: Optional discovery metadata (e.g. bazaar input/output schemas).
           additionalProperties: true
+  parameters:
+    TrialMode:
+      name: trial
+      in: query
+      required: false
+      description: 'Try before you buy. Set to 1 for one free real call per endpoint per hour — no wallet or payment needed — to verify the endpoint before paying. Equivalent to sending the "X-2s-Trial: 1" request header. Works on every endpoint.'
+      schema:
+        type: integer
+        enum:
+        - 1
   securitySchemes:
     x402Payment:
       type: apiKey
