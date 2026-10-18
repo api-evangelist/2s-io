@@ -31,7 +31,7 @@ tags:
 - Public Records
 - Government Data
 - Finance
-- Crypto
+- Cryptocurrency
 - Security
 - Legal
 - Weather
@@ -538,7 +538,7 @@ apis:
   humanURL: https://2s.io/discover
   baseURL: https://2s.io/mcp
   tags:
-  - Crypto
+  - Cryptocurrency
   tags_raw:
   - crypto
   properties:
@@ -804,9 +804,10 @@ apis:
   humanURL: https://2s.io/discover
   baseURL: https://2s.io/mcp
   tags:
-  - FX
+  - Foreign Exchange
   tags_raw:
   - fx
+  - FX
   properties:
   - type: OpenAPI
     url: openapi/2s-io-fx-api-openapi.yml
@@ -1452,7 +1453,7 @@ apis:
   humanURL: https://2s.io/discover
   baseURL: https://2s.io/mcp
   tags:
-  - Pub-Sub
+  - Pub/Sub
   tags_raw:
   - pubsub
   properties:
